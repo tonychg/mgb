@@ -1,5 +1,5 @@
 #ifdef TEST
-#include "test.h"
+#include "tests.h"
 
 int main()
 {

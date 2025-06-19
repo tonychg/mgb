@@ -50,7 +50,7 @@ void cpu_release(cpu *cpu)
 }
 
 #ifdef TEST
-#include "test.h"
+#include "tests.h"
 
 void test_cpu()
 {

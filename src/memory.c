@@ -1,5 +1,5 @@
 #ifdef TEST
-#include "test.h"
+#include "tests.h"
 
 void test_memory()
 {

@@ -52,7 +52,7 @@ void register_set_high(pair_register *rg, u8 value)
 }
 
 #ifdef TEST
-#include "test.h"
+#include "tests.h"
 
 void test_register()
 {
