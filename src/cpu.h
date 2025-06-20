@@ -20,20 +20,19 @@ enum execution_state {
 };
 
 typedef struct cpu {
-	u8 a;
-	unsigned z;
-	unsigned n;
-	unsigned h;
-	unsigned c;
+	u16 sp;
+	u16 pc;
+	pair_register *af;
 	pair_register *bc;
 	pair_register *de;
 	pair_register *hl;
-	u16 sp;
-	u16 pc;
+
 	u16 instruction;
-	enum execution_state state;
 	u64 cycles;
+
 	bool halted;
+	enum execution_state state;
+
 	int multiplier;
 } cpu;
 
@@ -41,6 +40,12 @@ cpu *cpu_init(void);
 void cpu_reset(cpu *cpu);
 void cpu_tick(cpu *cpu);
 void cpu_release(cpu *cpu);
+void cpu_pc_decrement(cpu *cpu);
+void cpu_pc_increment(cpu *cpu);
+unsigned cpu_get_z(cpu *cpu);
+unsigned cpu_get_n(cpu *cpu);
+unsigned cpu_get_h(cpu *cpu);
+unsigned cpu_get_c(cpu *cpu);
 int cpu_instruction_length(u8 opcode);
 
 #endif
