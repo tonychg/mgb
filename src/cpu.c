@@ -4,12 +4,13 @@
 
 void cpu_reset(cpu *cpu)
 {
+	cpu->sp = 0xFFFE;
+	cpu->pc = 0x100;
+
 	register_set_value(cpu->af, 0x01B0);
 	register_set_value(cpu->bc, 0x0013);
 	register_set_value(cpu->de, 0x00D8);
 	register_set_value(cpu->hl, 0x014D);
-	cpu->sp = 0xFFFE;
-	cpu->pc = 0x100;
 
 	cpu->instruction = 0;
 	cpu->cycles = 0;
@@ -102,6 +103,7 @@ void test_cpu()
 {
 	printf("# Testing cpu.c\n");
 	cpu *cpu = cpu_init();
+	assert(cpu != NULL);
 	cpu_reset(cpu);
 	cpu_debug(cpu);
 	cpu_release(cpu);

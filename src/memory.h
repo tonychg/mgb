@@ -3,4 +3,7 @@
 
 #include "types.h"
 
+typedef struct memory {
+} memory;
+
 #endif
