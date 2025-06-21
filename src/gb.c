@@ -19,7 +19,7 @@ int gb_boot(void *args)
 	while (1) {
 		if (cargs->debug)
 			cpu_debug(cpu);
-		cpu_instruction(cpu);
+		cpu_tick(cpu);
 		if (!cargs->debug)
 			cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 		else

@@ -22,6 +22,15 @@ enum ExecutionState {
 	CPU_CORE_HALT_BUG = 27,
 };
 
+typedef struct Instruction {
+	u8 opcode;
+	u8 length;
+	const char *mnemonic;
+	const char *op_1;
+	const char *op_2;
+	u8 cycles;
+} Instruction;
+
 typedef struct Cpu {
 	u16 sp;
 	u16 pc;
@@ -54,8 +63,8 @@ unsigned cpu_get_z(Cpu *cpu);
 unsigned cpu_get_n(Cpu *cpu);
 unsigned cpu_get_h(Cpu *cpu);
 unsigned cpu_get_c(Cpu *cpu);
-int cpu_instruction_length(u8 opcode);
-const char *cpu_opcode_mnemonic(u8 opcode);
-void cpu_instruction(Cpu *cpu);
+Instruction cpu_op_decode(u8 opcode);
+void cpu_debug_instruction(Instruction instruction);
+void cpu_execute(Cpu *cpu, Instruction instruction);
 
 #endif

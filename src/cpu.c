@@ -87,8 +87,26 @@ void cpu_pc_increment(Cpu *cpu)
 	cpu->pc++;
 }
 
-void cpu_tick(Cpu *cpu)
+u8 cpu_read_pc_addr(Cpu *cpu)
 {
+	u8 byte = cpu->memory->bus[cpu->pc];
+	cpu_pc_increment(cpu);
+	return byte;
+}
+
+u16 cpu_read_word(Cpu *cpu)
+{
+	return (u16)cpu_read_pc_addr(cpu) | (u16)cpu_read_pc_addr(cpu) << 8;
+}
+
+u8 cpu_read_byte(Cpu *cpu)
+{
+	return cpu_read_pc_addr(cpu);
+}
+
+void cpu_jump_word(Cpu *cpu, u16 r16)
+{
+	cpu->pc = r16;
 }
 
 void cpu_debug(Cpu *cpu)
@@ -109,46 +127,35 @@ void cpu_debug(Cpu *cpu)
 	printf(" %016b\n", cpu->pc);
 }
 
-u16 cpu_read_word(Cpu *cpu)
+void cpu_debug_instruction(Instruction instruction)
 {
-	u16 word = cpu->memory->bus[cpu->pc];
-	cpu_pc_increment(cpu);
-	word |= cpu->memory->bus[cpu->pc] << 8;
-	cpu_pc_increment(cpu);
-	return word;
+	printf("$%02X [%d %d] %s %s %s", instruction.opcode, instruction.length,
+	       instruction.cycles, instruction.mnemonic, instruction.op_1,
+	       instruction.op_2);
 }
 
-u8 cpu_read_byte(Cpu *cpu)
+void cpu_execute(Cpu *cpu, Instruction instruction)
 {
-	u8 byte = cpu->memory->bus[cpu->pc];
-	cpu_pc_increment(cpu);
-	return byte;
-}
+	cpu_debug_instruction(instruction);
 
-void cpu_jump_word(Cpu *cpu, u16 r16)
-{
-	cpu->pc = r16;
-}
-
-void cpu_instruction(Cpu *cpu)
-{
-	u8 opcode = cpu->memory->bus[cpu->pc];
-	const char *mnemonic = cpu_opcode_mnemonic(opcode);
-	int length = cpu_instruction_length(opcode);
-
-	printf("PC=$%02X 0x%02X -> %s (%d)", cpu->pc, opcode, mnemonic, length);
-	cpu_pc_increment(cpu);
-	if (length == 3) {
-		u16 r16 = cpu_read_word(cpu);
-		printf(" $%04X\n", r16);
-		if (!strcmp(mnemonic, "JP"))
-			cpu->pc = r16;
-	} else if (length == 2) {
-		u8 r8 = cpu_read_byte(cpu);
-		printf(" $%02X\n", r8);
+	if (instruction.length == 3) {
+		u16 imm16 = cpu_read_word(cpu);
+		printf(" $%04X\n", imm16);
+		if (!strcmp(instruction.mnemonic, "JP"))
+			cpu->pc = imm16;
+	} else if (instruction.length == 2) {
+		u8 imm8 = cpu_read_byte(cpu);
+		printf(" $%04X\n", imm8);
 	} else {
 		printf("\n");
 	}
+}
+
+void cpu_tick(Cpu *cpu)
+{
+	u8 opcode = cpu_read_pc_addr(cpu);
+	Instruction instruction = cpu_op_decode(opcode);
+	cpu_execute(cpu, instruction);
 }
 
 #ifdef TEST

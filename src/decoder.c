@@ -55,6 +55,64 @@ static const char *OP_TABLES_MNEMONIC[256] = {
 	"RST",
 };
 
+static const char *OP_TABLES_OP_1[256] = {
+	NULL, "BC",  "BC", "BC",  "B",	 "B",	"B",  NULL,  "a16", "HL",
+	"A",  "BC",  "C",  "C",	  "C",	 NULL,	"n8", "DE",  "DE",  "DE",
+	"D",  "D",   "D",  NULL,  "e8",	 "HL",	"A",  "DE",  "E",   "E",
+	"E",  NULL,  "NZ", "HL",  "HL",	 "HL",	"H",  "H",   "H",   NULL,
+	"Z",  "HL",  "A",  "HL",  "L",	 "L",	"L",  NULL,  "NC",  "SP",
+	"HL", "SP",  "HL", "HL",  "HL",	 NULL,	"C",  "HL",  "A",   "SP",
+	"A",  "A",   "A",  NULL,  "B",	 "B",	"B",  "B",   "B",   "B",
+	"B",  "B",   "C",  "C",	  "C",	 "C",	"C",  "C",   "C",   "C",
+	"D",  "D",   "D",  "D",	  "D",	 "D",	"D",  "D",   "E",   "E",
+	"E",  "E",   "E",  "E",	  "E",	 "E",	"H",  "H",   "H",   "H",
+	"H",  "H",   "H",  "H",	  "L",	 "L",	"L",  "L",   "L",   "L",
+	"L",  "L",   "HL", "HL",  "HL",	 "HL",	"HL", "HL",  NULL,  "HL",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "A",  "A",	  "A",	 "A",	"A",  "A",   "A",   "A",
+	"A",  "A",   "NZ", "BC",  "NZ",	 "a16", "NZ", "BC",  "A",   "$00",
+	"Z",  NULL,  "Z",  NULL,  "Z",	 "a16", "A",  "$08", "NC",  "DE",
+	"NC", NULL,  "NC", "DE",  "A",	 "$10", "C",  NULL,  "C",   NULL,
+	"C",  NULL,  "A",  "$18", "a8",	 "HL",	"C",  NULL,  NULL,  "HL",
+	"A",  "$20", "SP", "HL",  "a16", NULL,	NULL, NULL,  "A",   "$28",
+	"A",  "AF",  "A",  NULL,  NULL,	 "AF",	"A",  "$30", "HL",  "SP",
+	"A",  NULL,  NULL, NULL,  "A",	 "$38"
+};
+
+static const char *OP_TABLES_OP_2[256] = {
+	NULL,  "n16", "A",   NULL,  NULL,  NULL, "n8",	NULL,  "SP",  "BC",
+	"BC",  NULL,  NULL,  NULL,  "n8",  NULL, NULL,	"n16", "A",   NULL,
+	NULL,  NULL,  "n8",  NULL,  NULL,  "DE", "DE",	NULL,  NULL,  NULL,
+	"n8",  NULL,  "e8",  "n16", "A",   NULL, NULL,	NULL,  "n8",  NULL,
+	"e8",  "HL",  "HL",  NULL,  NULL,  NULL, "n8",	NULL,  "e8",  "n16",
+	"A",   NULL,  NULL,  NULL,  "n8",  NULL, "e8",	"SP",  "HL",  NULL,
+	NULL,  NULL,  "n8",  NULL,  "B",   "C",	 "D",	"E",   "H",   "L",
+	"HL",  "A",   "B",   "C",   "D",   "E",	 "H",	"L",   "HL",  "A",
+	"B",   "C",   "D",   "E",   "H",   "L",	 "HL",	"A",   "B",   "C",
+	"D",   "E",   "H",   "L",   "HL",  "A",	 "B",	"C",   "D",   "E",
+	"H",   "L",   "HL",  "A",   "B",   "C",	 "D",	"E",   "H",   "L",
+	"HL",  "A",   "B",   "C",   "D",   "E",	 "H",	"L",   NULL,  "A",
+	"B",   "C",   "D",   "E",   "H",   "L",	 "HL",	"A",   "B",   "C",
+	"D",   "E",   "H",   "L",   "HL",  "A",	 "B",	"C",   "D",   "E",
+	"H",   "L",   "HL",  "A",   "B",   "C",	 "D",	"E",   "H",   "L",
+	"HL",  "A",   "B",   "C",   "D",   "E",	 "H",	"L",   "HL",  "A",
+	"B",   "C",   "D",   "E",   "H",   "L",	 "HL",	"A",   "B",   "C",
+	"D",   "E",   "H",   "L",   "HL",  "A",	 "B",	"C",   "D",   "E",
+	"H",   "L",   "HL",  "A",   "B",   "C",	 "D",	"E",   "H",   "L",
+	"HL",  "A",   NULL,  NULL,  "a16", NULL, "a16", NULL,  "n8",  NULL,
+	NULL,  NULL,  "a16", NULL,  "a16", NULL, "n8",	NULL,  NULL,  NULL,
+	"a16", NULL,  "a16", NULL,  "n8",  NULL, NULL,	NULL,  "a16", NULL,
+	"a16", NULL,  "n8",  NULL,  "A",   NULL, "A",	NULL,  NULL,  NULL,
+	"n8",  NULL,  "e8",  NULL,  "A",   NULL, NULL,	NULL,  "n8",  NULL,
+	"a8",  NULL,  "C",   NULL,  NULL,  NULL, "n8",	NULL,  "SP",  "HL",
+	"a16", NULL,  NULL,  NULL,  "n8",  NULL
+};
+
 static const char *OP_TABLES_CB_MNEMONIC[256] = {
 	"RLC",	"RLC",	"RLC", "RLC",  "RLC",  "RLC",  "RLC",  "RLC",  "RRC",
 	"RRC",	"RRC",	"RRC", "RRC",  "RRC",  "RRC",  "RRC",  "RL",   "RL",
@@ -87,7 +145,55 @@ static const char *OP_TABLES_CB_MNEMONIC[256] = {
 	"SET",	"SET",	"SET", "SET"
 };
 
-static int OPCODE_WIDTH[256] = {
+static const char *OP_TABLES_CB_OP_1[256] = {
+	"B", "C",  "D",	 "E", "H",  "L", "HL", "A",  "B", "C",	"D",  "E", "H",
+	"L", "HL", "A",	 "B", "C",  "D", "E",  "H",  "L", "HL", "A",  "B", "C",
+	"D", "E",  "H",	 "L", "HL", "A", "B",  "C",  "D", "E",	"H",  "L", "HL",
+	"A", "B",  "C",	 "D", "E",  "H", "L",  "HL", "A", "B",	"C",  "D", "E",
+	"H", "L",  "HL", "A", "B",  "C", "D",  "E",  "H", "L",	"HL", "A", "0",
+	"0", "0",  "0",	 "0", "0",  "0", "0",  "1",  "1", "1",	"1",  "1", "1",
+	"1", "1",  "2",	 "2", "2",  "2", "2",  "2",  "2", "2",	"3",  "3", "3",
+	"3", "3",  "3",	 "3", "3",  "4", "4",  "4",  "4", "4",	"4",  "4", "4",
+	"5", "5",  "5",	 "5", "5",  "5", "5",  "5",  "6", "6",	"6",  "6", "6",
+	"6", "6",  "6",	 "7", "7",  "7", "7",  "7",  "7", "7",	"7",  "0", "0",
+	"0", "0",  "0",	 "0", "0",  "0", "1",  "1",  "1", "1",	"1",  "1", "1",
+	"1", "2",  "2",	 "2", "2",  "2", "2",  "2",  "2", "3",	"3",  "3", "3",
+	"3", "3",  "3",	 "3", "4",  "4", "4",  "4",  "4", "4",	"4",  "4", "5",
+	"5", "5",  "5",	 "5", "5",  "5", "5",  "6",  "6", "6",	"6",  "6", "6",
+	"6", "6",  "7",	 "7", "7",  "7", "7",  "7",  "7", "7",	"0",  "0", "0",
+	"0", "0",  "0",	 "0", "0",  "1", "1",  "1",  "1", "1",	"1",  "1", "1",
+	"2", "2",  "2",	 "2", "2",  "2", "2",  "2",  "3", "3",	"3",  "3", "3",
+	"3", "3",  "3",	 "4", "4",  "4", "4",  "4",  "4", "4",	"4",  "5", "5",
+	"5", "5",  "5",	 "5", "5",  "5", "6",  "6",  "6", "6",	"6",  "6", "6",
+	"6", "7",  "7",	 "7", "7",  "7", "7",  "7",  "7"
+};
+
+static const char *OP_TABLES_CB_OP_2[256] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, "B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",
+	"B",  "C",  "D",  "E",	"H",  "L",  "HL", "A",	"B",  "C",  "D",  "E",
+	"H",  "L",  "HL", "A"
+};
+
+static int OPCODE_LENGTH[256] = {
 	/*      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
 	/* 0 */ 1, 3, 1, 1, 1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1,
 	/* 1 */ 2, 3, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1,
@@ -107,9 +213,40 @@ static int OPCODE_WIDTH[256] = {
 	/* F */ 2, 1, 1, 1, 0, 1, 2, 1, 2, 1, 3, 1, 0, 0, 2, 1,
 };
 
+static int OPCODE_MACHINE_CYCLES[256] = {
+	1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, 1, 3, 2, 2, 1, 1, 2, 1,
+	3, 2, 2, 2, 1, 1, 2, 1, 2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+	2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4, 2, 3, 3, 0, 3, 4, 2, 4,
+	2, 4, 3, 0, 3, 0, 2, 4, 3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+	3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4
+};
+
+static int OPCODE_CB_MACHINE_CYCLES[256] = {
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+	2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+	2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+	2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
+};
+
 int cpu_instruction_length(u8 opcode)
 {
-	return OPCODE_WIDTH[opcode];
+	if (opcode != 0xCB)
+		return OPCODE_LENGTH[opcode];
+	else
+		return 2;
 }
 
 const char *cpu_opcode_mnemonic(u8 opcode)
@@ -118,4 +255,41 @@ const char *cpu_opcode_mnemonic(u8 opcode)
 		return OP_TABLES_MNEMONIC[opcode];
 	else
 		return OP_TABLES_CB_MNEMONIC[opcode];
+}
+
+const char *cpu_opcode_op_1(u8 opcode)
+{
+	if (opcode != 0xCB)
+		return OP_TABLES_OP_1[opcode];
+	else
+		return OP_TABLES_CB_OP_1[opcode];
+}
+
+const char *cpu_opcode_op_2(u8 opcode)
+{
+	if (opcode != 0xCB)
+		return OP_TABLES_OP_2[opcode];
+	else
+		return OP_TABLES_CB_OP_2[opcode];
+}
+
+static int cpu_opcode_machine_cycle(u8 opcode)
+{
+	if (opcode != 0xCB)
+		return OPCODE_MACHINE_CYCLES[opcode];
+	else
+		return OPCODE_CB_MACHINE_CYCLES[opcode];
+}
+
+Instruction cpu_op_decode(u8 opcode)
+{
+	Instruction instruction;
+
+	instruction.opcode = opcode;
+	instruction.length = cpu_instruction_length(opcode);
+	instruction.mnemonic = cpu_opcode_mnemonic(opcode);
+	instruction.op_1 = cpu_opcode_op_1(opcode);
+	instruction.op_2 = cpu_opcode_op_2(opcode);
+	instruction.cycles = cpu_opcode_machine_cycle(opcode);
+	return instruction;
 }
