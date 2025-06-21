@@ -4,7 +4,6 @@
 
 int main()
 {
-	test_register();
 	test_memory();
 	test_cpu();
 }

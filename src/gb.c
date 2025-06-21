@@ -12,6 +12,7 @@ int gb_boot(void *args)
 
 	memory_bind_cartridge(memory, cartridge);
 	cpu->multiplier = cargs->multiplier;
+	cpu->debug = cargs->debug;
 	if (cargs->debug)
 		cartridge_metadata(cartridge);
 	cpu_reset(cpu);
@@ -24,6 +25,10 @@ int gb_boot(void *args)
 			cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 		else
 			cpu_sleep_ns(50000000L);
+		// Work RAM
+		// memory_debug(cpu->memory, 0xC000, 0xCFFF);
+		// Video RAM
+		// memory_debug(cpu->memory, 0x8000, 0x9FFF);
 	}
 	cartridge_release(cartridge);
 	cpu_release(cpu);

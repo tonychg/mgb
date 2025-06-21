@@ -243,53 +243,75 @@ static int OPCODE_CB_MACHINE_CYCLES[256] = {
 
 int cpu_instruction_length(u8 opcode)
 {
-	if (opcode != 0xCB)
-		return OPCODE_LENGTH[opcode];
-	else
-		return 2;
+	return OPCODE_LENGTH[opcode];
+}
+
+int cpu_instruction_cb_length(u8 opcode)
+{
+	return 2;
 }
 
 const char *cpu_opcode_mnemonic(u8 opcode)
 {
-	if (opcode != 0xCB)
-		return OP_TABLES_MNEMONIC[opcode];
-	else
-		return OP_TABLES_CB_MNEMONIC[opcode];
+	return OP_TABLES_MNEMONIC[opcode];
+}
+
+const char *cpu_opcode_cb_mnemonic(u8 opcode)
+{
+	return OP_TABLES_CB_MNEMONIC[opcode];
 }
 
 const char *cpu_opcode_op_1(u8 opcode)
 {
-	if (opcode != 0xCB)
-		return OP_TABLES_OP_1[opcode];
-	else
-		return OP_TABLES_CB_OP_1[opcode];
+	return OP_TABLES_OP_1[opcode];
+}
+
+const char *cpu_opcode_cb_op_1(u8 opcode)
+{
+	return OP_TABLES_CB_OP_1[opcode];
 }
 
 const char *cpu_opcode_op_2(u8 opcode)
 {
-	if (opcode != 0xCB)
-		return OP_TABLES_OP_2[opcode];
-	else
-		return OP_TABLES_CB_OP_2[opcode];
+	return OP_TABLES_OP_2[opcode];
+}
+
+const char *cpu_opcode_cb_op_2(u8 opcode)
+{
+	return OP_TABLES_CB_OP_2[opcode];
 }
 
 static int cpu_opcode_machine_cycle(u8 opcode)
 {
-	if (opcode != 0xCB)
-		return OPCODE_MACHINE_CYCLES[opcode];
-	else
-		return OPCODE_CB_MACHINE_CYCLES[opcode];
+	return OPCODE_MACHINE_CYCLES[opcode];
 }
 
-Instruction cpu_op_decode(u8 opcode)
+static int cpu_opcode_cb_machine_cycle(u8 opcode)
+{
+	return OPCODE_CB_MACHINE_CYCLES[opcode];
+}
+
+Instruction cpu_op_decode(Cpu *cpu)
 {
 	Instruction instruction;
-
-	instruction.opcode = opcode;
-	instruction.length = cpu_instruction_length(opcode);
-	instruction.mnemonic = cpu_opcode_mnemonic(opcode);
-	instruction.op_1 = cpu_opcode_op_1(opcode);
-	instruction.op_2 = cpu_opcode_op_2(opcode);
-	instruction.cycles = cpu_opcode_machine_cycle(opcode);
+	u8 opcode = cpu_read_pc_addr(cpu);
+	if (opcode != 0xCB) {
+		instruction.opcode = opcode;
+		instruction.length = cpu_instruction_length(opcode);
+		instruction.mnemonic = cpu_opcode_mnemonic(opcode);
+		instruction.op_1 = cpu_opcode_op_1(opcode);
+		instruction.op_2 = cpu_opcode_op_2(opcode);
+		instruction.cycles = cpu_opcode_machine_cycle(opcode);
+		instruction.prefixed = false;
+	} else {
+		opcode = cpu_read_pc_addr(cpu);
+		instruction.opcode = opcode;
+		instruction.length = cpu_instruction_cb_length(opcode);
+		instruction.mnemonic = cpu_opcode_cb_mnemonic(opcode);
+		instruction.op_1 = cpu_opcode_cb_op_1(opcode);
+		instruction.op_2 = cpu_opcode_cb_op_2(opcode);
+		instruction.cycles = cpu_opcode_cb_machine_cycle(opcode);
+		instruction.prefixed = true;
+	}
 	return instruction;
 }

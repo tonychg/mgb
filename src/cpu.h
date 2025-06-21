@@ -2,11 +2,16 @@
 #define __CPU_H__
 
 #include "types.h"
-#include "register.h"
 #include "memory.h"
 #include "cartridge.h"
 
 #define CLOCK_PERIOD_NS 2384
+
+#define FLAG_ZERO 0b10000000
+#define FLAG_SUBS 0b01000000
+#define FLAG_HALF 0b00100000
+#define FLAG_CARRY 0b00010000
+#define FLAG_NONE 0
 
 enum ExecutionState {
 	CPU_CORE_FETCH = 3,
@@ -29,22 +34,30 @@ typedef struct Instruction {
 	const char *op_1;
 	const char *op_2;
 	u8 cycles;
+	bool prefixed;
 } Instruction;
 
 typedef struct Cpu {
 	u16 sp;
 	u16 pc;
-	PairRegister *af;
-	PairRegister *bc;
-	PairRegister *de;
-	PairRegister *hl;
+	u8 a;
+	u8 f;
+	u8 b;
+	u8 c;
+	u8 d;
+	u8 e;
+	u8 h;
+	u8 l;
 
 	Memory *memory;
 
 	u16 instruction;
 	u64 cycles;
+	u8 read_cache;
 
 	bool halted;
+	bool branch_taken;
+	bool debug;
 	enum ExecutionState state;
 
 	int multiplier;
@@ -59,12 +72,21 @@ void cpu_tick(Cpu *cpu);
 void cpu_release(Cpu *cpu);
 void cpu_pc_decrement(Cpu *cpu);
 void cpu_pc_increment(Cpu *cpu);
-unsigned cpu_get_z(Cpu *cpu);
-unsigned cpu_get_n(Cpu *cpu);
-unsigned cpu_get_h(Cpu *cpu);
-unsigned cpu_get_c(Cpu *cpu);
-Instruction cpu_op_decode(u8 opcode);
+
+void cpu_flag_set(Cpu *cpu, int flag);
+void cpu_flag_toggle(Cpu *cpu, int flag);
+void cpu_flag_untoggle(Cpu *cpu, int flag);
+void cpu_flag_clear(Cpu *cpu);
+bool cpu_flag_is_set(Cpu *cpu, int flag);
+void cpu_flag_flip(Cpu *cpu, int flag);
+void cpu_flag_set_or_clear(Cpu *cpu, int flag);
+
+Instruction cpu_op_decode(Cpu *cpu);
+u8 cpu_read_pc_addr(Cpu *cpu);
 void cpu_debug_instruction(Instruction instruction);
 void cpu_execute(Cpu *cpu, Instruction instruction);
+void cpu_execute_cb(Cpu *cpu, Instruction instruction);
+u16 cpu_read_word(Cpu *cpu);
+u8 cpu_read_byte(Cpu *cpu);
 
 #endif

@@ -76,5 +76,6 @@ Memory *memory_init(void);
 void memory_bind_cartridge(Memory *memory, Cartridge *cartridge);
 void memory_release(Memory *memory);
 u8 memory_hardware_register(Memory *memory, enum HardwareRegister r);
+void memory_debug(Memory *memory, u16 start, u16 end);
 
 #endif

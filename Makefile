@@ -4,10 +4,10 @@ BUILD_DIR = build
 SRC = \
       $(SRC_SUBDIR)/list.c \
       $(SRC_SUBDIR)/alloc.c \
-      $(SRC_SUBDIR)/register.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
       $(SRC_SUBDIR)/cpu.c \
+      $(SRC_SUBDIR)/opcodes.c \
       $(SRC_SUBDIR)/cli.c \
       $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/decoder.c \

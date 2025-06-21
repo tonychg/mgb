@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "alloc.h"
 #include <string.h>
+#include <stdio.h>
 
 Memory *memory_init()
 {
@@ -30,6 +31,21 @@ void memory_release(Memory *memory)
 {
 	zfree(memory->bus);
 	zfree(memory);
+}
+
+void memory_debug(Memory *memory, u16 start, u16 end)
+{
+	for (int i = 0; start + i <= end; i++) {
+		if (memory->bus[start + i] != 0)
+			printf("%02X", memory->bus[start + i]);
+		else
+			printf("..");
+		if ((i + 1) % 32 == 0 && i > 0)
+			printf("\n");
+		else if ((i + 1) % 8 == 0 && i > 0)
+			printf(" ");
+	}
+	printf("\n");
 }
 
 #ifdef TEST
