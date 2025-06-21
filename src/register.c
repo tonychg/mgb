@@ -1,12 +1,13 @@
+#include "alloc.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "register.h"
 
-pair_register *register_create(void)
+PairRegister *register_create(void)
 {
-	pair_register *rg;
+	PairRegister *rg;
 
-	if ((rg = (pair_register *)malloc(sizeof(pair_register))) == NULL) {
+	if ((rg = (PairRegister *)malloc(sizeof(PairRegister))) == NULL) {
 		return NULL;
 	}
 	rg->high = 0;
@@ -14,39 +15,38 @@ pair_register *register_create(void)
 	return rg;
 }
 
-void register_release(pair_register *rg)
+void register_release(PairRegister *rg)
 {
-	free(rg);
-	rg = NULL;
+	zfree(rg);
 }
 
-u16 register_get_value(pair_register *rg)
+u16 register_get_value(PairRegister *rg)
 {
 	return (u16)rg->high << 8 | rg->low;
 }
 
-void register_set_value(pair_register *rg, u16 value)
+void register_set_value(PairRegister *rg, u16 value)
 {
 	rg->high = value >> 8;
 	rg->low = 0xFF & value;
 }
 
-u8 register_get_low(pair_register *rg)
+u8 register_get_low(PairRegister *rg)
 {
 	return rg->low;
 }
 
-void register_set_low(pair_register *rg, u8 value)
+void register_set_low(PairRegister *rg, u8 value)
 {
 	rg->low = value;
 }
 
-u8 register_get_high(pair_register *rg)
+u8 register_get_high(PairRegister *rg)
 {
 	return rg->high;
 }
 
-void register_set_high(pair_register *rg, u8 value)
+void register_set_high(PairRegister *rg, u8 value)
 {
 	rg->high = value;
 }
@@ -57,7 +57,7 @@ void register_set_high(pair_register *rg, u8 value)
 void test_register()
 {
 	printf("# Testing register.c\n");
-	pair_register *rg = register_create();
+	PairRegister *rg = register_create();
 	register_set_low(rg, 0b10000000);
 	register_set_high(rg, 0b00000001);
 	assert(0b10000000 == register_get_low(rg));

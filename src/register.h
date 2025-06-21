@@ -3,18 +3,18 @@
 
 #include "types.h"
 
-typedef struct pair_register {
+typedef struct PairRegister {
 	u8 high;
 	u8 low;
-} pair_register;
+} PairRegister;
 
-pair_register *register_create(void);
-void register_release(pair_register *rg);
-u16 register_get_value(pair_register *rg);
-void register_set_value(pair_register *rg, u16 value);
-u8 register_get_low(pair_register *rg);
-void register_set_low(pair_register *rg, u8 value);
-u8 register_get_high(pair_register *rg);
-void register_set_high(pair_register *rg, u8 value);
+PairRegister *register_create(void);
+void register_release(PairRegister *rg);
+u16 register_get_value(PairRegister *rg);
+void register_set_value(PairRegister *rg, u16 value);
+u8 register_get_low(PairRegister *rg);
+void register_set_low(PairRegister *rg, u8 value);
+u8 register_get_high(PairRegister *rg);
+void register_set_high(PairRegister *rg, u8 value);
 
 #endif

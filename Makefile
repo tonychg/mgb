@@ -3,6 +3,7 @@ BUILD_DIR = build
 
 SRC = \
       $(SRC_SUBDIR)/list.c \
+      $(SRC_SUBDIR)/alloc.c \
       $(SRC_SUBDIR)/register.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
@@ -12,15 +13,15 @@ SRC = \
 
 SRC_MAIN = $(SRC)
 
-NAME         = $(BUILD_DIR)/gameboy
-TEST	     = $(BUILD_DIR)/test.bin
-DEBUG        = $(BUILD_DIR)/debug.bin
-CC           = gcc
-CFLAGS	     = -Wall
-CFLAGS_TEST  = -g -DTEST
-OBJ          = $(SRC:.c=.o)
-RM           = rm -f
-MKDIR	     = mkdir -p
+NAME        = $(BUILD_DIR)/gameboy
+TEST	    = $(BUILD_DIR)/test.bin
+DEBUG       = $(BUILD_DIR)/debug.bin
+CC          = gcc
+CFLAGS	    = -g -Wall
+CFLAGS_TEST = -g -DTEST
+OBJ         = $(SRC:.c=.o)
+RM          = rm -f
+MKDIR	    = mkdir -p
 
 .PHONY:all
 all:    clean $(NAME)

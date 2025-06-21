@@ -1,10 +1,10 @@
 #include "list.h"
 
-list *list_create(void)
+List *list_create(void)
 {
-	struct list *list;
+	List *list;
 
-	if ((list = (struct list *)malloc(sizeof(struct list))) == NULL)
+	if ((list = (List *)malloc(sizeof(List))) == NULL)
 		return NULL;
 	list->head = NULL;
 	list->free = NULL;
@@ -12,7 +12,7 @@ list *list_create(void)
 	return list;
 }
 
-void list_link_node_head(list *list, list_node *node)
+void list_link_node_head(List *list, ListNode *node)
 {
 	if (list->len == 0) {
 		list->head = list->tail = node;
@@ -26,18 +26,18 @@ void list_link_node_head(list *list, list_node *node)
 	list->len++;
 }
 
-list *list_add_node_head(list *list, void *data)
+List *list_add_node_head(List *list, void *data)
 {
-	list_node *node;
+	ListNode *node;
 
-	if ((node = (list_node *)malloc(sizeof(list_node))) == NULL)
+	if ((node = (ListNode *)malloc(sizeof(ListNode))) == NULL)
 		return NULL;
 	node->data = data;
 	list_link_node_head(list, node);
 	return list;
 }
 
-void list_link_node_tail(list *list, list_node *node)
+void list_link_node_tail(List *list, ListNode *node)
 {
 	if (list->len == 0) {
 		list->head = list->tail = node;
@@ -51,18 +51,18 @@ void list_link_node_tail(list *list, list_node *node)
 	list->len++;
 }
 
-list *list_add_node_tail(list *list, void *data)
+List *list_add_node_tail(List *list, void *data)
 {
-	list_node *node;
+	ListNode *node;
 
-	if ((node = (list_node *)malloc(sizeof(list_node))) == NULL)
+	if ((node = (ListNode *)malloc(sizeof(ListNode))) == NULL)
 		return NULL;
 	node->data = data;
 	list_link_node_tail(list, node);
 	return list;
 }
 
-void list_unlink(list *list, list_node *node)
+void list_unlink(List *list, ListNode *node)
 {
 	if (node->prev)
 		node->prev->next = node->next;
@@ -77,28 +77,28 @@ void list_unlink(list *list, list_node *node)
 	list->len--;
 }
 
-list_node *list_pop_node_head(list *list)
+ListNode *list_pop_node_head(List *list)
 {
-	list_node *node;
+	ListNode *node;
 
 	node = list->head;
 	list_unlink(list, node);
 	return node;
 }
 
-list_node *list_pop_node_tail(list *list)
+ListNode *list_pop_node_tail(List *list)
 {
-	list_node *node;
+	ListNode *node;
 
 	node = list->tail;
 	list_unlink(list, node);
 	return node;
 }
 
-void list_empty(list *list)
+void list_empty(List *list)
 {
 	unsigned long len;
-	list_node *next, *current;
+	ListNode *next, *current;
 
 	current = list->head;
 	len = list->len;
@@ -113,7 +113,7 @@ void list_empty(list *list)
 	list->len = 0;
 }
 
-void list_release(list *list)
+void list_release(List *list)
 {
 	if (list == NULL)
 		return;
@@ -121,11 +121,11 @@ void list_release(list *list)
 	free(list);
 }
 
-list_iterator *list_iter(list *list, int direction)
+ListIterator *list_iter(List *list, int direction)
 {
-	list_iterator *it;
+	ListIterator *it;
 
-	if ((it = (list_iterator *)malloc(sizeof(list_iterator))) == NULL)
+	if ((it = (ListIterator *)malloc(sizeof(ListIterator))) == NULL)
 		return NULL;
 	it->direction = direction;
 	if (direction == IT_FORWARD)
@@ -135,9 +135,9 @@ list_iterator *list_iter(list *list, int direction)
 	return it;
 }
 
-list_node *list_next(list_iterator *it)
+ListNode *list_next(ListIterator *it)
 {
-	list_node *current = it->next;
+	ListNode *current = it->next;
 
 	if (current != NULL) {
 		if (it->direction == IT_FORWARD)
@@ -148,7 +148,7 @@ list_node *list_next(list_iterator *it)
 	return current;
 }
 
-void list_release_iter(list_iterator *it)
+void list_release_iter(ListIterator *it)
 {
 	free(it);
 }
@@ -160,9 +160,9 @@ void list_release_iter(list_iterator *it)
 
 void test_list()
 {
-	list_node *node, *head, *tail;
-	list_iterator *it;
-	list *list = list_create();
+	ListNode *node, *head, *tail;
+	ListIterator *it;
+	List *list = list_create();
 	list_add_node_head(list, "1");
 	list_add_node_head(list, "2");
 	list_add_node_head(list, "3");

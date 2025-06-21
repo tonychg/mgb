@@ -4,8 +4,9 @@
 #include "types.h"
 #include "register.h"
 #include "memory.h"
+#include "cartridge.h"
 
-enum execution_state {
+enum ExecutionState {
 	CPU_CORE_FETCH = 3,
 	CPU_CORE_IDLE_0 = 0,
 	CPU_CORE_IDLE_1 = 1,
@@ -19,33 +20,36 @@ enum execution_state {
 	CPU_CORE_HALT_BUG = 27,
 };
 
-typedef struct cpu {
+typedef struct Cpu {
 	u16 sp;
 	u16 pc;
-	pair_register *af;
-	pair_register *bc;
-	pair_register *de;
-	pair_register *hl;
+	PairRegister *af;
+	PairRegister *bc;
+	PairRegister *de;
+	PairRegister *hl;
 
 	u16 instruction;
 	u64 cycles;
 
 	bool halted;
-	enum execution_state state;
+	enum ExecutionState state;
 
 	int multiplier;
-} cpu;
+} Cpu;
 
-cpu *cpu_init(void);
-void cpu_reset(cpu *cpu);
-void cpu_tick(cpu *cpu);
-void cpu_release(cpu *cpu);
-void cpu_pc_decrement(cpu *cpu);
-void cpu_pc_increment(cpu *cpu);
-unsigned cpu_get_z(cpu *cpu);
-unsigned cpu_get_n(cpu *cpu);
-unsigned cpu_get_h(cpu *cpu);
-unsigned cpu_get_c(cpu *cpu);
+Cpu *cpu_init(void);
+void cpu_reset(Cpu *cpu);
+void cpu_debug(Cpu *cpu);
+void cpu_tick(Cpu *cpu);
+void cpu_release(Cpu *cpu);
+void cpu_pc_decrement(Cpu *cpu);
+void cpu_pc_increment(Cpu *cpu);
+unsigned cpu_get_z(Cpu *cpu);
+unsigned cpu_get_n(Cpu *cpu);
+unsigned cpu_get_h(Cpu *cpu);
+unsigned cpu_get_c(Cpu *cpu);
 int cpu_instruction_length(u8 opcode);
+const char *cpu_opcode_repr(u8 opcode);
+void cpu_instruction(Cpu *cpu, Cartridge *cartridge);
 
 #endif

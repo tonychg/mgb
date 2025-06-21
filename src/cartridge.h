@@ -35,7 +35,7 @@ enum cartridge_type {
 	HUC1_RAM_BATTERY,
 };
 
-typedef struct cartridge {
+typedef struct Cartridge {
 	u8 *buffer;
 	char title[16];
 	u8 cgb;
@@ -44,11 +44,11 @@ typedef struct cartridge {
 	size_t size;
 	u8 rom_size;
 	u8 ram_size;
-} cartridge;
+} Cartridge;
 
-cartridge *cartridge_init(void);
-cartridge *cartridge_load_from_file(char *path);
-void cartridge_metadata(cartridge *cartridge);
-void cartridge_release(cartridge *cartridge);
+Cartridge *cartridge_init(void);
+Cartridge *cartridge_load_from_file(char *path);
+void cartridge_metadata(Cartridge *cartridge);
+void cartridge_release(Cartridge *cartridge);
 
 #endif
