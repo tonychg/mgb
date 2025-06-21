@@ -45,6 +45,16 @@ void cartridge_decode_title(Cartridge *cartridge)
 	memcpy(cartridge->title, cartridge->buffer + 0x134, sizeof(u8) * 16);
 }
 
+u32 cartridge_ram_size(u8 code)
+{
+	return 32768 * (1 << code);
+}
+
+u32 cartridge_rom_size(u8 code)
+{
+	return CARTRIDGE_RAM_SIZES[code];
+}
+
 Cartridge *cartridge_load_from_file(char *path)
 {
 	Cartridge *cartridge = cartridge_init();
@@ -63,8 +73,8 @@ Cartridge *cartridge_load_from_file(char *path)
 	cartridge->cgb = cartridge->buffer[0x143];
 	cartridge->sgb = cartridge->buffer[0x146];
 	cartridge->type = cartridge->buffer[0x147];
-	cartridge->rom_size = cartridge->buffer[0x148];
-	cartridge->ram_size = cartridge->buffer[0x149];
+	cartridge->rom_size = cartridge_rom_size(cartridge->buffer[0x148]);
+	cartridge->ram_size = cartridge_ram_size(cartridge->buffer[0x149]);
 	return cartridge;
 }
 
@@ -74,7 +84,7 @@ void cartridge_metadata(Cartridge *cartridge)
 	printf("Size = %lu bytes\n", cartridge->size);
 	printf("Type = 0x%02X\n", cartridge->type);
 	printf("CGB = 0x%02X  SGB = 0x%02X\n", cartridge->cgb, cartridge->sgb);
-	printf("ROM = 0x%02X  RAM = 0x%02X\n", cartridge->rom_size,
+	printf("ROM = %d  RAM = %d\n", cartridge->rom_size,
 	       cartridge->ram_size);
 }
 

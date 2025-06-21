@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #ifdef TEST
 #include "tests.h"
 
@@ -8,27 +9,20 @@ int main()
 	test_cpu();
 }
 #else
-#include "cpu.h"
-#include "cartridge.h"
-#include <unistd.h>
-
-void sleep_ms(int milliseconds)
-{
-	usleep(milliseconds * 1000);
-}
+#include "cli.h"
+#include "alloc.h"
 
 int main(int argc, char **argv)
 {
-	Cpu *cpu = cpu_init();
-	Cartridge *gb_cartridge = cartridge_load_from_file(argv[1]);
-	cartridge_metadata(gb_cartridge);
-	cpu_reset(cpu);
-	while (1) {
-		cpu_debug(cpu);
-		cpu_instruction(cpu, gb_cartridge);
-		sleep_ms(100);
+	int exit_code = 0;
+	Command *cmd = parse_args(argc, argv);
+
+	if (cmd == NULL) {
+		exit_code = -1;
+	} else {
+		exit_code = cmd->callback(cmd->args);
+		zfree(cmd);
 	}
-	cartridge_release(gb_cartridge);
-	cpu_release(cpu);
+	exit(exit_code);
 }
 #endif

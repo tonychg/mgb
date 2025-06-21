@@ -2,22 +2,11 @@
 #include "alloc.h"
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
-void cpu_reset(Cpu *cpu)
+void cpu_sleep_ms(int milliseconds)
 {
-	cpu->sp = 0xFFFE;
-	cpu->pc = 0x100;
-
-	register_set_value(cpu->af, 0x01B0);
-	register_set_value(cpu->bc, 0x0013);
-	register_set_value(cpu->de, 0x00D8);
-	register_set_value(cpu->hl, 0x014D);
-
-	cpu->instruction = 0;
-	cpu->cycles = 0;
-	cpu->halted = false;
-	cpu->state = CPU_CORE_FETCH;
-	cpu->multiplier = 1;
+	usleep(milliseconds * 1000);
 }
 
 Cpu *cpu_init(void)
@@ -35,6 +24,27 @@ Cpu *cpu_init(void)
 	if ((cpu->hl = register_create()) == NULL)
 		return NULL;
 	return cpu;
+}
+
+void cpu_bind_memory(Memory *memory)
+{
+}
+
+void cpu_reset(Cpu *cpu)
+{
+	cpu->sp = 0xFFFE;
+	cpu->pc = 0x100;
+
+	register_set_value(cpu->af, 0x01B0);
+	register_set_value(cpu->bc, 0x0013);
+	register_set_value(cpu->de, 0x00D8);
+	register_set_value(cpu->hl, 0x014D);
+
+	cpu->instruction = 0;
+	cpu->cycles = 0;
+	cpu->halted = false;
+	cpu->state = CPU_CORE_FETCH;
+	cpu->multiplier = 1;
 }
 
 void cpu_release(Cpu *cpu)

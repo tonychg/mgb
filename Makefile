@@ -8,6 +8,8 @@ SRC = \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
       $(SRC_SUBDIR)/cpu.c \
+      $(SRC_SUBDIR)/cli.c \
+      $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/decoder.c \
       $(SRC_SUBDIR)/main.c \
 

@@ -28,6 +28,8 @@ typedef struct Cpu {
 	PairRegister *de;
 	PairRegister *hl;
 
+	Memory *memory;
+
 	u16 instruction;
 	u64 cycles;
 
@@ -38,7 +40,9 @@ typedef struct Cpu {
 } Cpu;
 
 Cpu *cpu_init(void);
+void cpu_bind_memory(Memory *memory);
 void cpu_reset(Cpu *cpu);
+void cpu_sleep_ms(int milliseconds);
 void cpu_debug(Cpu *cpu);
 void cpu_tick(Cpu *cpu);
 void cpu_release(Cpu *cpu);
