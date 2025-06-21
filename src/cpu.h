@@ -6,6 +6,8 @@
 #include "memory.h"
 #include "cartridge.h"
 
+#define CLOCK_PERIOD_NS 2384
+
 enum ExecutionState {
 	CPU_CORE_FETCH = 3,
 	CPU_CORE_IDLE_0 = 0,
@@ -42,7 +44,7 @@ typedef struct Cpu {
 Cpu *cpu_init(void);
 void cpu_bind_memory(Memory *memory);
 void cpu_reset(Cpu *cpu);
-void cpu_sleep_ms(int milliseconds);
+void cpu_sleep_ns(int nanoseconds);
 void cpu_debug(Cpu *cpu);
 void cpu_tick(Cpu *cpu);
 void cpu_release(Cpu *cpu);

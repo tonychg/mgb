@@ -10,6 +10,8 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 	if (args == NULL)
 		return NULL;
 	args->rom_path = NULL;
+	args->debug = false;
+	args->multiplier = 1;
 	if (argc <= 2) {
 		return args;
 	}
@@ -17,6 +19,13 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		if ((!strcmp(argv[i], "--path") || !strcmp(argv[i], "-p")) &&
 		    i + 1 < argc) {
 			args->rom_path = argv[i + 1];
+		}
+		if ((!strcmp(argv[i], "--debug") || !strcmp(argv[i], "-d")))
+			args->debug = true;
+		if ((!strcmp(argv[i], "--multiplier") ||
+		     !strcmp(argv[i], "-m")) &&
+		    i + 1 < argc) {
+			args->multiplier = atoi(argv[i + 1]);
 		}
 	}
 	return args;

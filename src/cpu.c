@@ -2,11 +2,11 @@
 #include "alloc.h"
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <time.h>
 
-void cpu_sleep_ms(int milliseconds)
+void cpu_sleep_ns(int nanoseconds)
 {
-	usleep(milliseconds * 1000);
+	nanosleep((const struct timespec[]){ { 0, nanoseconds } }, NULL);
 }
 
 Cpu *cpu_init(void)
@@ -102,8 +102,10 @@ void cpu_debug(Cpu *cpu)
 	printf("%08b | %08b\n", cpu->de->high, cpu->de->low);
 	printf("H = 0x%02X | L = 0x%02X\n", cpu->hl->high, cpu->hl->low);
 	printf("%08b | %08b\n", cpu->hl->high, cpu->hl->low);
-	printf("    SP = 0x%04X\n", cpu->pc);
-	printf("    PC = 0x%04X\n", cpu->pc);
+	printf("    SP = $%04X\n", cpu->sp);
+	printf(" %016b\n", cpu->sp);
+	printf("    PC = $%04X\n", cpu->pc);
+	printf(" %016b\n", cpu->pc);
 }
 
 u16 cpu_read_word(Cpu *cpu, Cartridge *cartridge)
@@ -133,7 +135,8 @@ void cpu_instruction(Cpu *cpu, Cartridge *cartridge)
 	const char *opcode_repr = cpu_opcode_repr(opcode);
 	int length = cpu_instruction_length(opcode);
 
-	printf("0x%02X -> %s (%d)", opcode, opcode_repr, length);
+	printf("PC=$%02X 0x%02X -> %s (%d)", cpu->pc, opcode, opcode_repr,
+	       length);
 	cpu_pc_increment(cpu);
 	if (length == 3) {
 		u16 r16 = cpu_read_word(cpu, cartridge);
@@ -146,6 +149,7 @@ void cpu_instruction(Cpu *cpu, Cartridge *cartridge)
 	} else {
 		printf("\n");
 	}
+	cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 }
 
 #ifdef TEST

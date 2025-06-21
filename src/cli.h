@@ -10,13 +10,18 @@ typedef struct Command {
 
 typedef struct ArgsBoot {
 	char *rom_path;
+	bool debug;
+	int multiplier;
 } ArgsBoot;
 
 typedef struct ArgsRom {
 	char *rom_path;
 } ArgsRom;
 
-#define CLI_HELP "Usage: gameboy [rom,boot] [-p/--path]\n"
+#define CLI_HELP                                             \
+	"Usage: gameboy [rom,boot] [-p/--path] [-d/--debug]" \
+	"[-m/--multiplier] [INT]"                            \
+	"\n"
 
 Command *parse_args(int argc, char **argv);
 
