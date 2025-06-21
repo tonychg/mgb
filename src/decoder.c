@@ -106,7 +106,7 @@ int cpu_instruction_length(u8 opcode)
 	return OPCODE_WIDTH[opcode];
 }
 
-const char *cpu_opcode_repr(u8 opcode)
+const char *cpu_opcode_mnemonic(u8 opcode)
 {
 	if (opcode != 0xCB)
 		return OP_TABLES_REPR[opcode];

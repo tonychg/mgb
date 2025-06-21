@@ -42,7 +42,7 @@ typedef struct Cpu {
 } Cpu;
 
 Cpu *cpu_init(void);
-void cpu_bind_memory(Memory *memory);
+void cpu_bind_memory(Cpu *cpu, Memory *memory);
 void cpu_reset(Cpu *cpu);
 void cpu_sleep_ns(int nanoseconds);
 void cpu_debug(Cpu *cpu);
@@ -55,7 +55,7 @@ unsigned cpu_get_n(Cpu *cpu);
 unsigned cpu_get_h(Cpu *cpu);
 unsigned cpu_get_c(Cpu *cpu);
 int cpu_instruction_length(u8 opcode);
-const char *cpu_opcode_repr(u8 opcode);
-void cpu_instruction(Cpu *cpu, Cartridge *cartridge);
+const char *cpu_opcode_mnemonic(u8 opcode);
+void cpu_instruction(Cpu *cpu);
 
 #endif

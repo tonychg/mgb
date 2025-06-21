@@ -1,6 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
+#include "cartridge.h"
 #include "types.h"
 
 enum HardwareRegister {
@@ -66,11 +67,13 @@ enum HardwareRegister {
 };
 
 typedef struct Memory {
-	u8 *wram;
-	u8 *vram;
+	u8 *bus;
+	u8 wram_bank;
+	u8 vram_bank;
 } Memory;
 
-Memory *memory_init(u32 ram_size, u32 vram_size);
+Memory *memory_init(void);
+void memory_bind_cartridge(Memory *memory, Cartridge *cartridge);
 void memory_release(Memory *memory);
 u8 memory_hardware_register(Memory *memory, enum HardwareRegister r);
 

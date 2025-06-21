@@ -26,8 +26,9 @@ Cpu *cpu_init(void)
 	return cpu;
 }
 
-void cpu_bind_memory(Memory *memory)
+void cpu_bind_memory(Cpu *cpu, Memory *memory)
 {
+	cpu->memory = memory;
 }
 
 void cpu_reset(Cpu *cpu)
@@ -108,18 +109,18 @@ void cpu_debug(Cpu *cpu)
 	printf(" %016b\n", cpu->pc);
 }
 
-u16 cpu_read_word(Cpu *cpu, Cartridge *cartridge)
+u16 cpu_read_word(Cpu *cpu)
 {
-	u16 word = cartridge->buffer[cpu->pc];
+	u16 word = cpu->memory->bus[cpu->pc];
 	cpu_pc_increment(cpu);
-	word |= cartridge->buffer[cpu->pc] << 8;
+	word |= cpu->memory->bus[cpu->pc] << 8;
 	cpu_pc_increment(cpu);
 	return word;
 }
 
-u8 cpu_read_byte(Cpu *cpu, Cartridge *cartridge)
+u8 cpu_read_byte(Cpu *cpu)
 {
-	u8 byte = cartridge->buffer[cpu->pc];
+	u8 byte = cpu->memory->bus[cpu->pc];
 	cpu_pc_increment(cpu);
 	return byte;
 }
@@ -129,27 +130,25 @@ void cpu_jump_word(Cpu *cpu, u16 r16)
 	cpu->pc = r16;
 }
 
-void cpu_instruction(Cpu *cpu, Cartridge *cartridge)
+void cpu_instruction(Cpu *cpu)
 {
-	u8 opcode = cartridge->buffer[cpu->pc];
-	const char *opcode_repr = cpu_opcode_repr(opcode);
+	u8 opcode = cpu->memory->bus[cpu->pc];
+	const char *mnemonic = cpu_opcode_mnemonic(opcode);
 	int length = cpu_instruction_length(opcode);
 
-	printf("PC=$%02X 0x%02X -> %s (%d)", cpu->pc, opcode, opcode_repr,
-	       length);
+	printf("PC=$%02X 0x%02X -> %s (%d)", cpu->pc, opcode, mnemonic, length);
 	cpu_pc_increment(cpu);
 	if (length == 3) {
-		u16 r16 = cpu_read_word(cpu, cartridge);
+		u16 r16 = cpu_read_word(cpu);
 		printf(" $%04X\n", r16);
-		if (!strcmp(opcode_repr, "JP"))
+		if (!strcmp(mnemonic, "JP"))
 			cpu->pc = r16;
 	} else if (length == 2) {
-		u8 r8 = cpu_read_byte(cpu, cartridge);
+		u8 r8 = cpu_read_byte(cpu);
 		printf(" $%02X\n", r8);
 	} else {
 		printf("\n");
 	}
-	cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 }
 
 #ifdef TEST
