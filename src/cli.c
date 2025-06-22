@@ -11,6 +11,7 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		return NULL;
 	args->rom_path = NULL;
 	args->debug = false;
+	args->cpu_debug = false;
 	args->multiplier = 1;
 	if (argc <= 2) {
 		return args;
@@ -27,6 +28,8 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		    i + 1 < argc) {
 			args->multiplier = atoi(argv[i + 1]);
 		}
+		if ((!strcmp(argv[i], "--cpu-debug") || !strcmp(argv[i], "-c")))
+			args->cpu_debug = true;
 	}
 	return args;
 }

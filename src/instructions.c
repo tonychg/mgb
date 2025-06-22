@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include "memory.h"
 #include "opcodes.h"
 
 u8 opcode_get_high(u16 word)
