@@ -29,10 +29,10 @@ void cpu_reset(Cpu *cpu)
 	cpu->sp = 0xFFFE;
 	cpu->pc = 0x100;
 
-	opcode_set_af(cpu, 0x01B0);
-	opcode_set_bc(cpu, 0x0013);
-	opcode_set_de(cpu, 0x00D8);
-	opcode_set_hl(cpu, 0x014D);
+	SET_AF(cpu, 0x01B0);
+	SET_BC(cpu, 0x0013);
+	SET_DE(cpu, 0x00D8);
+	SET_HL(cpu, 0x014D);
 
 	cpu->read_cache = 0;
 	cpu->instruction = 0;

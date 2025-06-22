@@ -1,251 +1,5 @@
 #include "cpu.h"
-
-u8 opcode_get_high(u16 word)
-{
-	return word >> 8;
-}
-
-u8 opcode_get_low(u16 word)
-{
-	return 0xFF & word;
-}
-
-u16 opcode_get_value(u8 r1, u8 r2)
-{
-	return (u16)r1 << 8 | r2;
-}
-
-void opcode_set_af(Cpu *cpu, u16 word)
-{
-	cpu->a = opcode_get_high(word);
-	cpu->f = opcode_get_low(word);
-}
-
-u16 opcode_get_af(Cpu *cpu)
-{
-	return opcode_get_value(cpu->a, cpu->f);
-}
-
-void opcode_increment_af(Cpu *cpu)
-{
-	opcode_set_af(cpu, opcode_get_af(cpu) + 1);
-}
-
-void opcode_decrement_af(Cpu *cpu)
-{
-	opcode_set_af(cpu, opcode_get_af(cpu) - 1);
-}
-
-void opcode_set_bc(Cpu *cpu, u16 word)
-{
-	cpu->b = opcode_get_high(word);
-	cpu->c = opcode_get_low(word);
-}
-
-u16 opcode_get_bc(Cpu *cpu)
-{
-	return opcode_get_value(cpu->b, cpu->c);
-}
-
-void opcode_increment_bc(Cpu *cpu)
-{
-	opcode_set_bc(cpu, opcode_get_bc(cpu) + 1);
-}
-
-void opcode_decrement_bc(Cpu *cpu)
-{
-	opcode_set_bc(cpu, opcode_get_bc(cpu) - 1);
-}
-
-void opcode_set_de(Cpu *cpu, u16 word)
-{
-	cpu->d = opcode_get_high(word);
-	cpu->e = opcode_get_low(word);
-}
-
-u16 opcode_get_de(Cpu *cpu)
-{
-	return opcode_get_value(cpu->d, cpu->e);
-}
-
-void opcode_increment_de(Cpu *cpu)
-{
-	opcode_set_de(cpu, opcode_get_de(cpu) + 1);
-}
-
-void opcode_decrement_de(Cpu *cpu)
-{
-	opcode_set_de(cpu, opcode_get_de(cpu) - 1);
-}
-
-void opcode_set_hl(Cpu *cpu, u16 word)
-{
-	cpu->h = opcode_get_high(word);
-	cpu->l = opcode_get_low(word);
-}
-
-u16 opcode_get_hl(Cpu *cpu)
-{
-	return opcode_get_value(cpu->h, cpu->l);
-}
-
-void opcode_increment_hl(Cpu *cpu)
-{
-	opcode_set_hl(cpu, opcode_get_hl(cpu) + 1);
-}
-
-void opcode_decrement_hl(Cpu *cpu)
-{
-	opcode_set_hl(cpu, opcode_get_hl(cpu) - 1);
-}
-
-void opcode_increment(Cpu *cpu, u8 *reg)
-{
-	u8 result = *reg + 1;
-
-	*reg = result;
-	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	if ((result & 0x0F) == 0x00) {
-		cpu_flag_toggle(cpu, FLAG_HALF);
-	}
-}
-
-void opcode_decrement(Cpu *cpu, u8 *reg)
-{
-	u8 result = *reg - 1;
-
-	*reg = result;
-	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
-	cpu_flag_toggle(cpu, FLAG_SUBS);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	if ((result & 0x0F) == 0x0F)
-		cpu_flag_toggle(cpu, FLAG_HALF);
-}
-
-void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a)
-{
-	u8 result = *reg;
-
-	if ((result & 0x80) != 0) {
-		cpu_flag_set(cpu, FLAG_CARRY);
-		result <<= 1;
-		result |= 0x1;
-	} else {
-		cpu_flag_clear(cpu);
-		result <<= 1;
-	}
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	}
-}
-
-void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a)
-{
-	u8 result = *reg;
-
-	if ((result & 0x01) != 0) {
-		cpu_flag_set(cpu, FLAG_CARRY);
-		result >>= 1;
-		result |= 0x80;
-	} else {
-		cpu_flag_clear(cpu);
-		result >>= 1;
-	}
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	}
-}
-
-void opcode_rl(Cpu *cpu, u8 *reg, bool is_a)
-{
-	u8 carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 1 : 0;
-	u8 result = *reg;
-
-	((result & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_CARRY) :
-				 cpu_flag_clear(cpu);
-	result <<= 1;
-	result |= carry;
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	}
-}
-
-void opcode_rr(Cpu *cpu, u8 *reg, bool is_a)
-{
-	u8 carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 0x80 : 0x00;
-	u8 result = *reg;
-
-	((result & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_CARRY) :
-				 cpu_flag_clear(cpu);
-	result >>= 1;
-	result |= carry;
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	}
-}
-
-void opcode_ld(u8 *reg, u8 byte)
-{
-	*reg = byte;
-}
-
-void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address)
-{
-	*reg = cpu->memory->bus[address];
-}
-
-void opcode_ld_nn(Cpu *cpu, u16 *reg)
-{
-	u16 address = cpu->memory->bus[cpu_read_word(cpu)];
-	cpu->memory->bus[address] = opcode_get_low(*reg);
-	cpu->memory->bus[address + 1] = opcode_get_high(*reg);
-}
-
-void opcode_add_hl(Cpu *cpu, u16 word)
-{
-	u16 result = opcode_get_hl(cpu) + word;
-
-	cpu_flag_set_or_clear(cpu, FLAG_ZERO);
-	if (result & 0x10000) {
-		cpu_flag_toggle(cpu, FLAG_CARRY);
-	}
-	if ((opcode_get_hl(cpu) ^ word ^ (result & 0xFFFF)) & 0x1000) {
-		cpu_flag_toggle(cpu, FLAG_HALF);
-	}
-	opcode_set_hl(cpu, result);
-}
-
-void opcode_daa(Cpu *cpu)
-{
-	int a = cpu->a;
-
-	if (!cpu_flag_is_set(cpu, FLAG_SUBS)) {
-		if (cpu_flag_is_set(cpu, FLAG_HALF) || ((a & 0xF) > 9))
-			a += 0x06;
-		if (cpu_flag_is_set(cpu, FLAG_CARRY) || (a > 0x9F))
-			a += 0x60;
-	} else {
-		if (cpu_flag_is_set(cpu, FLAG_HALF))
-			a = (a - 6) & 0xFF;
-		if (cpu_flag_is_set(cpu, FLAG_CARRY))
-			a -= 0x60;
-	}
-	cpu_flag_untoggle(cpu, FLAG_HALF);
-	cpu_flag_untoggle(cpu, FLAG_ZERO);
-	if ((a & 0x100) == 0x100)
-		cpu_flag_toggle(cpu, FLAG_CARRY);
-	a &= 0xFF;
-	if (a == 0)
-		cpu_flag_toggle(cpu, FLAG_ZERO);
-	cpu->a = a;
-}
+#include "opcodes.h"
 
 void opcode_execute(Cpu *cpu, Instruction instruction)
 {
@@ -257,15 +11,15 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// NOOP
 		break;
 	case 0x01:
-		opcode_set_bc(cpu, cpu_read_word(cpu));
+		SET_BC(cpu, cpu_read_word(cpu));
 		break;
 	case 0x02:
 		// LD (BC),a
-		cpu->memory->bus[opcode_get_bc(cpu)] = cpu->a;
+		cpu->memory->bus[BC(cpu)] = cpu->a;
 		break;
 	case 0x03:
 		// INC BC
-		opcode_increment_bc(cpu);
+		INC_BC(cpu);
 		break;
 	case 0x04:
 		// Z 0 H -
@@ -290,15 +44,15 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x09:
 		// ADD HL, BC
 		// - 0 H C
-		opcode_add_hl(cpu, opcode_get_bc(cpu));
+		opcode_add_hl(cpu, BC(cpu));
 		break;
 	case 0x0A:
 		// LD a,(BC)
-		cpu->a = cpu->memory->bus[opcode_get_bc(cpu)];
+		cpu->a = cpu->memory->bus[BC(cpu)];
 		break;
 	case 0x0B:
 		// DEC BC
-		opcode_decrement_bc(cpu);
+		DEC_BC(cpu);
 		break;
 	case 0x0C:
 		// Z 0 H -
@@ -322,15 +76,15 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x11:
 		// LD DE,nn
-		opcode_set_de(cpu, cpu_read_word(cpu));
+		SET_DE(cpu, cpu_read_word(cpu));
 		break;
 	case 0x12:
 		// LD (DE),a
-		cpu->memory->bus[opcode_get_de(cpu)] = cpu->a;
+		cpu->memory->bus[DE(cpu)] = cpu->a;
 		break;
 	case 0x13:
 		// DEC de
-		opcode_increment_de(cpu);
+		DEC_DE(cpu);
 		break;
 	case 0x14:
 		// Z 0 H -
@@ -356,15 +110,15 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x19:
 		// ADD HL, DE
 		// - 0 H C
-		opcode_add_hl(cpu, opcode_get_de(cpu));
+		opcode_add_hl(cpu, DE(cpu));
 		break;
 	case 0x1A:
 		// LD,A,(DE)
-		cpu->a = cpu->memory->bus[opcode_get_de(cpu)];
+		cpu->a = cpu->memory->bus[DE(cpu)];
 		break;
 	case 0x1B:
 		// DEC DE
-		opcode_decrement_de(cpu);
+		DEC_DE(cpu);
 		break;
 	case 0x1C:
 		// Z 0 H -
@@ -394,16 +148,16 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x21:
 		// LD HL,nn
-		opcode_set_hl(cpu, cpu_read_word(cpu));
+		SET_HL(cpu, cpu_read_word(cpu));
 		break;
 	case 0x22:
 		// LD [HL+], A
-		cpu->memory->bus[opcode_get_hl(cpu)] = cpu->a;
-		opcode_increment_hl(cpu);
+		cpu->memory->bus[HL(cpu)] = cpu->a;
+		INC_HL(cpu);
 		break;
 	case 0x23:
 		// INC hl
-		opcode_increment_hl(cpu);
+		INC_HL(cpu);
 		break;
 	case 0x24:
 		// INC h
@@ -436,16 +190,16 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x29:
 		// ADD HL,HL
 		// - 0 H C
-		opcode_add_hl(cpu, opcode_get_hl(cpu));
+		opcode_add_hl(cpu, HL(cpu));
 		break;
 	case 0x2A:
 		// LD A,[HL+]
-		opcode_ld(&cpu->a, opcode_get_hl(cpu));
-		opcode_increment_hl(cpu);
+		opcode_ld(&cpu->a, HL(cpu));
+		INC_HL(cpu);
 		break;
 	case 0x2B:
 		// DEC hl
-		opcode_decrement_hl(cpu);
+		DEC_HL(cpu);
 		break;
 	case 0x2C:
 		// INC l
@@ -483,7 +237,8 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x32:
 		// LD (HLD), A
-		cpu->memory->bus[opcode_get_bc(cpu)] = cpu->a;
+		cpu->memory->bus[HL(cpu)] = cpu->a;
+		DEC_HL(cpu);
 		break;
 	case 0x33:
 		// INC sp
@@ -499,8 +254,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x36:
 		// LD (HL),n
-		cpu->memory->bus[opcode_get_hl(cpu)] =
-			cpu->memory->bus[cpu->pc];
+		cpu->memory->bus[HL(cpu)] = cpu->memory->bus[cpu->pc];
 		cpu->pc++;
 		break;
 	case 0x37:
@@ -525,8 +279,8 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x3A:
 		// LD A,(HLD)
 		// TODO
-		opcode_ld(&cpu->a, opcode_get_hl(cpu));
-		opcode_decrement_hl(cpu);
+		opcode_ld(&cpu->a, HL(cpu));
+		DEC_HL(cpu);
 		break;
 	case 0x3B:
 		// DEC SP
