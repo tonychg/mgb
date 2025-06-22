@@ -12,6 +12,8 @@ typedef struct ArgsBoot {
 	char *rom_path;
 	bool debug;
 	bool cpu_debug;
+	bool wram_debug;
+	bool interactive;
 	double delay_in_sec;
 	int multiplier;
 } ArgsBoot;

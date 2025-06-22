@@ -17,6 +17,20 @@ Memory *memory_init()
 	return memory;
 }
 
+void memory_reset(Memory *memory)
+{
+	for (int i = 0; i <= 0xFFFF; i++) {
+		memory->bus[i] = 0x00;
+		if ((i >= 0xC000) && (i < 0xE000)) {
+			if ((i & 0x8) ^ ((i & 0x800) >> 8)) {
+				memory->bus[i] = 0x0f;
+			} else {
+				memory->bus[i] = 0xff;
+			}
+		}
+	}
+}
+
 u8 memory_read(Memory *memory, u16 addr)
 {
 	return memory->bus[addr];

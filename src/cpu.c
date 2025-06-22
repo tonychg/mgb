@@ -137,18 +137,19 @@ void cpu_debug(Cpu *cpu)
 	       cpu_flag_is_set(cpu, FLAG_SUBS));
 	printf("   H = %d | C = %d\n", cpu_flag_is_set(cpu, FLAG_HALF),
 	       cpu_flag_is_set(cpu, FLAG_CARRY));
-	printf("A = 0x%02X | F = 0x%02X\n", cpu->a, cpu->f);
+	printf("A = $%02X  |  F = $%02X\n", cpu->a, cpu->f);
 	printf("%08b | %08b\n", cpu->a, cpu->f);
-	printf("B = 0x%02X | C = 0x%02X\n", cpu->b, cpu->c);
+	printf("B = $%02X  |  C = $%02X\n", cpu->b, cpu->c);
 	printf("%08b | %08b\n", cpu->b, cpu->c);
-	printf("D = 0x%02X | E = 0x%02X\n", cpu->d, cpu->e);
+	printf("D = $%02X  |  E = $%02X\n", cpu->d, cpu->e);
 	printf("%08b | %08b\n", cpu->d, cpu->e);
-	printf("H = 0x%02X | L = 0x%02X\n", cpu->h, cpu->l);
+	printf("H = $%02X  |  L = $%02X\n", cpu->h, cpu->l);
 	printf("%08b | %08b\n", cpu->h, cpu->l);
 	printf("    SP = $%04X\n", cpu->sp);
 	printf(" %016b\n", cpu->sp);
 	printf("    PC = $%04X\n", cpu->pc);
 	printf(" %016b\n", cpu->pc);
+	printf("IME = %d  | HALT = %d\n", cpu->ime, cpu->halted);
 }
 
 char *cpu_resolve_operand(Cpu *cpu, const char *op)

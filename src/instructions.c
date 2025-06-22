@@ -291,7 +291,7 @@ void opcode_xor(Cpu *cpu, u8 byte)
 	u8 result = cpu->a ^ byte;
 
 	cpu->a = result;
-	cpu_flag_set(cpu, FLAG_HALF);
+	cpu_flag_clear(cpu);
 	if (result == 0)
 		cpu_flag_toggle(cpu, FLAG_ZERO);
 }
@@ -301,7 +301,7 @@ void opcode_or(Cpu *cpu, u8 byte)
 	u8 result = cpu->a | byte;
 
 	cpu->a = result;
-	cpu_flag_set(cpu, FLAG_HALF);
+	cpu_flag_clear(cpu);
 	if (result == 0)
 		cpu_flag_toggle(cpu, FLAG_ZERO);
 }

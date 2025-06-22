@@ -1135,6 +1135,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xFB:
 		// EI
 		// TODO
+		cpu->ime = true;
 		break;
 	case 0xFC:
 		// No code

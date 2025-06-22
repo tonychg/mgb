@@ -73,6 +73,7 @@ typedef struct Memory {
 } Memory;
 
 Memory *memory_init(void);
+void memory_reset(Memory *memory);
 u8 memory_read(Memory *memory, u16 addr);
 void memory_write(Memory *memory, u16 addr, u8 byte);
 void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian);
