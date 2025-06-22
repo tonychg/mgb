@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <stdio.h>
 
 static const char *OP_TABLES_MNEMONIC[256] = {
 	"NOP",	      "LD",	    "LD",	  "INC",	"INC",
@@ -289,6 +290,21 @@ static int cpu_opcode_machine_cycle(u8 opcode)
 static int cpu_opcode_cb_machine_cycle(u8 opcode)
 {
 	return OPCODE_CB_MACHINE_CYCLES[opcode];
+}
+
+char *cpu_opcode_to_string(u8 opcode)
+{
+	static char buffer[50];
+	const char *mnemonic = cpu_opcode_mnemonic(opcode);
+	const char *op_1 = cpu_opcode_op_1(opcode);
+	const char *op_2 = cpu_opcode_op_2(opcode);
+	if (op_1 && op_2)
+		sprintf(buffer, "%s %s %s", mnemonic, op_1, op_2);
+	else if (op_1)
+		sprintf(buffer, "%s %s", mnemonic, op_1);
+	else
+		sprintf(buffer, "%s", mnemonic);
+	return buffer;
 }
 
 Instruction cpu_op_decode(Cpu *cpu)

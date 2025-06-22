@@ -3,9 +3,9 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdbool.h>
 
-void test_register();
 void test_memory();
-void test_cpu();
+void test_cpu(bool verbose);
 
 #endif

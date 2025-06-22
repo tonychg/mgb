@@ -14,6 +14,8 @@
         buildInputs = with pkgs; [
           gnumake
           lldb
+          python314
+          python314Packages.jinja2
         ];
       };
     });

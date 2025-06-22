@@ -25,6 +25,9 @@ char *gb_interactive(Cpu *cpu, Cartridge *cartridge)
 		} else if (!strcmp(buf, "p")) {
 			memory_debug(cpu->memory, 0xC000, 0xDFFF);
 			gb_interactive(cpu, cartridge);
+		} else if (!strcmp(buf, "d")) {
+			cpu_debug(cpu);
+			gb_interactive(cpu, cartridge);
 		} else if (!strcmp(buf, "q")) {
 			exit(0);
 		} else if (!strcmp(buf, "r")) {

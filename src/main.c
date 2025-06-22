@@ -5,7 +5,11 @@
 int main()
 {
 	test_memory();
-	test_cpu();
+#ifdef VERBOSE
+	test_cpu(true);
+#else
+	test_cpu(false);
+#endif
 }
 #else
 #include "cli.h"

@@ -12,16 +12,15 @@ SRC = \
       $(SRC_SUBDIR)/cli.c \
       $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/decoder.c \
+      $(SRC_SUBDIR)/tests.c \
+      $(SRC_SUBDIR)/cJSON.c \
       $(SRC_SUBDIR)/main.c \
-
-SRC_MAIN = $(SRC)
 
 NAME        = $(BUILD_DIR)/gameboy
 TEST	    = $(BUILD_DIR)/test.bin
 DEBUG       = $(BUILD_DIR)/debug.bin
 CC          = gcc
 CFLAGS	    = -g -Wall
-CFLAGS_TEST = -g -DTEST
 OBJ         = $(SRC:.c=.o)
 RM          = rm -f
 MKDIR	    = mkdir -p
@@ -35,6 +34,9 @@ build:
 
 $(OBJ): %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
+
+$(OBJ_TEST):
+	$(CC) $(CFLAGS_TEST) -c $^ -o $@
 
 $(NAME):    build $(OBJ)
 	$(CC) -o $(NAME) $(OBJ)

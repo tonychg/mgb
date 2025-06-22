@@ -73,6 +73,7 @@ typedef struct Cpu {
 	memory_write_word(cpu->memory, addr, word, false)
 #define MEM_READ_PC_S8(cpu) (cpu->pc + 1) + (s8)MEM_READ(cpu, cpu->pc)
 
+// cpu.c
 Cpu *cpu_init(void);
 void cpu_bind_memory(Cpu *cpu, Memory *memory);
 void cpu_reset(Cpu *cpu);
@@ -91,12 +92,15 @@ bool cpu_flag_is_set(Cpu *cpu, int flag);
 void cpu_flag_flip(Cpu *cpu, int flag);
 void cpu_flag_set_or_clear(Cpu *cpu, int flag);
 
-Instruction cpu_op_decode(Cpu *cpu);
 u8 cpu_read_pc_addr(Cpu *cpu);
 void cpu_debug_instruction(Cpu *cpu, Instruction instruction);
 void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_execute_cb(Cpu *cpu, Instruction instruction);
 u16 cpu_read_word(Cpu *cpu);
 u8 cpu_read_byte(Cpu *cpu);
+
+// decoder.c
+Instruction cpu_op_decode(Cpu *cpu);
+char *cpu_opcode_to_string(u8 opcode);
 
 #endif

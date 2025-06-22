@@ -100,7 +100,11 @@ void cpu_pc_increment(Cpu *cpu)
 
 u8 cpu_read_pc_addr(Cpu *cpu)
 {
+#ifdef TEST
+	u8 byte = MEM_READ(cpu, cpu->pc - 1);
+#else
 	u8 byte = MEM_READ(cpu, cpu->pc);
+#endif
 	cpu_pc_increment(cpu);
 	return byte;
 }
@@ -198,17 +202,3 @@ void cpu_tick(Cpu *cpu)
 	else
 		opcode_execute_cb(cpu, instruction);
 }
-
-#ifdef TEST
-#include "tests.h"
-
-void test_cpu()
-{
-	printf("# Testing cpu.c\n");
-	Cpu *cpu = cpu_init();
-	assert(cpu != NULL);
-	cpu_reset(cpu);
-	cpu_debug(cpu);
-	cpu_release(cpu);
-}
-#endif
