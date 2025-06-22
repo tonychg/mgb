@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "opcodes.h"
+#include "types.h"
 
 u8 opcode_get_high(u16 word)
 {
@@ -165,6 +166,20 @@ void opcode_ld_nn(Cpu *cpu, u16 *reg)
 	MEM_WRITE_LE(cpu, cpu_read_word(cpu), *reg);
 }
 
+void opcode_ld_spn(Cpu *cpu)
+{
+	s8 n = MEM_READ(cpu, cpu->pc);
+	u16 result = cpu->sp + n;
+
+	cpu_flag_clear(cpu);
+	if (((cpu->sp ^ n ^ result) & 0x100) == 0x100)
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	if (((cpu->sp ^ n ^ result) & 0x10) == 0x10)
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	SET_HL(cpu, result);
+	cpu_pc_increment(cpu);
+}
+
 void opcode_add_hl(Cpu *cpu, u16 word)
 {
 	u16 result = HL(cpu) + word;
@@ -177,6 +192,169 @@ void opcode_add_hl(Cpu *cpu, u16 word)
 		cpu_flag_toggle(cpu, FLAG_HALF);
 	}
 	SET_HL(cpu, result);
+}
+
+void opcode_add_sp(Cpu *cpu, s8 value)
+{
+	int result = cpu->sp + value;
+
+	cpu_flag_clear(cpu);
+	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100) {
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	}
+	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10) {
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	}
+	cpu->sp = (u16)result;
+}
+
+void opcode_add(Cpu *cpu, u8 byte)
+{
+	int result = cpu->a + byte;
+	int carrybits = cpu->a ^ byte ^ result;
+
+	cpu->a = (u8)result;
+	cpu_flag_clear(cpu);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if ((carrybits & 0x100) != 0) {
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	}
+	if ((carrybits & 0x10) != 0) {
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	}
+}
+
+void opcode_adc(Cpu *cpu, u8 byte)
+{
+	int carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 1 : 0;
+	int result = cpu->a + byte + carry;
+
+	cpu_flag_clear(cpu);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if (result > 0xFF) {
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	}
+	if (((cpu->a & 0x0F) + (byte & 0x0F) + carry) > 0x0F) {
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	}
+	cpu->a = (u8)result;
+}
+
+void opcode_sub(Cpu *cpu, u8 byte)
+{
+	int result = cpu->a - byte;
+	int carrybits = cpu->a ^ byte ^ result;
+
+	cpu->a = (u8)result;
+	cpu_flag_set(cpu, FLAG_SUBS);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if ((carrybits & 0x100) != 0) {
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	}
+	if ((carrybits & 0x10) != 0) {
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	}
+}
+
+void opcode_sbc(Cpu *cpu, u8 byte)
+{
+	int carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 1 : 0;
+	int result = cpu->a - byte - carry;
+
+	cpu_flag_set(cpu, FLAG_SUBS);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if (result < 0) {
+		cpu_flag_toggle(cpu, FLAG_CARRY);
+	}
+	if (((cpu->a & 0x0F) - (byte & 0x0F) - carry) < 0) {
+		cpu_flag_toggle(cpu, FLAG_HALF);
+	}
+	cpu->a = (u8)result;
+}
+
+void opcode_and(Cpu *cpu, u8 byte)
+{
+	u8 result = cpu->a & byte;
+
+	cpu->a = result;
+	cpu_flag_set(cpu, FLAG_HALF);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_xor(Cpu *cpu, u8 byte)
+{
+	u8 result = cpu->a ^ byte;
+
+	cpu->a = result;
+	cpu_flag_set(cpu, FLAG_HALF);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_or(Cpu *cpu, u8 byte)
+{
+	u8 result = cpu->a | byte;
+
+	cpu->a = result;
+	cpu_flag_set(cpu, FLAG_HALF);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_cp(Cpu *cpu, u8 byte)
+{
+	cpu_flag_set(cpu, FLAG_SUBS);
+	if (cpu->a < byte) {
+		cpu_flag_set(cpu, FLAG_CARRY);
+	}
+	if (cpu->a == byte) {
+		cpu_flag_set(cpu, FLAG_ZERO);
+	}
+	if (((cpu->a - byte) & 0xF) > (cpu->a & 0xF)) {
+		cpu_flag_set(cpu, FLAG_HALF);
+	}
+}
+
+void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2)
+{
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, *r1);
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, *r2);
+}
+
+void opcode_stack_push_pc(Cpu *cpu, u16 *pc)
+{
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, opcode_get_high(cpu->pc));
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, opcode_get_low(cpu->pc));
+}
+
+void opcode_stack_pop(Cpu *cpu, u8 *r1, u8 *r2)
+{
+	*r2 = MEM_READ(cpu, cpu->sp);
+	cpu->sp++;
+	*r1 = MEM_READ(cpu, cpu->sp);
+	cpu->sp++;
+}
+
+void opcode_stack_pop_pc(Cpu *cpu, u16 *pc)
+{
+	u16 result;
+	u8 low, high;
+
+	low = MEM_READ(cpu, cpu->sp);
+	cpu->sp++;
+	high = MEM_READ(cpu, cpu->sp);
+	cpu->sp++;
+	result = opcode_r16_get(&high, &low);
+	*pc = result;
 }
 
 void opcode_daa(Cpu *cpu)

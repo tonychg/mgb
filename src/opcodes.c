@@ -561,199 +561,480 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		opcode_ld(&cpu->a, cpu->a);
 		break;
 	case 0x80:
+		// ADD A,B
+		opcode_add(cpu, cpu->b);
 		break;
 	case 0x81:
+		// ADD A,C
+		opcode_add(cpu, cpu->c);
 		break;
 	case 0x82:
+		// ADD A,D
+		opcode_add(cpu, cpu->d);
 		break;
 	case 0x83:
+		// ADD A,E
+		opcode_add(cpu, cpu->e);
 		break;
 	case 0x84:
+		// ADD A,H
+		opcode_add(cpu, cpu->h);
 		break;
 	case 0x85:
+		// ADD A,L
+		opcode_add(cpu, cpu->l);
 		break;
 	case 0x86:
+		// ADD A,L
+		opcode_add(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x87:
+		// ADD A,A
+		opcode_add(cpu, cpu->a);
 		break;
 	case 0x88:
+		// ADC A,B
+		opcode_adc(cpu, cpu->b);
 		break;
 	case 0x89:
+		// ADC A,C
+		opcode_adc(cpu, cpu->c);
 		break;
 	case 0x8A:
+		// ADC A,D
+		opcode_adc(cpu, cpu->d);
 		break;
 	case 0x8B:
+		// ADC A,E
+		opcode_adc(cpu, cpu->e);
 		break;
 	case 0x8C:
+		// ADC A,H
+		opcode_adc(cpu, cpu->h);
 		break;
 	case 0x8D:
+		// ADC A,L
+		opcode_adc(cpu, cpu->l);
 		break;
 	case 0x8E:
+		// ADC A,[HL]
+		opcode_adc(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x8F:
+		// ADC A,A
+		opcode_adc(cpu, cpu->a);
 		break;
 	case 0x90:
+		// SUB A,B
+		opcode_sub(cpu, cpu->b);
 		break;
 	case 0x91:
+		// SUB A,C
+		opcode_sub(cpu, cpu->c);
 		break;
 	case 0x92:
+		// SUB A,D
+		opcode_sub(cpu, cpu->d);
 		break;
 	case 0x93:
+		// SUB A,E
+		opcode_sub(cpu, cpu->e);
 		break;
 	case 0x94:
+		// SUB A,H
+		opcode_sub(cpu, cpu->h);
 		break;
 	case 0x95:
+		// SUB A,L
+		opcode_sub(cpu, cpu->l);
 		break;
 	case 0x96:
+		// SUB A,[HL]
+		opcode_sub(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x97:
+		// SUB A,A
+		opcode_sub(cpu, cpu->a);
 		break;
 	case 0x98:
+		// SBC A,B
+		opcode_sbc(cpu, cpu->b);
 		break;
 	case 0x99:
+		// SBC A,C
+		opcode_sbc(cpu, cpu->c);
 		break;
 	case 0x9A:
+		// SBC A,D
+		opcode_sbc(cpu, cpu->d);
 		break;
 	case 0x9B:
+		// SBC A,E
+		opcode_sbc(cpu, cpu->e);
 		break;
 	case 0x9C:
+		// SBC A,H
+		opcode_sbc(cpu, cpu->e);
 		break;
 	case 0x9D:
+		// SBC A,L
+		opcode_sbc(cpu, cpu->l);
 		break;
 	case 0x9E:
+		// SBC A,[HL]
+		opcode_sbc(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x9F:
+		// SBC A,A
+		opcode_sbc(cpu, cpu->a);
 		break;
 	case 0xA0:
+		// AND A,B
+		opcode_and(cpu, cpu->b);
 		break;
 	case 0xA1:
+		// AND A,C
+		opcode_and(cpu, cpu->c);
 		break;
 	case 0xA2:
+		// AND A,D
+		opcode_and(cpu, cpu->d);
 		break;
 	case 0xA3:
+		// AND A,E
+		opcode_and(cpu, cpu->e);
 		break;
 	case 0xA4:
+		// AND A,H
+		opcode_and(cpu, cpu->h);
 		break;
 	case 0xA5:
+		// AND A,L
+		opcode_and(cpu, cpu->l);
 		break;
 	case 0xA6:
+		// AND A,[HL]
+		opcode_and(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0xA7:
+		// AND A,A
+		opcode_and(cpu, cpu->a);
 		break;
 	case 0xA8:
+		// XOR A,B
+		opcode_xor(cpu, cpu->b);
+		break;
+	case 0xA9:
+		// XOR A,C
+		opcode_xor(cpu, cpu->c);
 		break;
 	case 0xAA:
+		// XOR A,D
+		opcode_xor(cpu, cpu->d);
 		break;
 	case 0xAB:
+		// XOR A,E
+		opcode_xor(cpu, cpu->e);
 		break;
 	case 0xAC:
+		// XOR A,H
+		opcode_xor(cpu, cpu->h);
 		break;
 	case 0xAD:
+		// XOR A,L
+		opcode_xor(cpu, cpu->l);
 		break;
 	case 0xAE:
+		// XOR A,[HL]
+		opcode_xor(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0xAF:
+		// XOR A,A
+		opcode_xor(cpu, cpu->a);
 		break;
 	case 0xB0:
+		// OR A,B
+		opcode_or(cpu, cpu->b);
 		break;
 	case 0xB1:
+		// OR A,C
+		opcode_or(cpu, cpu->c);
 		break;
 	case 0xB2:
+		// OR A,D
+		opcode_or(cpu, cpu->d);
 		break;
 	case 0xB3:
+		// OR A,E
+		opcode_or(cpu, cpu->e);
 		break;
 	case 0xB4:
+		// OR A,H
+		opcode_or(cpu, cpu->h);
 		break;
 	case 0xB5:
+		// OR A,L
+		opcode_or(cpu, cpu->l);
 		break;
 	case 0xB6:
+		// OR A,[HL]
+		opcode_or(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0xB7:
+		// OR A,A
+		opcode_or(cpu, cpu->a);
 		break;
 	case 0xB8:
+		// CP A,B
+		opcode_cp(cpu, cpu->b);
+		break;
+	case 0xB9:
+		// CP A,C
+		opcode_cp(cpu, cpu->c);
 		break;
 	case 0xBA:
+		// CP A,D
+		opcode_cp(cpu, cpu->d);
 		break;
 	case 0xBB:
+		// CP A,E
+		opcode_cp(cpu, cpu->e);
 		break;
 	case 0xBC:
+		// CP A,H
+		opcode_cp(cpu, cpu->h);
 		break;
 	case 0xBD:
+		// CP A,L
+		opcode_cp(cpu, cpu->l);
 		break;
 	case 0xBE:
+		// CP A,[HL]
+		opcode_cp(cpu, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0xBF:
+		// CP A,A
+		opcode_cp(cpu, cpu->a);
 		break;
 	case 0xC0:
+		// RET NZ
+		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			opcode_stack_pop_pc(cpu, &cpu->pc);
+		}
 		break;
 	case 0xC1:
+		// POP BC
+		opcode_stack_pop(cpu, &cpu->b, &cpu->c);
 		break;
 	case 0xC2:
+		// JP NZ,nn
+		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu_pc_increment(cpu);
+			u8 high = MEM_READ(cpu, cpu->pc);
+			cpu->pc = opcode_r16_get(&high, &low);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xC3:
+		// JP nn
 		cpu->pc = cpu_read_word(cpu);
 		break;
 	case 0xC4:
+		// CALL NZ,nn
+		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			u16 result = cpu_read_word(cpu);
+			opcode_stack_push_pc(cpu, &cpu->pc);
+			cpu->pc = result;
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xC5:
+		// PUSH BC
+		opcode_stack_push(cpu, &cpu->b, &cpu->c);
 		break;
 	case 0xC6:
+		// ADD A,n
+		opcode_add(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xC7:
+		// RST 00H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0000;
 		break;
 	case 0xC8:
+		// RET Z
+		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			opcode_stack_pop_pc(cpu, &cpu->pc);
+			cpu->branch_taken = true;
+		}
+		break;
+	case 0xC9:
+		// RET
+		opcode_stack_pop_pc(cpu, &cpu->pc);
 		break;
 	case 0xCA:
+		// JP Z,nn
+		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu_pc_increment(cpu);
+			u8 high = MEM_READ(cpu, cpu->pc);
+			cpu->pc = opcode_r16_get(&high, &low);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xCB:
 		// Prefix
 		break;
 	case 0xCC:
+		// CALL Z,nn
+		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
+			u16 result = cpu_read_word(cpu);
+			opcode_stack_push_pc(cpu, &cpu->pc);
+			cpu->pc = result;
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xCD:
+		// CALL nn
+		cpu->pc = cpu_read_word(cpu);
+		opcode_stack_push_pc(cpu, &cpu->pc);
 		break;
 	case 0xCE:
+		// ADC A, n
+		opcode_adc(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xCF:
+		// RST 08H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0008;
 		break;
 	case 0xD0:
+		// RET NC
+		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			opcode_stack_pop_pc(cpu, &cpu->pc);
+			cpu->branch_taken = true;
+		}
 		break;
 	case 0xD1:
+		// POP DE
+		opcode_stack_pop(cpu, &cpu->d, &cpu->e);
 		break;
 	case 0xD2:
+		// JP NC,nn
+		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu_pc_increment(cpu);
+			u8 high = MEM_READ(cpu, cpu->pc);
+			cpu->pc = opcode_r16_get(&high, &low);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xD3:
 		// No code
 		break;
 	case 0xD4:
+		// CALL NC,nn
+		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			cpu->pc = cpu_read_word(cpu);
+			opcode_stack_push_pc(cpu, &cpu->pc);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xD5:
+		// PUSH DE
+		opcode_stack_push(cpu, &cpu->d, &cpu->e);
 		break;
 	case 0xD6:
+		// SUB n
+		opcode_sub(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xD7:
+		// RST 10H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0010;
 		break;
 	case 0xD8:
+		// RST C
+		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			opcode_stack_pop_pc(cpu, &cpu->pc);
+			cpu->branch_taken = true;
+		}
+		break;
+	case 0xD9:
+		// RETI
+		opcode_stack_pop_pc(cpu, &cpu->pc);
+		cpu->ime = true;
 		break;
 	case 0xDA:
+		// JP C,nn
+		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu_pc_increment(cpu);
+			u8 high = MEM_READ(cpu, cpu->pc);
+			cpu->pc = opcode_r16_get(&high, &low);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xDB:
 		// No code
 		break;
 	case 0xDC:
+		// CALL C,nn
+		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
+			cpu->pc = cpu_read_word(cpu);
+			opcode_stack_push_pc(cpu, &cpu->pc);
+			cpu->branch_taken = true;
+		} else {
+			cpu_pc_increment(cpu);
+			cpu_pc_increment(cpu);
+		}
 		break;
 	case 0xDD:
 		// No code
 		break;
 	case 0xDE:
+		// SBC n
+		opcode_sbc(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xDF:
+		// RST 18H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0018;
 		break;
 	case 0xE0:
+		// LD (0xFF00+n),A
+		MEM_WRITE(cpu, (u16)(0xFF00 + MEM_READ(cpu, cpu->pc)), cpu->a);
+		cpu_pc_increment(cpu);
 		break;
 	case 0xE1:
+		// POP HL
+		opcode_stack_pop(cpu, &cpu->h, &cpu->l);
 		break;
 	case 0xE2:
+		// LD (0xFF00+C),A
+		MEM_WRITE(cpu, (u16)(0xFF00 + cpu->c), cpu->a);
 		break;
 	case 0xE3:
 		// No code
@@ -762,14 +1043,30 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// No code
 		break;
 	case 0xE5:
+		// PUSH HL
+		opcode_stack_push(cpu, &cpu->h, &cpu->l);
 		break;
 	case 0xE6:
+		// AND n
+		opcode_and(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xE7:
+		// RST 20H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0020;
 		break;
 	case 0xE8:
+		// ADD SP,n
+		opcode_add_sp(cpu, (u8)MEM_READ(cpu, cpu->pc));
+		cpu_pc_increment(cpu);
+		break;
+	case 0xE9:
+		// JP (HL)
+		cpu->pc = MEM_READ(cpu, HL(cpu));
 		break;
 	case 0xEA:
+		// LD (nn),A
+		MEM_WRITE(cpu, cpu_read_word(cpu), cpu->a);
 		break;
 	case 0xEB:
 		// No code
@@ -781,31 +1078,63 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// No code
 		break;
 	case 0xEE:
+		// XOR n
+		opcode_xor(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xEF:
+		// RST 28H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0028;
 		break;
 	case 0xF0:
+		// LD A,(0xFF00+n)
+		MEM_WRITE(cpu, (u16)(0xFF00 + cpu_read_byte(cpu)), cpu->a);
 		break;
 	case 0xF1:
+		// POP AF
+		opcode_stack_pop(cpu, &cpu->a, &cpu->f);
+		cpu->f &= 0xF0;
 		break;
 	case 0xF2:
+		// LD A,(C)
+		MEM_WRITE(cpu, (u16)(0xFF00 + cpu->c), cpu->a);
 		break;
 	case 0xF3:
+		// DI
+		cpu->ime = false;
+		cpu->ime_cycles = 0;
 		break;
 	case 0xF4:
 		// No code
 		break;
 	case 0xF5:
+		// PUSH AF
+		opcode_stack_push(cpu, &cpu->a, &cpu->f);
 		break;
 	case 0xF6:
+		// OR n
+		opcode_or(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xF7:
+		// RST 30H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0030;
 		break;
 	case 0xF8:
+		// LD HL,SP+n
+		opcode_ld_spn(cpu);
+		break;
+	case 0xF9:
+		// LD SP,HL
+		cpu->sp = HL(cpu);
 		break;
 	case 0xFA:
+		// LD A,(nn)
+		cpu->a = opcode_get_high(cpu_read_word(cpu));
 		break;
 	case 0xFB:
+		// EI
+		// TODO
 		break;
 	case 0xFC:
 		// No code
@@ -814,8 +1143,13 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// No code
 		break;
 	case 0xFE:
+		// CP
+		opcode_cp(cpu, cpu_read_byte(cpu));
 		break;
 	case 0xFF:
+		// RST 38H
+		opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = 0x0038;
 		break;
 	}
 }

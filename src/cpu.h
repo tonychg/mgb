@@ -54,6 +54,8 @@ typedef struct Cpu {
 	u16 instruction;
 	u64 cycles;
 	u8 read_cache;
+	bool ime;
+	u64 ime_cycles;
 
 	bool halted;
 	bool branch_taken;

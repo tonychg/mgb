@@ -39,6 +39,8 @@ void cpu_reset(Cpu *cpu)
 	cpu->cycles = 0;
 	cpu->halted = false;
 	cpu->branch_taken = false;
+	cpu->ime = false;
+	cpu->ime_cycles = 0;
 	cpu->state = CPU_CORE_FETCH;
 	cpu->multiplier = 1;
 }
@@ -70,7 +72,7 @@ void cpu_flag_clear(Cpu *cpu)
 
 bool cpu_flag_is_set(Cpu *cpu, int flag)
 {
-	return (cpu->f & flag) == 0;
+	return (cpu->f & flag) != 0;
 }
 
 void cpu_flag_flip(Cpu *cpu, int flag)
@@ -108,9 +110,20 @@ u16 cpu_read_word(Cpu *cpu)
 	return (u16)cpu_read_pc_addr(cpu) | (u16)cpu_read_pc_addr(cpu) << 8;
 }
 
+u16 cpu_read_word_no_inc(Cpu *cpu)
+{
+	return (u16)MEM_READ(cpu, cpu->pc) | (u16)MEM_READ(cpu, cpu->pc + 1)
+						     << 8;
+}
+
 u8 cpu_read_byte(Cpu *cpu)
 {
 	return cpu_read_pc_addr(cpu);
+}
+
+u8 cpu_read_byte_no_inc(Cpu *cpu)
+{
+	return MEM_READ(cpu, cpu->pc);
 }
 
 void cpu_jump_word(Cpu *cpu, u16 r16)
@@ -138,21 +151,40 @@ void cpu_debug(Cpu *cpu)
 	printf(" %016b\n", cpu->pc);
 }
 
+char *cpu_resolve_operand(Cpu *cpu, const char *op)
+{
+	static char buffer[20];
+
+	if (!strcmp(op, "a16") || !strcmp(op, "n16")) {
+		sprintf(buffer, "$%04X", cpu_read_word_no_inc(cpu));
+	} else if (!strcmp(op, "a8") || !strcmp(op, "n8")) {
+		sprintf(buffer, "$%02X", cpu_read_byte_no_inc(cpu));
+	} else if (!strcmp(op, "e8")) {
+		u8 byte = cpu_read_byte_no_inc(cpu);
+		s8 offset = (s8)byte;
+		sprintf(buffer, "$%02X [%d]", byte, offset);
+	} else {
+		sprintf(buffer, "%s", op);
+	}
+	return buffer;
+}
+
 void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 {
-	printf("00:%04X", cpu->pc);
+	printf("00:%04X", cpu->pc - 1);
 	printf(" %02X", instruction.opcode);
-	for (int i = 1; i <= 3; i++) {
-		if (i <= instruction.length)
+	for (int i = 0; i < 2; i++) {
+		if (instruction.length - 1 > i)
 			printf(" %02X", MEM_READ(cpu, cpu->pc + i));
 		else
 			printf("   ");
 	}
 	printf(" -> %s", instruction.mnemonic);
-	if (instruction.op_1 != NULL)
-		printf(" %s", instruction.op_1);
+	if (instruction.op_1 != NULL) {
+		printf(" %s", cpu_resolve_operand(cpu, instruction.op_1));
+	}
 	if (instruction.op_2 != NULL)
-		printf(" %s", instruction.op_2);
+		printf(" %s", cpu_resolve_operand(cpu, instruction.op_2));
 	printf("\n");
 }
 

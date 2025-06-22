@@ -2,6 +2,7 @@
 #include "cartridge.h"
 #include "cli.h"
 #include "cpu.h"
+#include "unistd.h"
 
 int gb_boot(void *args)
 {
@@ -22,7 +23,7 @@ int gb_boot(void *args)
 			cpu_debug(cpu);
 		cpu_tick(cpu);
 		if (cargs->delay_in_sec)
-			cpu_sleep_ns(cargs->delay_in_sec * 1000000000);
+			usleep(cargs->delay_in_sec * 1000000);
 		cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 		// Work RAM
 		// memory_debug(cpu->memory, 0xC000, 0xCFFF);

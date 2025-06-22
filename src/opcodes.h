@@ -26,8 +26,25 @@ void opcode_ld(u8 *reg, u8 byte);
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address);
 void opcode_ld_r8_a16(Cpu *cpu, u16 address, u8 byte);
 void opcode_ld_nn(Cpu *cpu, u16 *reg);
+void opcode_ld_spn(Cpu *cpu);
 
 void opcode_add_hl(Cpu *cpu, u16 word);
+void opcode_add_sp(Cpu *cpu, s8 value);
+void opcode_add(Cpu *cpu, u8 byte);
+void opcode_adc(Cpu *cpu, u8 byte);
+void opcode_sub(Cpu *cpu, u8 byte);
+void opcode_sbc(Cpu *cpu, u8 byte);
+
+void opcode_and(Cpu *cpu, u8 byte);
+void opcode_xor(Cpu *cpu, u8 byte);
+void opcode_and(Cpu *cpu, u8 byte);
+void opcode_or(Cpu *cpu, u8 byte);
+void opcode_cp(Cpu *cpu, u8 byte);
+
+void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2);
+void opcode_stack_push_pc(Cpu *cpu, u16 *pc);
+void opcode_stack_pop(Cpu *cpu, u8 *r1, u8 *r2);
+void opcode_stack_pop_pc(Cpu *cpu, u16 *pc);
 
 void opcode_daa(Cpu *cpu);
 
