@@ -6,20 +6,29 @@
 // instructions.c
 u8 opcode_get_high(u16 word);
 u8 opcode_get_low(u16 word);
+
 u16 opcode_r16_get(u8 *r1, u8 *r2);
 void opcode_r16_set(u8 *r1, u8 *r2, u16 word);
 void opcode_r16_inc(u8 *r1, u8 *r2);
 void opcode_r16_dec(u8 *r1, u8 *r2);
+
 void opcode_increment(Cpu *cpu, u8 *reg);
+void opcode_inc_hl(Cpu *cpu);
 void opcode_decrement(Cpu *cpu, u8 *reg);
+void opcode_dec_hl(Cpu *cpu);
+
 void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rl(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rr(Cpu *cpu, u8 *reg, bool is_a);
+
 void opcode_ld(u8 *reg, u8 byte);
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address);
+void opcode_ld_r8_a16(Cpu *cpu, u16 address, u8 byte);
 void opcode_ld_nn(Cpu *cpu, u16 *reg);
+
 void opcode_add_hl(Cpu *cpu, u16 word);
+
 void opcode_daa(Cpu *cpu);
 
 #define AF(cpu) opcode_r16_get(&cpu->a, &cpu->f)

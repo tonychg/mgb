@@ -17,14 +17,38 @@ Memory *memory_init()
 	return memory;
 }
 
+u8 memory_read(Memory *memory, u16 addr)
+{
+	return memory->bus[addr];
+}
+
+void memory_write(Memory *memory, u16 addr, u8 byte)
+{
+	memory->bus[addr] = byte;
+}
+
+void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian)
+{
+	u8 high = word >> 8;
+	u8 low = 0xFF & word;
+
+	if (big_endian) {
+		memory->bus[addr] = high;
+		memory->bus[addr + 1] = low;
+	} else {
+		memory->bus[addr] = low;
+		memory->bus[addr + 1] = high;
+	}
+}
+
 void memory_bind_cartridge(Memory *memory, Cartridge *cartridge)
 {
 	memcpy(memory->bus, cartridge->buffer, 0x7FFF);
 }
 
-u8 memory_hardware_register(Memory *memory, enum HardwareRegister r)
+u8 memory_hardware_register(Memory *memory, HardwareRegister reg)
 {
-	return memory->bus[r];
+	return memory_read(memory, reg);
 }
 
 void memory_release(Memory *memory)

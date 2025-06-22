@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "memory.h"
 #include "opcodes.h"
 
 u8 opcode_get_high(u16 word)
@@ -42,9 +43,20 @@ void opcode_increment(Cpu *cpu, u8 *reg)
 	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
 	if (result == 0)
 		cpu_flag_toggle(cpu, FLAG_ZERO);
-	if ((result & 0x0F) == 0x00) {
+	if ((result & 0x0F) == 0x00)
 		cpu_flag_toggle(cpu, FLAG_HALF);
-	}
+}
+
+void opcode_inc_hl(Cpu *cpu)
+{
+	u8 result = HL(cpu) + 1;
+
+	MEM_WRITE(cpu, HL(cpu), result);
+	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if ((result & 0x0F) == 0x00)
+		cpu_flag_toggle(cpu, FLAG_HALF);
 }
 
 void opcode_decrement(Cpu *cpu, u8 *reg)
@@ -52,6 +64,19 @@ void opcode_decrement(Cpu *cpu, u8 *reg)
 	u8 result = *reg - 1;
 
 	*reg = result;
+	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
+	cpu_flag_toggle(cpu, FLAG_SUBS);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	if ((result & 0x0F) == 0x0F)
+		cpu_flag_toggle(cpu, FLAG_HALF);
+}
+
+void opcode_dec_hl(Cpu *cpu)
+{
+	u8 result = HL(cpu) - 1;
+
+	MEM_WRITE(cpu, HL(cpu), result);
 	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
 	cpu_flag_toggle(cpu, FLAG_SUBS);
 	if (result == 0)
@@ -133,14 +158,12 @@ void opcode_ld(u8 *reg, u8 byte)
 
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address)
 {
-	*reg = cpu->memory->bus[address];
+	*reg = MEM_READ(cpu, address);
 }
 
 void opcode_ld_nn(Cpu *cpu, u16 *reg)
 {
-	u16 address = cpu->memory->bus[cpu_read_word(cpu)];
-	cpu->memory->bus[address] = opcode_get_low(*reg);
-	cpu->memory->bus[address + 1] = opcode_get_high(*reg);
+	MEM_WRITE_LE(cpu, cpu_read_word(cpu), *reg);
 }
 
 void opcode_add_hl(Cpu *cpu, u16 word)

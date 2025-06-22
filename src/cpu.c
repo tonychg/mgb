@@ -98,7 +98,7 @@ void cpu_pc_increment(Cpu *cpu)
 
 u8 cpu_read_pc_addr(Cpu *cpu)
 {
-	u8 byte = cpu->memory->bus[cpu->pc];
+	u8 byte = MEM_READ(cpu, cpu->pc);
 	cpu_pc_increment(cpu);
 	return byte;
 }

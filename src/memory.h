@@ -4,7 +4,7 @@
 #include "cartridge.h"
 #include "types.h"
 
-enum HardwareRegister {
+typedef enum HardwareRegister {
 	P1_JOYP = 0xFF00,
 	SB = 0xFF01,
 	SC = 0xFF02,
@@ -64,7 +64,7 @@ enum HardwareRegister {
 	PCM12 = 0xFF76,
 	PCM34 = 0xFF77,
 	IE = 0xFFFF,
-};
+} HardwareRegister;
 
 typedef struct Memory {
 	u8 *bus;
@@ -73,9 +73,12 @@ typedef struct Memory {
 } Memory;
 
 Memory *memory_init(void);
+u8 memory_read(Memory *memory, u16 addr);
+void memory_write(Memory *memory, u16 addr, u8 byte);
+void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian);
 void memory_bind_cartridge(Memory *memory, Cartridge *cartridge);
 void memory_release(Memory *memory);
-u8 memory_hardware_register(Memory *memory, enum HardwareRegister r);
+u8 memory_hardware_register(Memory *memory, HardwareRegister reg);
 void memory_debug(Memory *memory, u16 start, u16 end);
 
 #endif

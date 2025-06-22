@@ -15,7 +15,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x02:
 		// LD (BC),a
-		cpu->memory->bus[BC(cpu)] = cpu->a;
+		MEM_WRITE(cpu, BC(cpu), cpu->a);
 		break;
 	case 0x03:
 		// INC BC
@@ -48,7 +48,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x0A:
 		// LD a,(BC)
-		cpu->a = cpu->memory->bus[BC(cpu)];
+		opcode_ld(&cpu->a, MEM_READ(cpu, BC(cpu)));
 		break;
 	case 0x0B:
 		// DEC BC
@@ -64,7 +64,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x0E:
 		// LD c,n
-		cpu->c = cpu_read_byte(cpu);
+		opcode_ld(&cpu->c, cpu_read_byte(cpu));
 		break;
 	case 0x0F:
 		// RRCA
@@ -80,7 +80,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x12:
 		// LD (DE),a
-		cpu->memory->bus[DE(cpu)] = cpu->a;
+		MEM_WRITE(cpu, DE(cpu), cpu->a);
 		break;
 	case 0x13:
 		// DEC de
@@ -96,7 +96,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x16:
 		// LD D,n
-		cpu->d = cpu_read_byte(cpu);
+		opcode_ld(&cpu->d, cpu_read_byte(cpu));
 		break;
 	case 0x17:
 		// RLA
@@ -105,7 +105,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x18:
 		// JR e8
-		cpu->pc = (cpu->pc + 1) + (s8)cpu->memory->bus[cpu->pc];
+		cpu->pc = MEM_READ_PC_S8(cpu);
 		break;
 	case 0x19:
 		// ADD HL, DE
@@ -114,7 +114,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x1A:
 		// LD,A,(DE)
-		cpu->a = cpu->memory->bus[DE(cpu)];
+		opcode_ld(&cpu->a, MEM_READ(cpu, DE(cpu)));
 		break;
 	case 0x1B:
 		// DEC DE
@@ -130,7 +130,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x1E:
 		// LD E,n
-		cpu->e = cpu_read_byte(cpu);
+		opcode_ld(&cpu->e, cpu_read_byte(cpu));
 		break;
 	case 0x1F:
 		// RRA
@@ -140,7 +140,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x20:
 		// JR NZ,e8
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
-			cpu->pc = (cpu->pc + 1) + (s8)cpu->memory->bus[cpu->pc];
+			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -152,7 +152,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x22:
 		// LD [HL+], A
-		cpu->memory->bus[HL(cpu)] = cpu->a;
+		MEM_WRITE(cpu, HL(cpu), cpu->a);
 		INC_HL(cpu);
 		break;
 	case 0x23:
@@ -171,7 +171,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x26:
 		// LD h,n
-		cpu->h = cpu_read_byte(cpu);
+		opcode_ld(&cpu->h, cpu_read_byte(cpu));
 		break;
 	case 0x27:
 		// DAA
@@ -181,7 +181,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x28:
 		// JR Z,e8
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
-			cpu->pc = (cpu->pc + 1) + (s8)cpu->memory->bus[cpu->pc];
+			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -225,7 +225,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x30:
 		// JR NC,n
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			cpu->pc = (cpu->pc + 1) + (s8)cpu->memory->bus[cpu->pc];
+			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -237,7 +237,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x32:
 		// LD (HLD), A
-		cpu->memory->bus[HL(cpu)] = cpu->a;
+		MEM_WRITE(cpu, HL(cpu), cpu->a);
 		DEC_HL(cpu);
 		break;
 	case 0x33:
@@ -246,16 +246,16 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x34:
 		// INC (HL)
-		// TODO
+		opcode_inc_hl(cpu);
 		break;
 	case 0x35:
 		// DEC (HL)
-		// TODO
+		opcode_dec_hl(cpu);
 		break;
 	case 0x36:
 		// LD (HL),n
-		cpu->memory->bus[HL(cpu)] = cpu->memory->bus[cpu->pc];
-		cpu->pc++;
+		MEM_WRITE(cpu, HL(cpu), MEM_READ(cpu, cpu->pc));
+		cpu_pc_increment(cpu);
 		break;
 	case 0x37:
 		// SCF
@@ -266,7 +266,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x38:
 		// JR C,n
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			cpu->pc = (cpu->pc + 1) + (s8)cpu->memory->bus[cpu->pc];
+			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -278,7 +278,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x3A:
 		// LD A,(HLD)
-		// TODO
 		opcode_ld(&cpu->a, HL(cpu));
 		DEC_HL(cpu);
 		break;
@@ -296,7 +295,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x3E:
 		// LD A,n
-		cpu->a = cpu_read_byte(cpu);
+		opcode_ld(&cpu->a, cpu_read_byte(cpu));
 		break;
 	case 0x3F:
 		// CCF
@@ -305,132 +304,261 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		cpu_flag_untoggle(cpu, FLAG_SUBS);
 		break;
 	case 0x40:
+		// LD B,B
+		opcode_ld(&cpu->b, cpu->b);
 		break;
 	case 0x41:
+		// LD B,C
+		opcode_ld(&cpu->b, cpu->c);
 		break;
 	case 0x42:
+		// LD B,D
+		opcode_ld(&cpu->b, cpu->d);
 		break;
 	case 0x43:
+		// LD B,E
+		opcode_ld(&cpu->b, cpu->e);
 		break;
 	case 0x44:
+		// LD B,H
+		opcode_ld(&cpu->b, cpu->h);
 		break;
 	case 0x45:
+		// LD B,L
+		opcode_ld(&cpu->b, cpu->l);
 		break;
 	case 0x46:
+		// LD B,[HL]
+		opcode_ld(&cpu->b, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x47:
+		// LD B,A
+		opcode_ld(&cpu->b, cpu->a);
 		break;
 	case 0x48:
+		// LD C,B
+		opcode_ld(&cpu->c, cpu->b);
 		break;
 	case 0x49:
+		// LD C,C
+		opcode_ld(&cpu->c, cpu->c);
 		break;
 	case 0x4A:
+		// LD C,D
+		opcode_ld(&cpu->c, cpu->d);
 		break;
 	case 0x4B:
+		// LD C,E
+		opcode_ld(&cpu->c, cpu->e);
 		break;
 	case 0x4C:
+		// LD C,H
+		opcode_ld(&cpu->c, cpu->h);
 		break;
 	case 0x4D:
+		// LD C,L
+		opcode_ld(&cpu->c, cpu->l);
 		break;
 	case 0x4E:
+		// LD C,[HL]
+		opcode_ld(&cpu->c, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x4F:
+		// LD C,A
+		opcode_ld(&cpu->c, cpu->a);
 		break;
 	case 0x50:
+		// LD D,B
+		opcode_ld(&cpu->d, cpu->b);
 		break;
 	case 0x51:
+		// LD D,C
+		opcode_ld(&cpu->d, cpu->c);
 		break;
 	case 0x52:
+		// LD D,D
+		opcode_ld(&cpu->d, cpu->d);
 		break;
 	case 0x53:
+		// LD D,E
+		opcode_ld(&cpu->d, cpu->e);
 		break;
 	case 0x54:
+		// LD D,H
+		opcode_ld(&cpu->d, cpu->h);
 		break;
 	case 0x55:
+		// LD D,L
+		opcode_ld(&cpu->d, cpu->l);
 		break;
 	case 0x56:
+		// LD D,[HL]
+		opcode_ld(&cpu->d, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x57:
+		// LD D,A
+		opcode_ld(&cpu->d, cpu->a);
 		break;
 	case 0x58:
+		// LD E,B
+		opcode_ld(&cpu->e, cpu->b);
 		break;
 	case 0x59:
+		// LD E,C
+		opcode_ld(&cpu->e, cpu->c);
 		break;
 	case 0x5A:
+		// LD E,D
+		opcode_ld(&cpu->e, cpu->d);
 		break;
 	case 0x5B:
+		// LD E,E
+		opcode_ld(&cpu->e, cpu->e);
 		break;
 	case 0x5C:
+		// LD E,H
+		opcode_ld(&cpu->e, cpu->h);
 		break;
 	case 0x5D:
+		// LD E,L
+		opcode_ld(&cpu->e, cpu->l);
 		break;
 	case 0x5E:
+		// LD E,[HL]
+		opcode_ld(&cpu->e, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x5F:
+		// LD E,A
+		opcode_ld(&cpu->e, cpu->a);
 		break;
 	case 0x60:
+		// LD H,B
+		opcode_ld(&cpu->h, cpu->b);
 		break;
 	case 0x61:
+		// LD H,C
+		opcode_ld(&cpu->h, cpu->c);
 		break;
 	case 0x62:
+		// LD H,D
+		opcode_ld(&cpu->h, cpu->d);
 		break;
 	case 0x63:
+		// LD H,E
+		opcode_ld(&cpu->h, cpu->e);
 		break;
 	case 0x64:
+		// LD H,H
+		opcode_ld(&cpu->h, cpu->h);
 		break;
 	case 0x65:
+		// LD H,L
+		opcode_ld(&cpu->h, cpu->l);
 		break;
 	case 0x66:
+		// LD H,[HL]
+		opcode_ld(&cpu->h, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x67:
+		// LD H,A
+		opcode_ld(&cpu->h, cpu->a);
 		break;
 	case 0x68:
+		// LD L,B
+		opcode_ld(&cpu->l, cpu->b);
 		break;
 	case 0x69:
+		// LD L,C
+		opcode_ld(&cpu->l, cpu->c);
 		break;
 	case 0x6A:
+		// LD L,D
+		opcode_ld(&cpu->l, cpu->d);
 		break;
 	case 0x6B:
+		// LD L,E
+		opcode_ld(&cpu->l, cpu->e);
 		break;
 	case 0x6C:
+		// LD L,H
+		opcode_ld(&cpu->l, cpu->h);
 		break;
 	case 0x6D:
+		// LD L,L
+		opcode_ld(&cpu->l, cpu->l);
 		break;
 	case 0x6E:
+		// LD L,[HL]
+		opcode_ld(&cpu->l, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x6F:
+		// LD L,A
+		opcode_ld(&cpu->l, cpu->a);
 		break;
 	case 0x70:
+		// LD [HL],B
+		MEM_WRITE(cpu, HL(cpu), cpu->b);
 		break;
 	case 0x71:
+		// LD [HL],C
+		MEM_WRITE(cpu, HL(cpu), cpu->c);
 		break;
 	case 0x72:
+		// LD [HL],D
+		MEM_WRITE(cpu, HL(cpu), cpu->d);
 		break;
 	case 0x73:
+		// LD [HL],E
+		MEM_WRITE(cpu, HL(cpu), cpu->e);
 		break;
 	case 0x74:
+		// LD [HL],H
+		MEM_WRITE(cpu, HL(cpu), cpu->h);
 		break;
 	case 0x75:
+		// LD [HL],L
+		MEM_WRITE(cpu, HL(cpu), cpu->l);
 		break;
 	case 0x76:
+		// HALT
+		// TODO
+		cpu->halted = true;
 		break;
 	case 0x77:
+		// LD [HL],A
+		MEM_WRITE(cpu, HL(cpu), cpu->a);
 		break;
 	case 0x78:
+		// LD A,B
+		opcode_ld(&cpu->a, cpu->b);
 		break;
 	case 0x79:
+		// LD A,C
+		opcode_ld(&cpu->a, cpu->c);
 		break;
 	case 0x7A:
+		// LD A,D
+		opcode_ld(&cpu->a, cpu->d);
 		break;
 	case 0x7B:
+		// LD A,E
+		opcode_ld(&cpu->a, cpu->e);
 		break;
 	case 0x7C:
+		// LD A,H
+		opcode_ld(&cpu->a, cpu->h);
 		break;
 	case 0x7D:
+		// LD A,L
+		opcode_ld(&cpu->a, cpu->l);
 		break;
 	case 0x7E:
+		// LD A,[HL]
+		opcode_ld(&cpu->a, MEM_READ(cpu, HL(cpu)));
 		break;
 	case 0x7F:
+		// LD A,A
+		opcode_ld(&cpu->a, cpu->a);
 		break;
 	case 0x80:
 		break;

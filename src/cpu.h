@@ -63,6 +63,14 @@ typedef struct Cpu {
 	int multiplier;
 } Cpu;
 
+#define MEM_READ(cpu, addr) memory_read(cpu->memory, addr)
+#define MEM_WRITE(cpu, addr, byte) memory_write(cpu->memory, addr, byte)
+#define MEM_WRITE_BE(cpu, addr, word) \
+	memory_write_word(cpu->memory, addr, word, true)
+#define MEM_WRITE_LE(cpu, addr, word) \
+	memory_write_word(cpu->memory, addr, word, false)
+#define MEM_READ_PC_S8(cpu) (cpu->pc + 1) + (s8)MEM_READ(cpu, cpu->pc)
+
 Cpu *cpu_init(void);
 void cpu_bind_memory(Cpu *cpu, Memory *memory);
 void cpu_reset(Cpu *cpu);
