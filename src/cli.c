@@ -7,15 +7,18 @@
 ArgsBoot *parse_args_boot(int argc, char **argv)
 {
 	ArgsBoot *args = (ArgsBoot *)malloc(sizeof(ArgsBoot));
+
 	if (args == NULL)
 		return NULL;
 	args->rom_path = NULL;
 	args->debug = false;
 	args->cpu_debug = false;
+	args->delay_in_sec = 0.0;
 	args->multiplier = 1;
 	if (argc <= 2) {
 		return args;
 	}
+
 	for (int i = 2; i < argc; i++) {
 		if ((!strcmp(argv[i], "--path") || !strcmp(argv[i], "-p")) &&
 		    i + 1 < argc) {
@@ -30,6 +33,8 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		}
 		if ((!strcmp(argv[i], "--cpu-debug") || !strcmp(argv[i], "-c")))
 			args->cpu_debug = true;
+		if ((!strcmp(argv[i], "--delay")) && i + 1 < argc)
+			args->delay_in_sec = atof(argv[i + 1]);
 	}
 	return args;
 }
@@ -37,6 +42,7 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 ArgsRom *parse_args_rom(int argc, char **argv)
 {
 	ArgsRom *args = (ArgsRom *)malloc(sizeof(ArgsRom));
+
 	if (args == NULL)
 		return NULL;
 	args->rom_path = NULL;

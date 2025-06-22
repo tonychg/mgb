@@ -4,7 +4,7 @@
 void opcode_execute(Cpu *cpu, Instruction instruction)
 {
 	if (cpu->debug)
-		cpu_debug_instruction(instruction);
+		cpu_debug_instruction(cpu, instruction);
 
 	switch (instruction.opcode) {
 	case 0x00:
@@ -823,7 +823,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 void opcode_execute_cb(Cpu *cpu, Instruction instruction)
 {
 	if (cpu->debug)
-		cpu_debug_instruction(instruction);
+		cpu_debug_instruction(cpu, instruction);
 	switch (instruction.opcode) {
 	case 0x00:
 		break;

@@ -21,9 +21,8 @@ int gb_boot(void *args)
 		if (cargs->cpu_debug)
 			cpu_debug(cpu);
 		cpu_tick(cpu);
-		// Add some delay if --cpu-debug is enabled
-		if (cargs->cpu_debug)
-			cpu_sleep_ns(50000000L);
+		if (cargs->delay_in_sec)
+			cpu_sleep_ns(cargs->delay_in_sec * 1000000000);
 		cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 		// Work RAM
 		// memory_debug(cpu->memory, 0xC000, 0xCFFF);

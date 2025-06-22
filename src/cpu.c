@@ -138,10 +138,17 @@ void cpu_debug(Cpu *cpu)
 	printf(" %016b\n", cpu->pc);
 }
 
-void cpu_debug_instruction(Instruction instruction)
+void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 {
-	printf("$%02X[%d %d] %s", instruction.opcode, instruction.length,
-	       instruction.cycles, instruction.mnemonic);
+	printf("00:%04X", cpu->pc);
+	printf(" %02X", instruction.opcode);
+	for (int i = 1; i <= 3; i++) {
+		if (i <= instruction.length)
+			printf(" %02X", MEM_READ(cpu, cpu->pc + i));
+		else
+			printf("   ");
+	}
+	printf(" -> %s", instruction.mnemonic);
 	if (instruction.op_1 != NULL)
 		printf(" %s", instruction.op_1);
 	if (instruction.op_2 != NULL)

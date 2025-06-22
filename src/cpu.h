@@ -91,7 +91,7 @@ void cpu_flag_set_or_clear(Cpu *cpu, int flag);
 
 Instruction cpu_op_decode(Cpu *cpu);
 u8 cpu_read_pc_addr(Cpu *cpu);
-void cpu_debug_instruction(Instruction instruction);
+void cpu_debug_instruction(Cpu *cpu, Instruction instruction);
 void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_execute_cb(Cpu *cpu, Instruction instruction);
 u16 cpu_read_word(Cpu *cpu);
