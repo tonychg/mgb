@@ -50,7 +50,7 @@ int gb_boot(void *args)
 		cartridge_metadata(cartridge);
 	cpu_bind_memory(cpu, memory);
 	gb_reset(cpu, cartridge);
-	cpu_trigger_vblank(cpu);
+	cpu_enable_display(cpu);
 	while (1) {
 		if (cargs->interactive) {
 			gb_interactive(cpu, cartridge);
@@ -67,8 +67,10 @@ int gb_boot(void *args)
 			// Work RAM Bank
 			memory_debug(cpu->memory, 0xD000, 0xDFFF);
 		}
-		// Video RAM
-		// memory_debug(cpu->memory, 0x8000, 0x9FFF);
+		if (cargs->vram_debug) {
+			// Video RAM
+			memory_debug(cpu->memory, 0x8000, 0x9FFF);
+		}
 	}
 	cartridge_release(cartridge);
 	cpu_release(cpu);

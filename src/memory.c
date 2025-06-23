@@ -86,6 +86,16 @@ void memory_debug(Memory *memory, u16 start, u16 end)
 	printf("\n");
 }
 
+void memory_dump(Memory *memory)
+{
+	FILE *file;
+
+	if ((file = fopen("data/dump.gb", "w")) == NULL)
+		return;
+	fwrite(memory->bus, 0xFFFF, sizeof(u8), file);
+	fclose(file);
+}
+
 #ifdef TEST
 #include "tests.h"
 

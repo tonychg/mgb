@@ -80,6 +80,7 @@ void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian);
 void memory_bind_cartridge(Memory *memory, Cartridge *cartridge);
 void memory_release(Memory *memory);
 u8 memory_hardware_register(Memory *memory, HardwareRegister reg);
+void memory_dump(Memory *memory);
 void memory_debug(Memory *memory, u16 start, u16 end);
 
 #endif

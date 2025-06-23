@@ -13,6 +13,7 @@ typedef struct ArgsBoot {
 	bool debug;
 	bool cpu_debug;
 	bool wram_debug;
+	bool vram_debug;
 	bool interactive;
 	double delay_in_sec;
 	int multiplier;
