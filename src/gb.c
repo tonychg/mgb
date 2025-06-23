@@ -14,25 +14,52 @@ void gb_reset(Cpu *cpu, Cartridge *cartridge)
 	cpu_reset(cpu);
 }
 
+u16 parse_hex_address(char *buf)
+{
+	char addr[4];
+
+	for (int i = 0; i < 4; i++) {
+		addr[i] = buf[i + 2];
+	}
+	return strtol(addr, NULL, 16);
+}
+
 char *gb_interactive(Cpu *cpu, Cartridge *cartridge)
 {
-	static char buf[256];
+	char buf[256];
 
 	printf("> ");
-	if (scanf("%255s", buf) >= 0) {
-		if (!strcmp(buf, "c")) {
-			return NULL;
-		} else if (!strcmp(buf, "p")) {
-			memory_debug(cpu->memory, 0xC000, 0xDFFF);
-			gb_interactive(cpu, cartridge);
-		} else if (!strcmp(buf, "d")) {
-			cpu_debug(cpu);
-			gb_interactive(cpu, cartridge);
-		} else if (!strcmp(buf, "q")) {
-			exit(0);
-		} else if (!strcmp(buf, "r")) {
-			gb_reset(cpu, cartridge);
-		}
+	if (fgets(buf, 256, stdin) == 0)
+		return NULL;
+	switch (buf[0]) {
+	case 'w':
+		memory_debug(cpu->memory, 0xC000, 0xDFFF);
+		gb_interactive(cpu, cartridge);
+		break;
+	case 'v':
+		memory_debug(cpu->memory, 0x8000, 0x9FFF);
+		gb_interactive(cpu, cartridge);
+		break;
+	case 'q':
+		memory_release(cpu->memory);
+		cpu_release(cpu);
+		cartridge_release(cartridge);
+		exit(0);
+		break;
+	case 'o':
+		memory_dump(cpu->memory);
+		gb_interactive(cpu, cartridge);
+		break;
+	case 'r':
+		gb_reset(cpu, cartridge);
+		break;
+	case 'd':
+		cpu_debug(cpu);
+		gb_interactive(cpu, cartridge);
+		break;
+	case 'g':
+		cpu_goto(cpu, parse_hex_address(buf));
+		break;
 	}
 	return NULL;
 }
@@ -50,7 +77,6 @@ int gb_boot(void *args)
 		cartridge_metadata(cartridge);
 	cpu_bind_memory(cpu, memory);
 	gb_reset(cpu, cartridge);
-	cpu_enable_display(cpu);
 	while (1) {
 		if (cargs->interactive) {
 			gb_interactive(cpu, cartridge);
@@ -60,7 +86,6 @@ int gb_boot(void *args)
 		cpu_tick(cpu);
 		if (cargs->delay_in_sec)
 			usleep(cargs->delay_in_sec * 1000000);
-		cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 		if (cargs->wram_debug) {
 			// Work RAM
 			memory_debug(cpu->memory, 0xC000, 0xCFFF);
@@ -70,6 +95,9 @@ int gb_boot(void *args)
 		if (cargs->vram_debug) {
 			// Video RAM
 			memory_debug(cpu->memory, 0x8000, 0x9FFF);
+		}
+		if (cargs->memory_dump) {
+			memory_dump(cpu->memory);
 		}
 	}
 	cartridge_release(cartridge);

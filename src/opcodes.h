@@ -3,7 +3,11 @@
 
 #include "cpu.h"
 
-// instructions.c
+// op_helpers.c
+u16 unsigned_16(u8 lsb, u8 msb);
+u8 msb(u16 value);
+u8 lsb(u16 value);
+
 u8 opcode_get_high(u16 word);
 u8 opcode_get_low(u16 word);
 
@@ -21,6 +25,7 @@ void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rl(Cpu *cpu, u8 *reg, bool is_a);
 void opcode_rr(Cpu *cpu, u8 *reg, bool is_a);
+void opcode_rst(Cpu *cpu, u8 vec);
 
 void opcode_ld(u8 *reg, u8 byte);
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address);
@@ -69,7 +74,7 @@ void opcode_daa(Cpu *cpu);
 #define DEC_HL(cpu) opcode_r16_dec(&cpu->h, &cpu->l)
 
 // opcodes.c
-void opcode_execute(Cpu *cpu, Instruction instruction);
-void opcode_execute_cb(Cpu *cpu, Instruction instruction);
+void opcode_execute(Cpu *cpu, u8 opcode);
+void opcode_execute_cb(Cpu *cpu, u8 opcode);
 
 #endif

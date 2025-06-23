@@ -1,13 +1,9 @@
 #include "cpu.h"
-#include <stdio.h>
 #include "opcodes.h"
 
-void opcode_execute(Cpu *cpu, Instruction instruction)
+void opcode_execute(Cpu *cpu, u8 opcode)
 {
-	if (cpu->debug)
-		cpu_debug_instruction(cpu, instruction);
-
-	switch (instruction.opcode) {
+	switch (opcode) {
 	case 0x00:
 		// NOOP
 		break;
@@ -107,9 +103,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x18:
 		// JR e8
 		cpu->pc = MEM_READ_PC_S8(cpu);
-#ifdef TEST
-		cpu_pc_increment(cpu);
-#endif
 		break;
 	case 0x19:
 		// ADD HL, DE
@@ -186,9 +179,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JR Z,e8
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
-#ifdef TEST
-			cpu_pc_increment(cpu);
-#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -838,9 +828,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JP NZ,nn
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = cpu_read_word(cpu);
-#ifdef TEST
-			cpu_pc_increment(cpu);
-#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -850,9 +837,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xC3:
 		// JP nn
 		cpu->pc = cpu_read_word(cpu);
-#ifdef TEST
-		cpu_pc_increment(cpu);
-#endif
 		break;
 	case 0xC4:
 		// CALL NZ,nn
@@ -876,8 +860,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xC7:
 		// RST 00H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0000;
+		opcode_rst(cpu, 0x00);
 		break;
 	case 0xC8:
 		// RET Z
@@ -894,9 +877,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JP Z,nn
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = cpu_read_word(cpu);
-#ifdef TEST
-			cpu_pc_increment(cpu);
-#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -920,8 +900,8 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xCD:
 		// CALL nn
-		cpu->pc = cpu_read_word(cpu);
-		opcode_stack_push_pc(cpu, &cpu->pc);
+		// cpu->pc = cpu_read_word(cpu);
+		// opcode_stack_push_pc(cpu, &cpu->pc);
 		break;
 	case 0xCE:
 		// ADC A, n
@@ -929,8 +909,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xCF:
 		// RST 08H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0008;
+		opcode_rst(cpu, 0x08);
 		break;
 	case 0xD0:
 		// RET NC
@@ -947,9 +926,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JP NC,nn
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
-#ifdef TEST
-			cpu_pc_increment(cpu);
-#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -980,11 +956,10 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xD7:
 		// RST 10H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0010;
+		opcode_rst(cpu, 0x10);
 		break;
 	case 0xD8:
-		// RST C
+		// RET C
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			opcode_stack_pop_pc(cpu, &cpu->pc);
 			cpu->branch_taken = true;
@@ -999,9 +974,6 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JP C,nn
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
-#ifdef TEST
-			cpu_pc_increment(cpu);
-#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -1031,8 +1003,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xDF:
 		// RST 18H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0018;
+		opcode_rst(cpu, 0x18);
 		break;
 	case 0xE0:
 		// LD (0xFF00+n),A
@@ -1063,8 +1034,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xE7:
 		// RST 20H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0020;
+		opcode_rst(cpu, 0x20);
 		break;
 	case 0xE8:
 		// ADD SP,n
@@ -1093,8 +1063,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xEF:
 		// RST 28H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0028;
+		opcode_rst(cpu, 0x28);
 		break;
 	case 0xF0:
 		// LD A,(0xFF00+n)
@@ -1127,8 +1096,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xF7:
 		// RST 30H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0030;
+		opcode_rst(cpu, 0x30);
 		break;
 	case 0xF8:
 		// LD HL,SP+n
@@ -1159,17 +1127,14 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xFF:
 		// RST 38H
-		opcode_stack_push_pc(cpu, &cpu->pc);
-		cpu->pc = 0x0038;
+		opcode_rst(cpu, 0x38);
 		break;
 	}
 }
 
-void opcode_execute_cb(Cpu *cpu, Instruction instruction)
+void opcode_execute_cb(Cpu *cpu, u8 opcode)
 {
-	if (cpu->debug)
-		cpu_debug_instruction(cpu, instruction);
-	switch (instruction.opcode) {
+	switch (opcode) {
 	case 0x00:
 		break;
 	case 0x01:

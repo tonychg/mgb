@@ -2,6 +2,21 @@
 #include "opcodes.h"
 #include "types.h"
 
+u16 unsigned_16(u8 lsb, u8 msb)
+{
+	return (u16)msb << 8 | lsb;
+}
+
+u8 msb(u16 value)
+{
+	return value >> 8;
+}
+
+u8 lsb(u16 value)
+{
+	return value ^ 0xFF00;
+}
+
 u8 opcode_get_high(u16 word)
 {
 	return word >> 8;
@@ -149,6 +164,15 @@ void opcode_rr(Cpu *cpu, u8 *reg, bool is_a)
 	if (!is_a && result == 0) {
 		cpu_flag_toggle(cpu, FLAG_ZERO);
 	}
+}
+
+void opcode_rst(Cpu *cpu, u8 vec)
+{
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, msb(cpu->pc));
+	cpu->sp--;
+	MEM_WRITE(cpu, cpu->sp, lsb(cpu->pc));
+	cpu->pc = unsigned_16(vec, 0x00);
 }
 
 void opcode_ld(u8 *reg, u8 byte)
@@ -317,6 +341,10 @@ void opcode_cp(Cpu *cpu, u8 byte)
 	if (((cpu->a - byte) & 0xF) > (cpu->a & 0xF)) {
 		cpu_flag_toggle(cpu, FLAG_HALF);
 	}
+}
+
+void opcode_call_nn(Cpu *cpu)
+{
 }
 
 void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2)

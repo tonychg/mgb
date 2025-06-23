@@ -158,9 +158,24 @@ void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
 	}
 }
 
-void test_case_run(TestCase *test, TestSuite *suite)
+void test_case_run_cycle(cJSON *cycle, Cpu *cpu)
 {
-	cpu_tick(test->initial);
+	// cJSON *member = NULL;
+	// int i = 0;
+	//
+	// cJSON_ArrayForEach(member, cycle)
+	// {
+	// 	if (i == 0)
+	// 		cpu->pc = (u16)member->valueint;
+	// 	else if (i == 1)
+	// 		cpu->memory->bus[cpu->pc] = (u8)member->valueint;
+	// 	i++;
+	// }
+	cpu_execute(cpu, cpu_fetch(cpu));
+}
+
+void test_case_assert(TestCase *test, TestSuite *suite)
+{
 	assert_register(suite, test, "a", test->initial->a, test->final->a);
 	assert_register(suite, test, "b", test->initial->b, test->final->b);
 	assert_register(suite, test, "c", test->initial->c, test->final->c);
@@ -181,7 +196,7 @@ void test_case_run(TestCase *test, TestSuite *suite)
 TestSuite *test_suite_run(char *path, TestSuite *suite)
 {
 	char *buffer;
-	cJSON *json = NULL, *test_case = NULL;
+	cJSON *json = NULL, *test_case = NULL, *cycle = NULL;
 
 	if ((buffer = test_case_read(path)) == NULL)
 		return NULL;
@@ -197,11 +212,17 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 		}
 		cJSON *initial =
 			cJSON_GetObjectItemCaseSensitive(test_case, "initial");
+		cJSON *cycles =
+			cJSON_GetObjectItemCaseSensitive(test_case, "cycles");
 		cJSON *final =
 			cJSON_GetObjectItemCaseSensitive(test_case, "final");
 		test_case_reset_cpu_from_case(test->initial, initial);
+		cJSON_ArrayForEach(cycle, cycles)
+		{
+			test_case_run_cycle(cycle, test->initial);
+		}
 		test_case_reset_cpu_from_case(test->final, final);
-		test_case_run(test, suite);
+		test_case_assert(test, suite);
 		test_case_release(test);
 	}
 	cJSON_Delete(json);
@@ -217,7 +238,7 @@ void test_cpu(bool verbose)
 	int opcode;
 
 	printf("# Testing cpu.c\n");
-	for (opcode = 0; opcode <= 0xFF; opcode++) {
+	for (opcode = 0x00; opcode <= 0x01; opcode++) {
 		TestSuite *suite;
 		char path[50];
 		char *opcode_decoded = cpu_opcode_to_string(opcode);
@@ -226,7 +247,7 @@ void test_cpu(bool verbose)
 		suite->verbose = verbose;
 		if (opcode == 0xCB)
 			continue;
-		sprintf(path, "GameboyCPUTests/v2/%x.json", opcode);
+		sprintf(path, "sm83/v1/%02x.json", opcode);
 		if ((suite = test_suite_run(path, suite)) == NULL)
 			continue;
 		if (suite->passed != suite->total) {

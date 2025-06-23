@@ -50,6 +50,7 @@ typedef struct Cpu {
 	u8 l;
 
 	Memory *memory;
+	u8 bus[4];
 
 	u16 instruction;
 	u64 cycles;
@@ -79,7 +80,10 @@ void cpu_bind_memory(Cpu *cpu, Memory *memory);
 void cpu_reset(Cpu *cpu);
 void cpu_sleep_ns(int nanoseconds);
 void cpu_debug(Cpu *cpu);
+Instruction cpu_fetch(Cpu *cpu);
+void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_tick(Cpu *cpu);
+void cpu_goto(Cpu *cpu, u16 address);
 void cpu_release(Cpu *cpu);
 void cpu_pc_decrement(Cpu *cpu);
 void cpu_pc_increment(Cpu *cpu);
@@ -94,15 +98,14 @@ void cpu_flag_set_or_clear(Cpu *cpu, int flag);
 
 u8 cpu_read_pc_addr(Cpu *cpu);
 void cpu_debug_instruction(Cpu *cpu, Instruction instruction);
-void cpu_execute(Cpu *cpu, Instruction instruction);
-void cpu_execute_cb(Cpu *cpu, Instruction instruction);
 u16 cpu_read_word(Cpu *cpu);
 u8 cpu_read_byte(Cpu *cpu);
 
 void cpu_enable_display(Cpu *cpu);
 
 // decoder.c
-Instruction cpu_op_decode(Cpu *cpu);
+Instruction cpu_op_decode(u8 opcode);
+Instruction cpu_op_decode_cb(u8 opcode);
 char *cpu_opcode_to_string(u8 opcode);
 
 #endif

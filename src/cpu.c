@@ -100,11 +100,7 @@ void cpu_pc_increment(Cpu *cpu)
 
 u8 cpu_read_pc_addr(Cpu *cpu)
 {
-#ifdef TEST
-	u8 byte = MEM_READ(cpu, cpu->pc - 1);
-#else
 	u8 byte = MEM_READ(cpu, cpu->pc);
-#endif
 	cpu_pc_increment(cpu);
 	return byte;
 }
@@ -116,8 +112,8 @@ u16 cpu_read_word(Cpu *cpu)
 
 u16 cpu_read_word_no_inc(Cpu *cpu)
 {
-	return (u16)MEM_READ(cpu, cpu->pc) | (u16)MEM_READ(cpu, cpu->pc + 1)
-						     << 8;
+	return (u16)MEM_READ(cpu, cpu->pc + 1) | (u16)MEM_READ(cpu, cpu->pc + 2)
+							 << 8;
 }
 
 u8 cpu_read_byte(Cpu *cpu)
@@ -127,7 +123,7 @@ u8 cpu_read_byte(Cpu *cpu)
 
 u8 cpu_read_byte_no_inc(Cpu *cpu)
 {
-	return MEM_READ(cpu, cpu->pc);
+	return MEM_READ(cpu, cpu->pc + 1);
 }
 
 void cpu_jump_word(Cpu *cpu, u16 r16)
@@ -181,13 +177,9 @@ char *cpu_resolve_operand(Cpu *cpu, const char *op)
 
 void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 {
-	printf("00:%04X", cpu->pc - 1);
-	printf(" %02X", instruction.opcode);
-	for (int i = 0; i < 2; i++) {
-		if (instruction.length - 1 > i)
-			printf(" %02X", MEM_READ(cpu, cpu->pc + i));
-		else
-			printf("   ");
+	printf("00:%04X", cpu->pc);
+	for (int i = 0; i < instruction.length; i++) {
+		printf(" %02X", MEM_READ(cpu, cpu->pc + i));
 	}
 	printf(" -> %s", instruction.mnemonic);
 	if (instruction.op_1 != NULL) {
@@ -198,12 +190,43 @@ void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 	printf("\n");
 }
 
+Instruction cpu_fetch(Cpu *cpu)
+{
+	u8 opcode;
+	Instruction instruction;
+
+	opcode = MEM_READ(cpu, cpu->pc);
+	if (opcode == 0xCB) {
+		opcode = MEM_READ(cpu, cpu->pc + 1);
+		instruction = cpu_op_decode_cb(opcode);
+	} else {
+		instruction = cpu_op_decode(opcode);
+	}
+	if (cpu->debug) {
+		cpu_debug_instruction(cpu, instruction);
+	}
+	return instruction;
+}
+
+void cpu_execute(Cpu *cpu, Instruction instruction)
+{
+	cpu_pc_increment(cpu);
+	if (!instruction.prefixed) {
+		opcode_execute(cpu, instruction.opcode);
+	} else {
+		opcode_execute_cb(cpu, instruction.opcode);
+	}
+}
+
 void cpu_tick(Cpu *cpu)
 {
-	Instruction instruction = cpu_op_decode(cpu);
+	cpu_enable_display(cpu);
+	cpu_execute(cpu, cpu_fetch(cpu));
+	cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
+}
 
-	if (!instruction.prefixed)
-		opcode_execute(cpu, instruction);
-	else
-		opcode_execute_cb(cpu, instruction);
+void cpu_goto(Cpu *cpu, u16 address)
+{
+	while (cpu->pc != address)
+		cpu_tick(cpu);
 }

@@ -14,6 +14,7 @@ typedef struct ArgsBoot {
 	bool cpu_debug;
 	bool wram_debug;
 	bool vram_debug;
+	bool memory_dump;
 	bool interactive;
 	double delay_in_sec;
 	int multiplier;

@@ -298,6 +298,7 @@ char *cpu_opcode_to_string(u8 opcode)
 	const char *mnemonic = cpu_opcode_mnemonic(opcode);
 	const char *op_1 = cpu_opcode_op_1(opcode);
 	const char *op_2 = cpu_opcode_op_2(opcode);
+
 	if (op_1 && op_2)
 		sprintf(buffer, "%s %s %s", mnemonic, op_1, op_2);
 	else if (op_1)
@@ -307,27 +308,30 @@ char *cpu_opcode_to_string(u8 opcode)
 	return buffer;
 }
 
-Instruction cpu_op_decode(Cpu *cpu)
+Instruction cpu_op_decode(u8 opcode)
 {
 	Instruction instruction;
-	u8 opcode = cpu_read_pc_addr(cpu);
-	if (opcode != 0xCB) {
-		instruction.opcode = opcode;
-		instruction.length = cpu_instruction_length(opcode);
-		instruction.mnemonic = cpu_opcode_mnemonic(opcode);
-		instruction.op_1 = cpu_opcode_op_1(opcode);
-		instruction.op_2 = cpu_opcode_op_2(opcode);
-		instruction.cycles = cpu_opcode_machine_cycle(opcode);
-		instruction.prefixed = false;
-	} else {
-		opcode = cpu_read_pc_addr(cpu);
-		instruction.opcode = opcode;
-		instruction.length = cpu_instruction_cb_length(opcode);
-		instruction.mnemonic = cpu_opcode_cb_mnemonic(opcode);
-		instruction.op_1 = cpu_opcode_cb_op_1(opcode);
-		instruction.op_2 = cpu_opcode_cb_op_2(opcode);
-		instruction.cycles = cpu_opcode_cb_machine_cycle(opcode);
-		instruction.prefixed = true;
-	}
+
+	instruction.opcode = opcode;
+	instruction.length = cpu_instruction_length(opcode);
+	instruction.mnemonic = cpu_opcode_mnemonic(opcode);
+	instruction.op_1 = cpu_opcode_op_1(opcode);
+	instruction.op_2 = cpu_opcode_op_2(opcode);
+	instruction.cycles = cpu_opcode_machine_cycle(opcode);
+	instruction.prefixed = false;
+	return instruction;
+}
+
+Instruction cpu_op_decode_cb(u8 opcode)
+{
+	Instruction instruction;
+
+	instruction.opcode = opcode;
+	instruction.length = cpu_instruction_cb_length(opcode);
+	instruction.mnemonic = cpu_opcode_cb_mnemonic(opcode);
+	instruction.op_1 = cpu_opcode_cb_op_1(opcode);
+	instruction.op_2 = cpu_opcode_cb_op_2(opcode);
+	instruction.cycles = cpu_opcode_cb_machine_cycle(opcode);
+	instruction.prefixed = true;
 	return instruction;
 }

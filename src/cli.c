@@ -16,6 +16,7 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 	args->wram_debug = false;
 	args->vram_debug = false;
 	args->interactive = false;
+	args->memory_dump = false;
 	args->delay_in_sec = 0.0;
 	args->multiplier = 1;
 	if (argc <= 2) {
@@ -45,6 +46,9 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		if ((!strcmp(argv[i], "--vram-debug") ||
 		     !strcmp(argv[i], "-v")))
 			args->vram_debug = true;
+		if ((!strcmp(argv[i], "--memory-dump") ||
+		     !strcmp(argv[i], "-o")))
+			args->memory_dump = true;
 		if ((!strcmp(argv[i], "--delay")) && i + 1 < argc)
 			args->delay_in_sec = atof(argv[i + 1]);
 	}
