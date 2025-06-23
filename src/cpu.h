@@ -99,6 +99,8 @@ void cpu_execute_cb(Cpu *cpu, Instruction instruction);
 u16 cpu_read_word(Cpu *cpu);
 u8 cpu_read_byte(Cpu *cpu);
 
+void cpu_trigger_vblank(Cpu *cpu);
+
 // decoder.c
 Instruction cpu_op_decode(Cpu *cpu);
 char *cpu_opcode_to_string(u8 opcode);

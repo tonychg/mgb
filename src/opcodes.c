@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <stdio.h>
 #include "opcodes.h"
 
 void opcode_execute(Cpu *cpu, Instruction instruction)
@@ -83,8 +84,8 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		MEM_WRITE(cpu, DE(cpu), cpu->a);
 		break;
 	case 0x13:
-		// DEC de
-		DEC_DE(cpu);
+		// INC de
+		INC_DE(cpu);
 		break;
 	case 0x14:
 		// Z 0 H -
@@ -106,6 +107,9 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0x18:
 		// JR e8
 		cpu->pc = MEM_READ_PC_S8(cpu);
+#ifdef TEST
+		cpu_pc_increment(cpu);
+#endif
 		break;
 	case 0x19:
 		// ADD HL, DE
@@ -182,6 +186,9 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		// JR Z,e8
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
+#ifdef TEST
+			cpu_pc_increment(cpu);
+#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -194,7 +201,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x2A:
 		// LD A,[HL+]
-		opcode_ld(&cpu->a, HL(cpu));
+		opcode_ld(&cpu->a, MEM_READ(cpu, HL(cpu)));
 		INC_HL(cpu);
 		break;
 	case 0x2B:
@@ -254,8 +261,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x36:
 		// LD (HL),n
-		MEM_WRITE(cpu, HL(cpu), MEM_READ(cpu, cpu->pc));
-		cpu_pc_increment(cpu);
+		MEM_WRITE(cpu, HL(cpu), cpu_read_byte(cpu));
 		break;
 	case 0x37:
 		// SCF
@@ -278,7 +284,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x3A:
 		// LD A,(HLD)
-		opcode_ld(&cpu->a, HL(cpu));
+		opcode_ld(&cpu->a, MEM_READ(cpu, HL(cpu)));
 		DEC_HL(cpu);
 		break;
 	case 0x3B:
@@ -674,7 +680,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0x9C:
 		// SBC A,H
-		opcode_sbc(cpu, cpu->e);
+		opcode_sbc(cpu, cpu->h);
 		break;
 	case 0x9D:
 		// SBC A,L
@@ -814,7 +820,9 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xBF:
 		// CP A,A
-		opcode_cp(cpu, cpu->a);
+		cpu_flag_clear(cpu);
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+		cpu_flag_toggle(cpu, FLAG_SUBS);
 		break;
 	case 0xC0:
 		// RET NZ
@@ -829,10 +837,10 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xC2:
 		// JP NZ,nn
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
-			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu->pc = cpu_read_word(cpu);
+#ifdef TEST
 			cpu_pc_increment(cpu);
-			u8 high = MEM_READ(cpu, cpu->pc);
-			cpu->pc = opcode_r16_get(&high, &low);
+#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -842,6 +850,9 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xC3:
 		// JP nn
 		cpu->pc = cpu_read_word(cpu);
+#ifdef TEST
+		cpu_pc_increment(cpu);
+#endif
 		break;
 	case 0xC4:
 		// CALL NZ,nn
@@ -882,10 +893,10 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xCA:
 		// JP Z,nn
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
-			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu->pc = cpu_read_word(cpu);
+#ifdef TEST
 			cpu_pc_increment(cpu);
-			u8 high = MEM_READ(cpu, cpu->pc);
-			cpu->pc = opcode_r16_get(&high, &low);
+#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -935,10 +946,10 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xD2:
 		// JP NC,nn
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu->pc = cpu_read_word(cpu);
+#ifdef TEST
 			cpu_pc_increment(cpu);
-			u8 high = MEM_READ(cpu, cpu->pc);
-			cpu->pc = opcode_r16_get(&high, &low);
+#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -987,10 +998,10 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 	case 0xDA:
 		// JP C,nn
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			u8 low = MEM_READ(cpu, cpu->pc);
+			cpu->pc = cpu_read_word(cpu);
+#ifdef TEST
 			cpu_pc_increment(cpu);
-			u8 high = MEM_READ(cpu, cpu->pc);
-			cpu->pc = opcode_r16_get(&high, &low);
+#endif
 			cpu->branch_taken = true;
 		} else {
 			cpu_pc_increment(cpu);
@@ -1057,8 +1068,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xE8:
 		// ADD SP,n
-		opcode_add_sp(cpu, (u8)MEM_READ(cpu, cpu->pc));
-		cpu_pc_increment(cpu);
+		opcode_add_sp(cpu, (s8)cpu_read_byte(cpu));
 		break;
 	case 0xE9:
 		// JP (HL)
@@ -1088,7 +1098,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xF0:
 		// LD A,(0xFF00+n)
-		MEM_WRITE(cpu, (u16)(0xFF00 + cpu_read_byte(cpu)), cpu->a);
+		cpu->a = MEM_READ(cpu, (u16)(0xFF00 + cpu_read_byte(cpu)));
 		break;
 	case 0xF1:
 		// POP AF
@@ -1097,7 +1107,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xF2:
 		// LD A,(C)
-		MEM_WRITE(cpu, (u16)(0xFF00 + cpu->c), cpu->a);
+		cpu->a = MEM_READ(cpu, (u16)(0xFF00 + cpu->c));
 		break;
 	case 0xF3:
 		// DI
@@ -1130,7 +1140,7 @@ void opcode_execute(Cpu *cpu, Instruction instruction)
 		break;
 	case 0xFA:
 		// LD A,(nn)
-		cpu->a = opcode_get_high(cpu_read_word(cpu));
+		cpu->a = MEM_READ(cpu, cpu_read_word(cpu));
 		break;
 	case 0xFB:
 		// EI

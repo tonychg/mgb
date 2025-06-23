@@ -50,6 +50,7 @@ int gb_boot(void *args)
 		cartridge_metadata(cartridge);
 	cpu_bind_memory(cpu, memory);
 	gb_reset(cpu, cartridge);
+	cpu_trigger_vblank(cpu);
 	while (1) {
 		if (cargs->interactive) {
 			gb_interactive(cpu, cartridge);

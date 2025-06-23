@@ -49,7 +49,7 @@ void opcode_increment(Cpu *cpu, u8 *reg)
 
 void opcode_inc_hl(Cpu *cpu)
 {
-	u8 result = HL(cpu) + 1;
+	u8 result = MEM_READ(cpu, HL(cpu)) + 1;
 
 	MEM_WRITE(cpu, HL(cpu), result);
 	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
@@ -74,7 +74,7 @@ void opcode_decrement(Cpu *cpu, u8 *reg)
 
 void opcode_dec_hl(Cpu *cpu)
 {
-	u8 result = HL(cpu) - 1;
+	u8 result = MEM_READ(cpu, HL(cpu)) - 1;
 
 	MEM_WRITE(cpu, HL(cpu), result);
 	cpu_flag_set_or_clear(cpu, FLAG_CARRY);
@@ -168,7 +168,7 @@ void opcode_ld_nn(Cpu *cpu, u16 *reg)
 
 void opcode_ld_spn(Cpu *cpu)
 {
-	s8 n = MEM_READ(cpu, cpu->pc);
+	s8 n = (s8)cpu_read_byte(cpu);
 	u16 result = cpu->sp + n;
 
 	cpu_flag_clear(cpu);
@@ -177,12 +177,11 @@ void opcode_ld_spn(Cpu *cpu)
 	if (((cpu->sp ^ n ^ result) & 0x10) == 0x10)
 		cpu_flag_toggle(cpu, FLAG_HALF);
 	SET_HL(cpu, result);
-	cpu_pc_increment(cpu);
 }
 
 void opcode_add_hl(Cpu *cpu, u16 word)
 {
-	u16 result = HL(cpu) + word;
+	int result = HL(cpu) + word;
 
 	cpu_flag_set_or_clear(cpu, FLAG_ZERO);
 	if (result & 0x10000) {
@@ -191,7 +190,7 @@ void opcode_add_hl(Cpu *cpu, u16 word)
 	if ((HL(cpu) ^ word ^ (result & 0xFFFF)) & 0x1000) {
 		cpu_flag_toggle(cpu, FLAG_HALF);
 	}
-	SET_HL(cpu, result);
+	SET_HL(cpu, (u16)result);
 }
 
 void opcode_add_sp(Cpu *cpu, s8 value)
@@ -310,13 +309,13 @@ void opcode_cp(Cpu *cpu, u8 byte)
 {
 	cpu_flag_set(cpu, FLAG_SUBS);
 	if (cpu->a < byte) {
-		cpu_flag_set(cpu, FLAG_CARRY);
+		cpu_flag_toggle(cpu, FLAG_CARRY);
 	}
 	if (cpu->a == byte) {
-		cpu_flag_set(cpu, FLAG_ZERO);
+		cpu_flag_toggle(cpu, FLAG_ZERO);
 	}
 	if (((cpu->a - byte) & 0xF) > (cpu->a & 0xF)) {
-		cpu_flag_set(cpu, FLAG_HALF);
+		cpu_flag_toggle(cpu, FLAG_HALF);
 	}
 }
 

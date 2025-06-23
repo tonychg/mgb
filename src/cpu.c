@@ -135,6 +135,11 @@ void cpu_jump_word(Cpu *cpu, u16 r16)
 	cpu->pc = r16;
 }
 
+void cpu_trigger_vblank(Cpu *cpu)
+{
+	MEM_WRITE(cpu, 0xFF44, 0x94);
+}
+
 void cpu_debug(Cpu *cpu)
 {
 	printf("   Z = %d | N = %d\n", cpu_flag_is_set(cpu, FLAG_ZERO),
