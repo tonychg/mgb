@@ -8,7 +8,7 @@ SRC = \
       $(SRC_SUBDIR)/memory.c \
       $(SRC_SUBDIR)/cpu.c \
       $(SRC_SUBDIR)/opcodes.c \
-      $(SRC_SUBDIR)/instructions.c \
+      $(SRC_SUBDIR)/alu.c \
       $(SRC_SUBDIR)/cli.c \
       $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/decoder.c \
