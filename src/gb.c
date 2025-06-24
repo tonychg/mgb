@@ -118,6 +118,6 @@ int gb_rom(void *args)
 int gb_test(void *args)
 {
 	ArgsTest *cargs = (ArgsTest *)args;
-	test_opcode(cargs->opcode, cargs->verbose);
+	test_opcode(cargs->opcode, cargs->verbose, cargs->is_prefixed);
 	return 0;
 }

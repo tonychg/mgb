@@ -77,8 +77,10 @@ ArgsRom *parse_args_rom(int argc, char **argv)
 ArgsTest *parse_args_test(int argc, char **argv)
 {
 	ArgsTest *args = (ArgsTest *)malloc(sizeof(ArgsTest));
+
 	args->opcode = 0x00;
 	args->verbose = true;
+	args->is_prefixed = false;
 	if (argc <= 2) {
 		return args;
 	}
@@ -87,6 +89,9 @@ ArgsTest *parse_args_test(int argc, char **argv)
 		    i + 1 < argc) {
 			args->opcode = strtol(argv[i + 1], NULL, 16);
 		}
+		if ((!strcmp(argv[i], "--is-prefixed") ||
+		     !strcmp(argv[i], "-p")))
+			args->is_prefixed = true;
 	}
 	return args;
 }

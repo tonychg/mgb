@@ -215,15 +215,20 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 	return suite;
 }
 
-TestSuite *test_opcode(int opcode, bool verbose)
+TestSuite *test_opcode(int opcode, bool verbose, bool is_prefixed)
 {
 	TestSuite *suite;
 	char path[50];
-	char *opcode_decoded = cpu_opcode_to_string(opcode);
+	char *opcode_decoded = is_prefixed ? cpu_opcode_cb_to_string(opcode) :
+					     cpu_opcode_to_string(opcode);
 
 	suite = test_suite_init();
 	suite->verbose = verbose;
-	sprintf(path, "sm83/v1/%02x.json", opcode);
+	if (is_prefixed) {
+		sprintf(path, "sm83/v1/cb %02x.json", opcode);
+	} else {
+		sprintf(path, "sm83/v1/%02x.json", opcode);
+	}
 	if ((suite = test_suite_run(path, suite)) == NULL)
 		return suite;
 	if (suite->passed != suite->total) {
@@ -250,8 +255,17 @@ void test_cpu(bool verbose)
 	TestSuite *suite;
 
 	printf("# Testing cpu.c\n");
+	printf("# Testing non-prefixed instructions\n");
 	for (opcode = 0x00; opcode <= 0xFF; opcode++) {
-		if ((suite = test_opcode(opcode, verbose)) != NULL) {
+		if ((suite = test_opcode(opcode, verbose, false)) != NULL) {
+			total += suite->total;
+			total_failed += suite->failed;
+			total_passed += suite->passed;
+		}
+	}
+	printf("# Testing CB-prefixed instructions\n");
+	for (opcode = 0x00; opcode <= 0xFF; opcode++) {
+		if ((suite = test_opcode(opcode, verbose, true)) != NULL) {
 			total += suite->total;
 			total_failed += suite->failed;
 			total_passed += suite->passed;

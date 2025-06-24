@@ -216,6 +216,7 @@ void cpu_execute(Cpu *cpu, Instruction instruction)
 	if (!instruction.prefixed) {
 		opcode_execute(cpu, instruction.opcode);
 	} else {
+		cpu_pc_increment(cpu);
 		opcode_execute_cb(cpu, instruction.opcode);
 	}
 }

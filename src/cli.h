@@ -27,6 +27,7 @@ typedef struct ArgsRom {
 typedef struct ArgsTest {
 	int opcode;
 	bool verbose;
+	bool is_prefixed;
 } ArgsTest;
 
 #define CLI_HELP                                                  \

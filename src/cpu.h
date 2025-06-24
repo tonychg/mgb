@@ -99,5 +99,6 @@ void cpu_enable_display(Cpu *cpu);
 Instruction cpu_op_decode(u8 opcode);
 Instruction cpu_op_decode_cb(u8 opcode);
 char *cpu_opcode_to_string(u8 opcode);
+char *cpu_opcode_cb_to_string(u8 opcode);
 
 #endif

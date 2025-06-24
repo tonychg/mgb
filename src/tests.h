@@ -23,6 +23,6 @@ typedef struct TestSuite {
 
 void test_memory();
 void test_cpu(bool verbose);
-TestSuite *test_opcode(int opcode, bool verbose);
+TestSuite *test_opcode(int opcode, bool verbose, bool is_prefixed);
 
 #endif

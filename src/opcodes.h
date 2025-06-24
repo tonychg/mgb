@@ -22,9 +22,13 @@ void opcode_decrement(Cpu *cpu, u8 *reg);
 void opcode_dec_hl(Cpu *cpu);
 
 void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a);
+void opcode_rlc_hl(Cpu *cpu);
 void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a);
+void opcode_rrc_hl(Cpu *cpu);
 void opcode_rl(Cpu *cpu, u8 *reg, bool is_a);
+void opcode_rl_hl(Cpu *cpu);
 void opcode_rr(Cpu *cpu, u8 *reg, bool is_a);
+void opcode_rr_hl(Cpu *cpu);
 void opcode_rst(Cpu *cpu, u8 vec);
 
 void opcode_ld(u8 *reg, u8 byte);
@@ -39,11 +43,25 @@ void opcode_add(Cpu *cpu, u8 byte);
 void opcode_adc(Cpu *cpu, u8 byte);
 void opcode_sub(Cpu *cpu, u8 byte);
 void opcode_sbc(Cpu *cpu, u8 byte);
+void opcode_swap(Cpu *cpu, u8 *reg);
+void opcode_swap_hl(Cpu *cpu);
+void opcode_srl(Cpu *cpu, u8 *reg);
+void opcode_srl_hl(Cpu *cpu);
+void opcode_sla(Cpu *cpu, u8 *reg);
+void opcode_sla_hl(Cpu *cpu);
+void opcode_sra(Cpu *cpu, u8 *reg);
+void opcode_sra_hl(Cpu *cpu);
 
 void opcode_and(Cpu *cpu, u8 byte);
 void opcode_xor(Cpu *cpu, u8 byte);
 void opcode_and(Cpu *cpu, u8 byte);
 void opcode_or(Cpu *cpu, u8 byte);
+void opcode_bit(Cpu *cpu, u8 *reg, int bit);
+void opcode_bit_hl(Cpu *cpu, int bit);
+void opcode_set(Cpu *cpu, u8 *reg, int bit);
+void opcode_set_hl(Cpu *cpu, int bit);
+void opcode_res(Cpu *cpu, u8 *reg, int bit);
+void opcode_res_hl(Cpu *cpu, int bit);
 void opcode_cp(Cpu *cpu, u8 byte);
 
 void opcode_call_nn(Cpu *cpu);

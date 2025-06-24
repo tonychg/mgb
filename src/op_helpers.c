@@ -118,6 +118,25 @@ void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a)
 	}
 }
 
+void opcode_rlc_hl(Cpu *cpu)
+{
+	u8 result;
+
+	result = MEM_READ(cpu, HL(cpu));
+	if ((result & 0x80) != 0) {
+		cpu_flag_set(cpu, FLAG_CARRY);
+		result <<= 1;
+		result |= 0x1;
+	} else {
+		cpu_flag_clear(cpu);
+		result <<= 1;
+	}
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0) {
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	}
+}
+
 void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a)
 {
 	u8 result = *reg;
@@ -132,6 +151,24 @@ void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a)
 	}
 	*reg = result;
 	if (!is_a && result == 0) {
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	}
+}
+
+void opcode_rrc_hl(Cpu *cpu)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	if ((result & 0x01) != 0) {
+		cpu_flag_set(cpu, FLAG_CARRY);
+		result >>= 1;
+		result |= 0x80;
+	} else {
+		cpu_flag_clear(cpu);
+		result >>= 1;
+	}
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0) {
 		cpu_flag_toggle(cpu, FLAG_ZERO);
 	}
 }
@@ -151,6 +188,21 @@ void opcode_rl(Cpu *cpu, u8 *reg, bool is_a)
 	}
 }
 
+void opcode_rl_hl(Cpu *cpu)
+{
+	u8 carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 1 : 0;
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	((result & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_CARRY) :
+				 cpu_flag_clear(cpu);
+	result <<= 1;
+	result |= carry;
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0) {
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	}
+}
+
 void opcode_rr(Cpu *cpu, u8 *reg, bool is_a)
 {
 	u8 carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 0x80 : 0x00;
@@ -162,6 +214,21 @@ void opcode_rr(Cpu *cpu, u8 *reg, bool is_a)
 	result |= carry;
 	*reg = result;
 	if (!is_a && result == 0) {
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	}
+}
+
+void opcode_rr_hl(Cpu *cpu)
+{
+	u8 carry = cpu_flag_is_set(cpu, FLAG_CARRY) ? 0x80 : 0x00;
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	((result & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_CARRY) :
+				 cpu_flag_clear(cpu);
+	result >>= 1;
+	result |= carry;
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0) {
 		cpu_flag_toggle(cpu, FLAG_ZERO);
 	}
 }
@@ -299,6 +366,124 @@ void opcode_sbc(Cpu *cpu, u8 byte)
 	cpu->a = (u8)result;
 }
 
+void opcode_swap(Cpu *cpu, u8 *reg)
+{
+	u8 low_half = *reg & 0x0F;
+	u8 high_half = (*reg >> 4) & 0x0F;
+
+	*reg = (low_half << 4) + high_half;
+	cpu_flag_clear(cpu);
+	if (*reg == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_swap_hl(Cpu *cpu)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+	u8 low_half = result & 0x0F;
+	u8 high_half = (result >> 4) & 0x0F;
+
+	result = (low_half << 4) + high_half;
+	cpu_flag_clear(cpu);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	MEM_WRITE(cpu, HL(cpu), result);
+}
+
+void opcode_srl(Cpu *cpu, u8 *reg)
+{
+	u8 result = *reg;
+
+	if ((result & 0x01) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	result >>= 1;
+	*reg = result;
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_srl_hl(Cpu *cpu)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	if ((result & 0x01) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	result >>= 1;
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_sla(Cpu *cpu, u8 *reg)
+{
+	u8 result = *reg;
+
+	if ((result & 0x80) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	result <<= 1;
+	*reg = result;
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_sla_hl(Cpu *cpu)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	if ((result & 0x80) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	result <<= 1;
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_sra(Cpu *cpu, u8 *reg)
+{
+	u8 result = *reg;
+
+	if ((result & 0x01) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	if ((result & 0x80) != 0) {
+		result >>= 1;
+		result |= 0x80;
+	} else {
+		result >>= 1;
+	}
+	*reg = result;
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_sra_hl(Cpu *cpu)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+
+	if ((result & 0x01) != 0)
+		cpu_flag_set(cpu, FLAG_CARRY);
+	else
+		cpu_flag_clear(cpu);
+	if ((result & 0x80) != 0) {
+		result >>= 1;
+		result |= 0x80;
+	} else {
+		result >>= 1;
+	}
+	MEM_WRITE(cpu, HL(cpu), result);
+	if (result == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
 void opcode_and(Cpu *cpu, u8 byte)
 {
 	u8 result = cpu->a & byte;
@@ -327,6 +512,50 @@ void opcode_or(Cpu *cpu, u8 byte)
 	cpu_flag_clear(cpu);
 	if (result == 0)
 		cpu_flag_toggle(cpu, FLAG_ZERO);
+}
+
+void opcode_bit(Cpu *cpu, u8 *reg, int bit)
+{
+	if (((*reg >> bit) & 0x01) == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	else
+		cpu_flag_untoggle(cpu, FLAG_ZERO);
+	cpu_flag_toggle(cpu, FLAG_HALF);
+	cpu_flag_untoggle(cpu, FLAG_SUBS);
+}
+
+void opcode_bit_hl(Cpu *cpu, int bit)
+{
+	if (((MEM_READ(cpu, HL(cpu)) >> bit) & 0x01) == 0)
+		cpu_flag_toggle(cpu, FLAG_ZERO);
+	else
+		cpu_flag_untoggle(cpu, FLAG_ZERO);
+	cpu_flag_toggle(cpu, FLAG_HALF);
+	cpu_flag_untoggle(cpu, FLAG_SUBS);
+}
+
+void opcode_set(Cpu *cpu, u8 *reg, int bit)
+{
+	*reg = (*reg | (0x01 << bit));
+}
+
+void opcode_set_hl(Cpu *cpu, int bit)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+	result |= (0x1 << bit);
+	MEM_WRITE(cpu, HL(cpu), result);
+}
+
+void opcode_res(Cpu *cpu, u8 *reg, int bit)
+{
+	*reg = (*reg & (~(0x1 << bit)));
+}
+
+void opcode_res_hl(Cpu *cpu, int bit)
+{
+	u8 result = MEM_READ(cpu, HL(cpu));
+	result &= (~(0x1 << bit));
+	MEM_WRITE(cpu, HL(cpu), result);
 }
 
 void opcode_cp(Cpu *cpu, u8 byte)
