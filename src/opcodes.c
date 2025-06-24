@@ -902,8 +902,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		break;
 	case 0xCD:
 		// CALL nn
-		cpu->pc = cpu_read_word(cpu);
-		opcode_stack_push_pc(cpu, &cpu->pc);
+		opcode_call_nn(cpu);
 		break;
 	case 0xCE:
 		// ADC A, n
@@ -940,8 +939,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 	case 0xD4:
 		// CALL NC,nn
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			cpu->pc = cpu_read_word(cpu);
-			opcode_stack_push_pc(cpu, &cpu->pc);
+			opcode_call_nn(cpu);
 			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
@@ -988,8 +986,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 	case 0xDC:
 		// CALL C,nn
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
-			cpu->pc = cpu_read_word(cpu);
-			opcode_stack_push_pc(cpu, &cpu->pc);
+			opcode_call_nn(cpu);
 			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
@@ -1044,7 +1041,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		break;
 	case 0xE9:
 		// JP (HL)
-		cpu->pc = MEM_READ(cpu, HL(cpu));
+		cpu->pc = HL(cpu);
 		break;
 	case 0xEA:
 		// LD (nn),A

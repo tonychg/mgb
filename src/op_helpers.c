@@ -345,6 +345,19 @@ void opcode_cp(Cpu *cpu, u8 byte)
 
 void opcode_call_nn(Cpu *cpu)
 {
+	u8 nn_lsb, nn_msb;
+	u16 nn;
+
+	nn_lsb = MEM_READ(cpu, cpu->pc);
+	cpu_pc_increment(cpu);
+	nn_msb = MEM_READ(cpu, cpu->pc);
+	cpu_pc_increment(cpu);
+	nn = unsigned_16(nn_lsb, nn_msb);
+	--cpu->sp;
+	MEM_WRITE(cpu, cpu->sp, msb(cpu->pc));
+	--cpu->sp;
+	MEM_WRITE(cpu, cpu->sp, lsb(cpu->pc));
+	cpu->pc = nn;
 }
 
 void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2)

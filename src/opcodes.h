@@ -46,6 +46,7 @@ void opcode_and(Cpu *cpu, u8 byte);
 void opcode_or(Cpu *cpu, u8 byte);
 void opcode_cp(Cpu *cpu, u8 byte);
 
+void opcode_call_nn(Cpu *cpu);
 void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2);
 void opcode_stack_push_pc(Cpu *cpu, u16 *pc);
 void opcode_stack_pop(Cpu *cpu, u8 *r1, u8 *r2);
