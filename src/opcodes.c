@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include <stdio.h>
 #include "opcodes.h"
 
 void opcode_execute(Cpu *cpu, u8 opcode)

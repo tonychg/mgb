@@ -16,6 +16,9 @@ Cpu *cpu_init(void)
 
 	if ((cpu = (Cpu *)malloc(sizeof(Cpu))) == NULL)
 		return NULL;
+	cpu->state = CPU_CORE_IDLE;
+	cpu->opcode = 0;
+	cpu->cycles = 0;
 	return cpu;
 }
 
@@ -226,17 +229,25 @@ void cpu_tick(Cpu *cpu)
 
 void cpu_cycle(Cpu *cpu)
 {
-	if (!cpu->halted) {
-		Instruction instruction = cpu_fetch(cpu);
+	Instruction instruction;
+
+	switch (cpu->state) {
+	case CPU_CORE_IDLE:
+		instruction = cpu_fetch(cpu);
 		cpu->opcode = instruction.opcode;
 		cpu->cycles = instruction.cycles;
 		cpu_execute(cpu, instruction);
-		cpu->halted = true;
-	} else {
+		cpu->state = CPU_CORE_EXECUTE;
+		break;
+	case CPU_CORE_EXECUTE:
 		if (cpu->cycles == 0) {
-			cpu->halted = false;
+			cpu->state = CPU_CORE_IDLE;
 		}
 		cpu->cycles--;
+		break;
+	case CPU_CORE_HALT:
+		cpu->cycles--;
+		break;
 	}
 }
 
