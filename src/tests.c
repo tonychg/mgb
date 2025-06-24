@@ -160,17 +160,6 @@ void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
 
 void test_case_run_cycle(cJSON *cycle, Cpu *cpu)
 {
-	// cJSON *member = NULL;
-	// int i = 0;
-	//
-	// cJSON_ArrayForEach(member, cycle)
-	// {
-	// 	if (i == 0)
-	// 		cpu->pc = (u16)member->valueint;
-	// 	else if (i == 1)
-	// 		cpu->memory->bus[cpu->pc] = (u8)member->valueint;
-	// 	i++;
-	// }
 	cpu_execute(cpu, cpu_fetch(cpu));
 }
 
@@ -229,40 +218,44 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 	return suite;
 }
 
+TestSuite *test_opcode(int opcode, bool verbose)
+{
+	TestSuite *suite;
+	char path[50];
+	char *opcode_decoded = cpu_opcode_to_string(opcode);
+
+	suite = test_suite_init();
+	suite->verbose = verbose;
+	sprintf(path, "sm83/v1/%02x.json", opcode);
+	if ((suite = test_suite_run(path, suite)) == NULL)
+		return suite;
+	if (suite->passed != suite->total) {
+		double percentage =
+			((double)suite->passed / suite->total) * 100;
+		printf("[FAILED] %s %12s %2.0f%% passed %3d/%3d failed\n",
+		       suite->name, opcode_decoded, percentage, suite->failed,
+		       suite->total);
+	}
+	return suite;
+}
+
 void test_cpu(bool verbose)
 {
 	int total = 0;
 	int total_failed = 0;
 	int total_passed = 0;
-	double percentage;
 	int opcode;
+	TestSuite *suite;
 
 	printf("# Testing cpu.c\n");
-	for (opcode = 0x00; opcode <= 0x01; opcode++) {
-		TestSuite *suite;
-		char path[50];
-		char *opcode_decoded = cpu_opcode_to_string(opcode);
-
-		suite = test_suite_init();
-		suite->verbose = verbose;
-		if (opcode == 0xCB)
-			continue;
-		sprintf(path, "sm83/v1/%02x.json", opcode);
-		if ((suite = test_suite_run(path, suite)) == NULL)
-			continue;
-		if (suite->passed != suite->total) {
-			percentage =
-				((double)suite->passed / suite->total) * 100;
-			printf("[FAILED] %s %12s %2.0f%% passed %3d/%3d failed\n",
-			       suite->name, opcode_decoded, percentage,
-			       suite->failed, suite->total);
+	for (opcode = 0x00; opcode <= 0xFF; opcode++) {
+		if ((suite = test_opcode(opcode, verbose)) != NULL) {
+			total += suite->total;
+			total_failed += suite->failed;
+			total_passed += suite->passed;
 		}
-		total += suite->total;
-		total_failed += suite->failed;
-		total_passed += suite->passed;
-		zfree(suite);
 	}
-	percentage = ((double)total_failed / total) * 100;
+	double percentage = ((double)total_failed / total) * 100;
 	printf("Total %2.2f%% failed %d/%d passed\n", percentage, total_passed,
 	       total);
 }
