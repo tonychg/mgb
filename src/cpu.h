@@ -56,7 +56,6 @@ typedef struct Cpu {
 	u64 ime_cycles;
 
 	bool halted;
-	bool branch_taken;
 	bool debug;
 	enum ExecutionState state;
 

@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <stdio.h>
 #include "opcodes.h"
 
 void opcode_execute(Cpu *cpu, u8 opcode)
@@ -138,7 +139,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JR NZ,e8
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 3;
 		} else {
 			cpu_pc_increment(cpu);
 		}
@@ -179,7 +180,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JR Z,e8
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 3;
 		} else {
 			cpu_pc_increment(cpu);
 		}
@@ -223,7 +224,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JR NC,n
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 3;
 		} else {
 			cpu_pc_increment(cpu);
 		}
@@ -263,7 +264,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JR C,n
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = MEM_READ_PC_S8(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 3;
 		} else {
 			cpu_pc_increment(cpu);
 		}
@@ -818,6 +819,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// RET NZ
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			opcode_stack_pop_pc(cpu, &cpu->pc);
+			cpu->cycles = 5;
 		}
 		break;
 	case 0xC1:
@@ -828,7 +830,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JP NZ,nn
 		if (!cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = cpu_read_word(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 4;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -844,7 +846,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 			u16 result = cpu_read_word(cpu);
 			opcode_stack_push_pc(cpu, &cpu->pc);
 			cpu->pc = result;
-			cpu->branch_taken = true;
+			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -866,7 +868,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// RET Z
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			opcode_stack_pop_pc(cpu, &cpu->pc);
-			cpu->branch_taken = true;
+			cpu->cycles = 5;
 		}
 		break;
 	case 0xC9:
@@ -877,7 +879,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JP Z,nn
 		if (cpu_flag_is_set(cpu, FLAG_ZERO)) {
 			cpu->pc = cpu_read_word(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 4;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -892,7 +894,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 			u16 result = cpu_read_word(cpu);
 			opcode_stack_push_pc(cpu, &cpu->pc);
 			cpu->pc = result;
-			cpu->branch_taken = true;
+			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -900,8 +902,8 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		break;
 	case 0xCD:
 		// CALL nn
-		// cpu->pc = cpu_read_word(cpu);
-		// opcode_stack_push_pc(cpu, &cpu->pc);
+		cpu->pc = cpu_read_word(cpu);
+		opcode_stack_push_pc(cpu, &cpu->pc);
 		break;
 	case 0xCE:
 		// ADC A, n
@@ -915,7 +917,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// RET NC
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			opcode_stack_pop_pc(cpu, &cpu->pc);
-			cpu->branch_taken = true;
+			cpu->cycles = 5;
 		}
 		break;
 	case 0xD1:
@@ -926,7 +928,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JP NC,nn
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 4;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -940,7 +942,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		if (!cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
 			opcode_stack_push_pc(cpu, &cpu->pc);
-			cpu->branch_taken = true;
+			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -962,7 +964,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// RET C
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			opcode_stack_pop_pc(cpu, &cpu->pc);
-			cpu->branch_taken = true;
+			cpu->cycles = 5;
 		}
 		break;
 	case 0xD9:
@@ -974,7 +976,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		// JP C,nn
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
-			cpu->branch_taken = true;
+			cpu->cycles = 4;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);
@@ -988,7 +990,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		if (cpu_flag_is_set(cpu, FLAG_CARRY)) {
 			cpu->pc = cpu_read_word(cpu);
 			opcode_stack_push_pc(cpu, &cpu->pc);
-			cpu->branch_taken = true;
+			cpu->cycles = 6;
 		} else {
 			cpu_pc_increment(cpu);
 			cpu_pc_increment(cpu);

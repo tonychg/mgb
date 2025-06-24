@@ -38,7 +38,6 @@ void cpu_reset(Cpu *cpu)
 	cpu->opcode = 0;
 	cpu->cycles = 0;
 	cpu->halted = false;
-	cpu->branch_taken = false;
 	cpu->ime = false;
 	cpu->ime_cycles = 0;
 	cpu->state = CPU_CORE_IDLE;
@@ -221,16 +220,16 @@ void cpu_execute(Cpu *cpu, Instruction instruction)
 void cpu_tick(Cpu *cpu)
 {
 	cpu_enable_display(cpu);
-	cpu_execute(cpu, cpu_fetch(cpu));
-	cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
+	cpu_cycle(cpu);
+	// cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
 }
 
 void cpu_cycle(Cpu *cpu)
 {
 	if (!cpu->halted) {
 		Instruction instruction = cpu_fetch(cpu);
-		cpu->cycles = instruction.cycles;
 		cpu->opcode = instruction.opcode;
+		cpu->cycles = instruction.cycles;
 		cpu_execute(cpu, instruction);
 		cpu->halted = true;
 	} else {
