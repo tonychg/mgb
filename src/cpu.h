@@ -15,16 +15,13 @@
 
 enum ExecutionState {
 	CPU_CORE_FETCH = 3,
-	CPU_CORE_IDLE_0 = 0,
-	CPU_CORE_IDLE_1 = 1,
+	CPU_CORE_IDLE = 0,
 	CPU_CORE_EXECUTE = 2,
-
 	CPU_CORE_MEMORY_LOAD = 7,
 	CPU_CORE_MEMORY_STORE = 11,
 	CPU_CORE_READ_PC = 15,
 	CPU_CORE_STALL = 19,
-	CPU_CORE_OP2 = 23,
-	CPU_CORE_HALT_BUG = 27,
+	CPU_CORE_HALT = 27,
 };
 
 typedef struct Instruction {
@@ -52,8 +49,8 @@ typedef struct Cpu {
 	Memory *memory;
 	u8 bus[4];
 
-	u16 instruction;
-	u64 cycles;
+	u8 opcode;
+	u8 cycles;
 	u8 read_cache;
 	bool ime;
 	u64 ime_cycles;
@@ -83,6 +80,7 @@ void cpu_debug(Cpu *cpu);
 Instruction cpu_fetch(Cpu *cpu);
 void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_tick(Cpu *cpu);
+void cpu_cycle(Cpu *cpu);
 void cpu_goto(Cpu *cpu, u16 address);
 void cpu_release(Cpu *cpu);
 void cpu_pc_decrement(Cpu *cpu);

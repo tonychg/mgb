@@ -1,24 +1,9 @@
-#include "cpu.h"
 #include "memory.h"
 #include "tests.h"
 #include "alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "cJSON.h"
-
-typedef struct TestCase {
-	Cpu *initial;
-	Cpu *final;
-	int failed;
-} TestCase;
-
-typedef struct TestSuite {
-	char *name;
-	int failed;
-	int passed;
-	int total;
-	bool verbose;
-} TestSuite;
 
 TestSuite *test_suite_init()
 {
@@ -116,6 +101,7 @@ void test_case_reset_cpu_from_case(Cpu *cpu, cJSON *state)
 	cpu->l = l->valueint;
 	cpu->pc = pc->valueint;
 	cpu->sp = sp->valueint;
+	cpu->halted = false;
 	cJSON_ArrayForEach(memory, ram)
 	{
 		u16 address = 0;
@@ -138,8 +124,9 @@ void assert_register(TestSuite *suite, TestCase *test, const char *reg,
 {
 	if (result != expected) {
 		if (suite->verbose)
-			printf("[KO] %s cpu->%s (result) %X != (expected) %X\n",
-			       suite->name, reg, result, expected);
+			printf("[KO] %s[%d] cpu->%s (result) $%X(%d) != (expected) $%X(%d)\n",
+			       suite->name, test->index, reg, result, result,
+			       expected, expected);
 		test->failed++;
 	}
 }
@@ -150,8 +137,10 @@ void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
 	for (int addr = 0; addr < 0xFFFF; addr++) {
 		if (result->bus[addr] != expected->bus[addr]) {
 			if (suite->verbose)
-				printf("[KO] %s memory[%X] (result) %X != (expected) %X\n",
-				       suite->name, addr, result->bus[addr],
+				printf("[KO] %s[%d] memory[$%X] (result) $%X(%d) != (expected) $%X(%d)\n",
+				       suite->name, test->index, addr,
+				       result->bus[addr], result->bus[addr],
+				       expected->bus[addr],
 				       expected->bus[addr]);
 			test->failed++;
 		}
@@ -160,7 +149,7 @@ void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
 
 void test_case_run_cycle(cJSON *cycle, Cpu *cpu)
 {
-	cpu_execute(cpu, cpu_fetch(cpu));
+	cpu_cycle(cpu);
 }
 
 void test_case_assert(TestCase *test, TestSuite *suite)
@@ -176,15 +165,16 @@ void test_case_assert(TestCase *test, TestSuite *suite)
 	assert_register(suite, test, "pc", test->initial->pc, test->final->pc);
 	assert_register(suite, test, "sp", test->initial->sp, test->final->sp);
 	assert_memory(suite, test, test->initial->memory, test->final->memory);
-	if (test->failed > 0)
-		suite->failed++;
-	else
-		suite->passed++;
+	test->failed > 0 ? suite->failed++ : suite->passed++;
+	if (suite->verbose && test->failed == 0) {
+		printf("--> [OK]\n");
+	}
 }
 
 TestSuite *test_suite_run(char *path, TestSuite *suite)
 {
 	char *buffer;
+	int i = 0;
 	cJSON *json = NULL, *test_case = NULL, *cycle = NULL;
 
 	if ((buffer = test_case_read(path)) == NULL)
@@ -195,6 +185,7 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 	cJSON_ArrayForEach(test_case, json)
 	{
 		TestCase *test = test_case_init();
+		test->index = i;
 		if (test == NULL) {
 			printf("Failed to init test case\n");
 			exit(-1);
@@ -206,6 +197,11 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 		cJSON *final =
 			cJSON_GetObjectItemCaseSensitive(test_case, "final");
 		test_case_reset_cpu_from_case(test->initial, initial);
+		if (suite->verbose) {
+			test->initial->debug = true;
+			// cpu_debug(test->initial);
+			printf("--> Test %s[%d]\n", suite->name, test->index);
+		}
 		cJSON_ArrayForEach(cycle, cycles)
 		{
 			test_case_run_cycle(cycle, test->initial);
@@ -213,6 +209,7 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 		test_case_reset_cpu_from_case(test->final, final);
 		test_case_assert(test, suite);
 		test_case_release(test);
+		i++;
 	}
 	cJSON_Delete(json);
 	return suite;
@@ -235,6 +232,11 @@ TestSuite *test_opcode(int opcode, bool verbose)
 		printf("[FAILED] %s %12s %2.0f%% passed %3d/%3d failed\n",
 		       suite->name, opcode_decoded, percentage, suite->failed,
 		       suite->total);
+	} else if (verbose) {
+		double percentage =
+			((double)suite->passed / suite->total) * 100;
+		printf("[OK] %s %12s %2.0f%% passed\n", suite->name,
+		       opcode_decoded, percentage);
 	}
 	return suite;
 }

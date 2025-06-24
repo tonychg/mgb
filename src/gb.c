@@ -2,6 +2,7 @@
 #include "cartridge.h"
 #include "cli.h"
 #include "cpu.h"
+#include "tests.h"
 #include "unistd.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,5 +112,12 @@ int gb_rom(void *args)
 	Cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
 	cartridge_metadata(cartridge);
 	cartridge_release(cartridge);
+	return 0;
+}
+
+int gb_test(void *args)
+{
+	ArgsTest *cargs = (ArgsTest *)args;
+	test_opcode(cargs->opcode, cargs->verbose);
 	return 0;
 }

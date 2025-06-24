@@ -35,13 +35,13 @@ void cpu_reset(Cpu *cpu)
 	SET_HL(cpu, 0x014D);
 
 	cpu->read_cache = 0;
-	cpu->instruction = 0;
+	cpu->opcode = 0;
 	cpu->cycles = 0;
 	cpu->halted = false;
 	cpu->branch_taken = false;
 	cpu->ime = false;
 	cpu->ime_cycles = 0;
-	cpu->state = CPU_CORE_FETCH;
+	cpu->state = CPU_CORE_IDLE;
 	cpu->multiplier = 1;
 }
 
@@ -223,6 +223,22 @@ void cpu_tick(Cpu *cpu)
 	cpu_enable_display(cpu);
 	cpu_execute(cpu, cpu_fetch(cpu));
 	cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
+}
+
+void cpu_cycle(Cpu *cpu)
+{
+	if (!cpu->halted) {
+		Instruction instruction = cpu_fetch(cpu);
+		cpu->cycles = instruction.cycles;
+		cpu->opcode = instruction.opcode;
+		cpu_execute(cpu, instruction);
+		cpu->halted = true;
+	} else {
+		if (cpu->cycles == 0) {
+			cpu->halted = false;
+		}
+		cpu->cycles--;
+	}
 }
 
 void cpu_goto(Cpu *cpu, u16 address)

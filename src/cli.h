@@ -24,9 +24,14 @@ typedef struct ArgsRom {
 	char *rom_path;
 } ArgsRom;
 
-#define CLI_HELP                                             \
-	"Usage: gameboy [rom,boot] [-p/--path] [-d/--debug]" \
-	"[-m/--multiplier] [INT]"                            \
+typedef struct ArgsTest {
+	int opcode;
+	bool verbose;
+} ArgsTest;
+
+#define CLI_HELP                                                  \
+	"Usage: gameboy [rom,boot,test] [-p/--path] [-d/--debug]" \
+	"[-m/--multiplier] [INT]"                                 \
 	"\n"
 
 Command *parse_args(int argc, char **argv);

@@ -74,6 +74,23 @@ ArgsRom *parse_args_rom(int argc, char **argv)
 	return args;
 }
 
+ArgsTest *parse_args_test(int argc, char **argv)
+{
+	ArgsTest *args = (ArgsTest *)malloc(sizeof(ArgsTest));
+	args->opcode = 0x00;
+	args->verbose = true;
+	if (argc <= 2) {
+		return args;
+	}
+	for (int i = 2; i < argc; i++) {
+		if ((!strcmp(argv[i], "--opcode") || !strcmp(argv[i], "-c")) &&
+		    i + 1 < argc) {
+			args->opcode = strtol(argv[i + 1], NULL, 16);
+		}
+	}
+	return args;
+}
+
 Command *parse_command(int argc, char **argv)
 {
 	Command *cmd;
@@ -84,6 +101,10 @@ Command *parse_command(int argc, char **argv)
 	if (!strcmp(name, "boot")) {
 		cmd->args = parse_args_boot(argc, argv);
 		cmd->callback = gb_boot;
+	}
+	if (!strcmp(name, "test")) {
+		cmd->args = parse_args_test(argc, argv);
+		cmd->callback = gb_test;
 	}
 	if (!strcmp(name, "rom")) {
 		cmd->args = parse_args_rom(argc, argv);
