@@ -61,6 +61,11 @@ char *gb_interactive(Cpu *cpu, Cartridge *cartridge)
 	case 'g':
 		cpu_goto(cpu, parse_hex_address(buf));
 		break;
+	default:
+		do {
+			cpu_tick(cpu);
+		} while (cpu->cycles > 0);
+		break;
 	}
 	return NULL;
 }
@@ -110,6 +115,7 @@ int gb_rom(void *args)
 {
 	ArgsRom *cargs = (ArgsRom *)args;
 	Cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
+
 	cartridge_metadata(cartridge);
 	cartridge_release(cartridge);
 	return 0;
@@ -118,6 +124,7 @@ int gb_rom(void *args)
 int gb_test(void *args)
 {
 	ArgsTest *cargs = (ArgsTest *)args;
+
 	test_opcode(cargs->opcode, cargs->verbose, cargs->is_prefixed);
 	return 0;
 }

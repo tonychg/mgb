@@ -16,7 +16,7 @@ SRC = \
       $(SRC_SUBDIR)/cJSON.c \
       $(SRC_SUBDIR)/main.c \
 
-NAME        = $(BUILD_DIR)/gameboy
+NAME        = $(BUILD_DIR)/gb
 TEST	    = $(BUILD_DIR)/test.bin
 DEBUG       = $(BUILD_DIR)/debug.bin
 CC          = gcc
