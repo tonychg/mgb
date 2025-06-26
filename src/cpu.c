@@ -16,9 +16,10 @@ Cpu *cpu_init(void)
 
 	if ((cpu = (Cpu *)malloc(sizeof(Cpu))) == NULL)
 		return NULL;
-	cpu->state = CPU_CORE_IDLE;
+	cpu->state = CPU_CORE_RUNNING;
 	cpu->opcode = 0;
 	cpu->cycles = 0;
+	cpu->irq = list_create();
 	return cpu;
 }
 
@@ -37,13 +38,13 @@ void cpu_reset(Cpu *cpu)
 	SET_DE(cpu, 0x00D8);
 	SET_HL(cpu, 0x014D);
 
-	cpu->read_cache = 0;
 	cpu->opcode = 0;
 	cpu->cycles = 0;
 	cpu->halted = false;
 	cpu->ime = false;
 	cpu->ime_cycles = 0;
-	cpu->state = CPU_CORE_IDLE;
+	list_empty(cpu->irq);
+	cpu->state = CPU_CORE_RUNNING;
 	cpu->multiplier = 1;
 }
 
@@ -192,7 +193,7 @@ void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 	printf("\n");
 }
 
-Instruction cpu_fetch(Cpu *cpu)
+Instruction cpu_prefetch(Cpu *cpu)
 {
 	u8 opcode;
 	Instruction instruction;
@@ -225,16 +226,110 @@ void cpu_tick(Cpu *cpu)
 {
 	cpu_enable_display(cpu);
 	cpu_cycle(cpu);
-	// cpu_sleep_ns(CLOCK_PERIOD_NS / cpu->multiplier);
+}
+
+bool cpu_has_interrupt(Cpu *cpu)
+{
+	return cpu->ime && (MEM_READ(cpu, IF) & MEM_READ(cpu, IE));
+}
+
+bool cpu_has_pending_interrupt(Cpu *cpu)
+{
+	return cpu->irq->len > 0;
+}
+
+void cpu_handler_vblank(Cpu *cpu)
+{
+	if (cpu->debug)
+		printf("IR_VBLANK handle\n");
+	opcode_stack_push_pc(cpu, &cpu->pc);
+	cpu->pc = 0x40;
+}
+
+void cpu_handler_lcd(Cpu *cpu)
+{
+	if (cpu->debug)
+		printf("IR_LCD handle\n");
+	opcode_stack_push_pc(cpu, &cpu->pc);
+	cpu->pc = 0x48;
+}
+
+void cpu_handler_timer(Cpu *cpu)
+{
+	if (cpu->debug)
+		printf("IR_TIMER handle\n");
+	opcode_stack_push_pc(cpu, &cpu->pc);
+	cpu->pc = 0x50;
+}
+
+void cpu_handler_serial(Cpu *cpu)
+{
+	if (cpu->debug)
+		printf("IR_SERIAL handle\n");
+	opcode_stack_push_pc(cpu, &cpu->pc);
+	cpu->pc = 0x58;
+}
+
+void cpu_handler_joypad(Cpu *cpu)
+{
+	if (cpu->debug)
+		printf("IR_JOYPAD handle\n");
+	opcode_stack_push_pc(cpu, &cpu->pc);
+	cpu->pc = 0x60;
+}
+
+void cpu_ir_handle(Cpu *cpu, void (*ir_handler)(Cpu *cpu))
+{
+	(*ir_handler)(cpu);
+}
+
+void cpu_ack_interrupt(Cpu *cpu)
+{
+	if (IR_REQUESTED(cpu, IR_VBLANK)) {
+		list_add_node_head(cpu->irq, &cpu_handler_vblank);
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) & ~IR_VBLANK);
+	}
+	if (IR_REQUESTED(cpu, IR_LCD)) {
+		list_add_node_head(cpu->irq, &cpu_handler_lcd);
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) & ~IR_LCD);
+	}
+	if (IR_REQUESTED(cpu, IR_TIMER)) {
+		list_add_node_head(cpu->irq, &cpu_handler_timer);
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) & ~IR_TIMER);
+	}
+	if (IR_REQUESTED(cpu, IR_SERIAL)) {
+		list_add_node_head(cpu->irq, &cpu_handler_serial);
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) & ~IR_SERIAL);
+	}
+	if (IR_REQUESTED(cpu, IR_JOYPAD)) {
+		list_add_node_head(cpu->irq, &cpu_handler_joypad);
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) & ~IR_JOYPAD);
+	}
+	cpu->ime = false;
+	cpu->ime_cycles = 5;
+	cpu->state = CPU_CORE_INTERRUPT_DISPATCH;
+}
+
+void cpu_req_interrupt(Cpu *cpu, enum Interrupt ir)
+{
+	cpu->ime = true;
+	MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | ir);
 }
 
 void cpu_cycle(Cpu *cpu)
 {
 	Instruction instruction;
 
+	if (cpu_has_interrupt(cpu)) {
+		cpu_ack_interrupt(cpu);
+	}
 	switch (cpu->state) {
-	case CPU_CORE_IDLE:
-		instruction = cpu_fetch(cpu);
+	case CPU_CORE_RUNNING:
+		if (cpu_has_pending_interrupt(cpu)) {
+			ListNode *ir = list_pop_node_head(cpu->irq);
+			cpu_ir_handle(cpu, ir->data);
+		}
+		instruction = cpu_prefetch(cpu);
 		cpu->opcode = instruction.opcode;
 		cpu->cycles = instruction.cycles;
 		cpu_execute(cpu, instruction);
@@ -242,9 +337,14 @@ void cpu_cycle(Cpu *cpu)
 		break;
 	case CPU_CORE_EXECUTE:
 		if (cpu->cycles == 0) {
-			cpu->state = CPU_CORE_IDLE;
+			cpu->state = CPU_CORE_RUNNING;
 		}
 		cpu->cycles--;
+		break;
+	case CPU_CORE_INTERRUPT_DISPATCH:
+		if (cpu->ime_cycles == 0)
+			cpu->state = CPU_CORE_RUNNING;
+		cpu->ime_cycles--;
 		break;
 	case CPU_CORE_HALT:
 		cpu->cycles--;

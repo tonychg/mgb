@@ -22,7 +22,6 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 	if (argc <= 2) {
 		return args;
 	}
-
 	for (int i = 2; i < argc; i++) {
 		if ((!strcmp(argv[i], "--path") || !strcmp(argv[i], "-p")) &&
 		    i + 1 < argc) {

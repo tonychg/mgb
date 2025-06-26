@@ -2,6 +2,7 @@
 #define __CPU_H__
 
 #include "types.h"
+#include "list.h"
 #include "memory.h"
 #include "cartridge.h"
 
@@ -14,9 +15,18 @@
 #define FLAG_NONE 0
 
 enum ExecutionState {
-	CPU_CORE_IDLE = 0,
-	CPU_CORE_EXECUTE = 2,
-	CPU_CORE_HALT = 27,
+	CPU_CORE_RUNNING,
+	CPU_CORE_EXECUTE,
+	CPU_CORE_INTERRUPT_DISPATCH,
+	CPU_CORE_HALT,
+};
+
+enum Interrupt {
+	IR_VBLANK = 1 << 0,
+	IR_LCD = 1 << 1,
+	IR_TIMER = 1 << 2,
+	IR_SERIAL = 1 << 3,
+	IR_JOYPAD = 1 << 4,
 };
 
 typedef struct Instruction {
@@ -42,13 +52,12 @@ typedef struct Cpu {
 	u8 l;
 
 	Memory *memory;
-	u8 bus[4];
 
 	u8 opcode;
 	u8 cycles;
-	u8 read_cache;
 	bool ime;
 	u64 ime_cycles;
+	List *irq;
 
 	bool halted;
 	bool debug;
@@ -64,6 +73,8 @@ typedef struct Cpu {
 #define MEM_WRITE_LE(cpu, addr, word) \
 	memory_write_word(cpu->memory, addr, word, false)
 #define MEM_READ_PC_S8(cpu) (cpu->pc + 1) + (s8)MEM_READ(cpu, cpu->pc)
+#define IR_REQUESTED(cpu, ir) \
+	((MEM_READ(cpu, IF) & ir) & (MEM_READ(cpu, IE) & ir))
 
 // cpu.c
 Cpu *cpu_init(void);
@@ -71,7 +82,7 @@ void cpu_bind_memory(Cpu *cpu, Memory *memory);
 void cpu_reset(Cpu *cpu);
 void cpu_sleep_ns(int nanoseconds);
 void cpu_debug(Cpu *cpu);
-Instruction cpu_fetch(Cpu *cpu);
+Instruction cpu_prefetch(Cpu *cpu);
 void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_tick(Cpu *cpu);
 void cpu_cycle(Cpu *cpu);
