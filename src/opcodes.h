@@ -33,6 +33,7 @@ void opcode_rst(Cpu *cpu, u8 vec);
 
 void opcode_ld(u8 *reg, u8 byte);
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address);
+void opcode_ldh_a_n(Cpu *cpu);
 void opcode_ld_r8_a16(Cpu *cpu, u16 address, u8 byte);
 void opcode_ld_nn(Cpu *cpu, u16 *reg);
 void opcode_ld_spn(Cpu *cpu);

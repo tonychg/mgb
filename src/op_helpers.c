@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include "opcodes.h"
 #include "types.h"
+#include <stdio.h>
 
 u16 unsigned_16(u8 lsb, u8 msb)
 {
@@ -250,6 +251,14 @@ void opcode_ld(u8 *reg, u8 byte)
 void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address)
 {
 	*reg = MEM_READ(cpu, address);
+}
+
+void opcode_ldh_a_n(Cpu *cpu)
+{
+	u8 n = cpu_read_byte(cpu);
+	u16 addr = unsigned_16(n, 0xFF);
+	u8 a = MEM_READ(cpu, addr);
+	cpu->a = a;
 }
 
 void opcode_ld_nn(Cpu *cpu, u16 *reg)

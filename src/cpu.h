@@ -5,6 +5,7 @@
 #include "list.h"
 #include "memory.h"
 #include "cartridge.h"
+#include "video.h"
 
 #define CLOCK_PERIOD_NS 2384
 
@@ -66,8 +67,6 @@ typedef struct Cpu {
 	int multiplier;
 } Cpu;
 
-#define MEM_READ(cpu, addr) memory_read(cpu->memory, addr)
-#define MEM_WRITE(cpu, addr, byte) memory_write(cpu->memory, addr, byte)
 #define MEM_WRITE_BE(cpu, addr, word) \
 	memory_write_word(cpu->memory, addr, word, true)
 #define MEM_WRITE_LE(cpu, addr, word) \
@@ -86,7 +85,6 @@ Instruction cpu_prefetch(Cpu *cpu);
 void cpu_execute(Cpu *cpu, Instruction instruction);
 void cpu_tick(Cpu *cpu);
 void cpu_cycle(Cpu *cpu);
-void cpu_goto(Cpu *cpu, u16 address);
 void cpu_release(Cpu *cpu);
 void cpu_pc_decrement(Cpu *cpu);
 void cpu_pc_increment(Cpu *cpu);

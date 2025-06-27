@@ -168,6 +168,7 @@ void test_case_assert(TestCase *test, TestSuite *suite)
 	test->failed > 0 ? suite->failed++ : suite->passed++;
 	if (suite->verbose && test->failed == 0) {
 		printf("--> [OK]\n");
+		cpu_debug(test->initial);
 	}
 }
 
@@ -199,7 +200,6 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 		test_case_reset_cpu_from_case(test->initial, initial);
 		if (suite->verbose) {
 			test->initial->debug = true;
-			// cpu_debug(test->initial);
 			printf("--> Test %s[%d]\n", suite->name, test->index);
 		}
 		cJSON_ArrayForEach(cycle, cycles)

@@ -18,6 +18,7 @@ typedef struct ArgsBoot {
 	bool interactive;
 	double delay_in_sec;
 	int multiplier;
+	int start;
 } ArgsBoot;
 
 typedef struct ArgsRom {

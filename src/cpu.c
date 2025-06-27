@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "memory.h"
 #include "alloc.h"
 #include <stdio.h>
 #include <string.h>
@@ -224,7 +225,9 @@ void cpu_execute(Cpu *cpu, Instruction instruction)
 
 void cpu_tick(Cpu *cpu)
 {
-	cpu_enable_display(cpu);
+	if (MEM_READ(cpu, LY_LCD) == 144) {
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | IR_VBLANK);
+	}
 	cpu_cycle(cpu);
 }
 
@@ -350,10 +353,4 @@ void cpu_cycle(Cpu *cpu)
 		cpu->cycles--;
 		break;
 	}
-}
-
-void cpu_goto(Cpu *cpu, u16 address)
-{
-	while (cpu->pc != address)
-		cpu_tick(cpu);
 }

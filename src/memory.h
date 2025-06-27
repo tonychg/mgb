@@ -83,4 +83,7 @@ u8 memory_hardware_register(Memory *memory, HardwareRegister reg);
 void memory_dump(Memory *memory);
 void memory_debug(Memory *memory, u16 start, u16 end);
 
+#define MEM_READ(ptr, addr) memory_read(ptr->memory, addr)
+#define MEM_WRITE(ptr, addr, byte) memory_write(ptr->memory, addr, byte)
+
 #endif

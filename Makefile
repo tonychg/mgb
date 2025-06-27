@@ -13,6 +13,7 @@ SRC = \
       $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/decoder.c \
       $(SRC_SUBDIR)/tests.c \
+      $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/cJSON.c \
       $(SRC_SUBDIR)/main.c \
 

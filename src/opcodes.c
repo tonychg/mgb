@@ -1065,7 +1065,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		break;
 	case 0xF0:
 		// LD A,(0xFF00+n)
-		cpu->a = MEM_READ(cpu, (u16)(0xFF00 + cpu_read_byte(cpu)));
+		opcode_ldh_a_n(cpu);
 		break;
 	case 0xF1:
 		// POP AF

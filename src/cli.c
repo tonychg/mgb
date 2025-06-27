@@ -19,6 +19,7 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 	args->memory_dump = false;
 	args->delay_in_sec = 0.0;
 	args->multiplier = 1;
+	args->start = 0;
 	if (argc <= 2) {
 		return args;
 	}
@@ -33,6 +34,10 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		     !strcmp(argv[i], "-m")) &&
 		    i + 1 < argc) {
 			args->multiplier = atoi(argv[i + 1]);
+		}
+		if ((!strcmp(argv[i], "--start") || !strcmp(argv[i], "-s")) &&
+		    i + 1 < argc) {
+			args->start = atof(argv[i + 1]);
 		}
 		if ((!strcmp(argv[i], "--cpu-debug") || !strcmp(argv[i], "-c")))
 			args->cpu_debug = true;
