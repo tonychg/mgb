@@ -14,7 +14,6 @@ SRC = \
       $(SRC_SUBDIR)/decoder.c \
       $(SRC_SUBDIR)/tests.c \
       $(SRC_SUBDIR)/video.c \
-      $(SRC_SUBDIR)/cJSON.c \
       $(SRC_SUBDIR)/main.c \
 
 NAME        = $(BUILD_DIR)/gb
@@ -25,7 +24,7 @@ CFLAGS	    = -g -Wall
 OBJ         = $(SRC:.c=.o)
 RM          = rm -f
 MKDIR	    = mkdir -p
-LIB         = -lraylib
+LIB         = -lraylib -lcjson
 
 .PHONY:all
 all:    clean $(NAME)
@@ -44,10 +43,10 @@ $(NAME):    build $(OBJ)
 	$(CC) $(LIB) -o $(NAME) $(OBJ)
 
 debug:  clean build $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(DEBUG)
+	$(CC) $(LIB) $(CFLAGS) $(OBJ) -o $(DEBUG)
 
 test:	clean build $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(TEST)
+	$(CC) $(LIB) $(CFLAGS) $(OBJ) -o $(TEST)
 	./$(TEST)
 
 .PHONY:clean

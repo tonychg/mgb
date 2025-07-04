@@ -17,6 +17,7 @@
           python314
           python314Packages.jinja2
           raylib
+          cjson
         ];
       };
     });

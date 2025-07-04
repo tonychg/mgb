@@ -3,7 +3,7 @@
 #include "alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 TestSuite *test_suite_init()
 {
