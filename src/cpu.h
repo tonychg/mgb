@@ -67,10 +67,6 @@ typedef struct Cpu {
 	int multiplier;
 } Cpu;
 
-#define MEM_WRITE_BE(cpu, addr, word) \
-	memory_write_word(cpu->memory, addr, word, true)
-#define MEM_WRITE_LE(cpu, addr, word) \
-	memory_write_word(cpu->memory, addr, word, false)
 #define MEM_READ_PC_S8(cpu) (cpu->pc + 1) + (s8)MEM_READ(cpu, cpu->pc)
 #define IR_REQUESTED(cpu, ir) \
 	((MEM_READ(cpu, IF) & ir) & (MEM_READ(cpu, IE) & ir))

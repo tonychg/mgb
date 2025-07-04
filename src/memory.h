@@ -85,5 +85,9 @@ void memory_debug(Memory *memory, u16 start, u16 end);
 
 #define MEM_READ(ptr, addr) memory_read(ptr->memory, addr)
 #define MEM_WRITE(ptr, addr, byte) memory_write(ptr->memory, addr, byte)
+#define MEM_WRITE_BE(ptr, addr, word) \
+	memory_write_word(ptr->memory, addr, word, true)
+#define MEM_WRITE_LE(ptr, addr, word) \
+	memory_write_word(ptr->memory, addr, word, false)
 
 #endif
