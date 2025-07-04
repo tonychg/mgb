@@ -1,20 +1,48 @@
 #include "gb.h"
 #include "cartridge.h"
-#include "cli.h"
-#include "cpu.h"
 #include "tests.h"
 #include "unistd.h"
 #include "video.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "raylib.h"
 
-void gb_reset(Cpu *cpu, Cartridge *cartridge, Video *video)
+Gb *gb_create(ArgsBoot *args)
 {
-	memory_reset(cpu->memory);
-	memory_bind_cartridge(cpu->memory, cartridge);
-	cpu_reset(cpu);
-	video_reset(video);
+	Gb *gb;
+
+	if ((gb = (Gb *)malloc(sizeof(Gb))) == NULL)
+		return NULL;
+	gb->cpu = NULL;
+	gb->memory = NULL;
+	gb->cartridge = NULL;
+	gb->video = NULL;
+	gb->args = args;
+	return gb;
+}
+
+void gb_init(Gb *gb)
+{
+	gb->cpu = cpu_init();
+	gb->memory = memory_init();
+	gb->cartridge = cartridge_load_from_file(gb->args->rom_path);
+	gb->video = video_init(gb->args->render);
+	gb->cpu->multiplier = gb->args->multiplier;
+	gb->cpu->debug = gb->args->debug;
+	video_bind_memory(gb->video, gb->memory);
+	cpu_bind_memory(gb->cpu, gb->memory);
+	gb_reset(gb);
+}
+
+void gb_reset(Gb *gb)
+{
+	memory_reset(gb->cpu->memory);
+	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
+	video_reset(gb->video);
+	cpu_reset(gb->cpu);
+	if (gb->video->render)
+		video_render(gb->video);
 }
 
 u16 parse_hex_address(char *buf)
@@ -35,20 +63,28 @@ void print_byte_at(Cpu *cpu, char *buf)
 	printf("Reading [$%04X] = $%02X\n", addr, byte);
 }
 
-void gb_tick(Cpu *cpu, Video *video)
+void gb_tick(Gb *gb)
 {
-	cpu_tick(cpu);
-	video_tick(video);
+	cpu_tick(gb->cpu);
+	video_tick(gb->video);
 }
 
-void gb_goto(Cpu *cpu, Video *video, u16 address)
+void gb_goto(Gb *gb, u16 address)
 {
-	while (cpu->pc != address) {
-		gb_tick(cpu, video);
+	while (gb->cpu->pc != address) {
+		gb_tick(gb);
 	}
 }
 
-char *gb_interactive(Cpu *cpu, Cartridge *cartridge, Video *video)
+void gb_release(Gb *gb)
+{
+	memory_release(gb->memory);
+	cpu_release(gb->cpu);
+	video_release(gb->video);
+	cartridge_release(gb->cartridge);
+}
+
+char *gb_interactive(Gb *gb)
 {
 	char buf[256];
 
@@ -57,45 +93,43 @@ char *gb_interactive(Cpu *cpu, Cartridge *cartridge, Video *video)
 		return NULL;
 	switch (buf[0]) {
 	case 'w':
-		memory_debug(cpu->memory, 0xC000, 0xDFFF);
-		gb_interactive(cpu, cartridge, video);
+		memory_debug(gb->memory, 0xC000, 0xDFFF);
+		gb_interactive(gb);
 		break;
 	case 'v':
-		memory_debug(cpu->memory, 0x8000, 0x9FFF);
-		gb_interactive(cpu, cartridge, video);
+		memory_debug(gb->memory, 0x8000, 0x9FFF);
+		gb_interactive(gb);
 		break;
 	case 'q':
-		memory_release(cpu->memory);
-		cpu_release(cpu);
-		cartridge_release(cartridge);
+		gb_release(gb);
 		exit(0);
 		break;
 	case 'o':
-		memory_dump(cpu->memory);
-		gb_interactive(cpu, cartridge, video);
+		memory_dump(gb->memory);
+		gb_interactive(gb);
 		break;
 	case 'r':
-		gb_reset(cpu, cartridge, video);
+		gb_reset(gb);
 		break;
 	case 'R':
-		print_byte_at(cpu, buf);
-		gb_interactive(cpu, cartridge, video);
+		print_byte_at(gb->cpu, buf);
+		gb_interactive(gb);
 		break;
 	case 'd':
-		cpu_debug(cpu);
-		gb_interactive(cpu, cartridge, video);
+		cpu_debug(gb->cpu);
+		gb_interactive(gb);
 		break;
 	case 'g':
-		gb_goto(cpu, video, parse_hex_address(buf));
+		gb_goto(gb, parse_hex_address(buf));
 		break;
 	case 'V':
-		video_debug(video);
-		gb_interactive(cpu, cartridge, video);
+		video_debug(gb->video);
+		gb_interactive(gb);
 		break;
 	default:
 		do {
-			gb_tick(cpu, video);
-		} while (cpu->cycles > 0);
+			gb_tick(gb);
+		} while (gb->cpu->cycles > 0);
 		break;
 	}
 	return NULL;
@@ -103,48 +137,41 @@ char *gb_interactive(Cpu *cpu, Cartridge *cartridge, Video *video)
 
 int gb_boot(void *args)
 {
-	ArgsBoot *cargs = (ArgsBoot *)args;
-	Cpu *cpu = cpu_init();
-	Memory *memory = memory_init();
-	Cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
-	Video *video = video_init();
+	Gb *gb = gb_create((ArgsBoot *)args);
 
-	cpu->multiplier = cargs->multiplier;
-	cpu->debug = cargs->debug;
-	if (cargs->debug)
-		cartridge_metadata(cartridge);
-	video_bind_memory(video, memory);
-	cpu_bind_memory(cpu, memory);
-	gb_reset(cpu, cartridge, video);
-	if (cargs->start) {
-		printf("Starting at $%04X\n", cargs->start);
-		gb_goto(cpu, video, cargs->start);
-		cargs->start = 0;
+	gb_init(gb);
+	if (gb->args->debug)
+		cartridge_metadata(gb->cartridge);
+	if (gb->args->start != 0) {
+		printf("Starting at $%04X\n", gb->args->start);
+		gb_goto(gb, gb->args->start);
+		gb->args->start = 0;
 	}
-	while (1) {
-		if (cargs->interactive) {
-			gb_interactive(cpu, cartridge, video);
+	while (!gb->video->render ||
+	       (gb->video->render && !WindowShouldClose())) {
+		if (gb->args->interactive) {
+			gb_interactive(gb);
 		}
-		if (cargs->cpu_debug)
-			cpu_debug(cpu);
-		if (cargs->delay_in_sec)
-			usleep(cargs->delay_in_sec * 1000000);
-		if (cargs->wram_debug) {
+		gb_tick(gb);
+		if (gb->args->cpu_debug)
+			cpu_debug(gb->cpu);
+		if (gb->args->delay_in_sec)
+			usleep(gb->args->delay_in_sec * 1000000);
+		if (gb->args->wram_debug) {
 			// Work RAM
-			memory_debug(cpu->memory, 0xC000, 0xCFFF);
+			memory_debug(gb->memory, 0xC000, 0xCFFF);
 			// Work RAM Bank
-			memory_debug(cpu->memory, 0xD000, 0xDFFF);
+			memory_debug(gb->memory, 0xD000, 0xDFFF);
 		}
-		if (cargs->vram_debug) {
+		if (gb->args->vram_debug) {
 			// Video RAM
-			memory_debug(cpu->memory, 0x8000, 0x9FFF);
+			memory_debug(gb->memory, 0x8000, 0x9FFF);
 		}
-		if (cargs->memory_dump) {
-			memory_dump(cpu->memory);
+		if (gb->args->memory_dump) {
+			memory_dump(gb->memory);
 		}
 	}
-	cartridge_release(cartridge);
-	cpu_release(cpu);
+	gb_release(gb);
 	return 0;
 }
 

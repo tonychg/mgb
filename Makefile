@@ -25,6 +25,7 @@ CFLAGS	    = -g -Wall
 OBJ         = $(SRC:.c=.o)
 RM          = rm -f
 MKDIR	    = mkdir -p
+LIB         = -lraylib
 
 .PHONY:all
 all:    clean $(NAME)
@@ -40,7 +41,7 @@ $(OBJ_TEST):
 	$(CC) $(CFLAGS_TEST) -c $^ -o $@
 
 $(NAME):    build $(OBJ)
-	$(CC) -o $(NAME) $(OBJ)
+	$(CC) $(LIB) -o $(NAME) $(OBJ)
 
 debug:  clean build $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(DEBUG)

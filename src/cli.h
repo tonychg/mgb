@@ -11,6 +11,7 @@ typedef struct Command {
 typedef struct ArgsBoot {
 	char *rom_path;
 	bool debug;
+	bool render;
 	bool cpu_debug;
 	bool wram_debug;
 	bool vram_debug;

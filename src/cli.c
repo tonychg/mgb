@@ -12,6 +12,7 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		return NULL;
 	args->rom_path = NULL;
 	args->debug = false;
+	args->render = false;
 	args->cpu_debug = false;
 	args->wram_debug = false;
 	args->vram_debug = false;
@@ -47,6 +48,8 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 		if ((!strcmp(argv[i], "--wram-debug") ||
 		     !strcmp(argv[i], "-w")))
 			args->wram_debug = true;
+		if ((!strcmp(argv[i], "--render") || !strcmp(argv[i], "-r")))
+			args->render = true;
 		if ((!strcmp(argv[i], "--vram-debug") ||
 		     !strcmp(argv[i], "-v")))
 			args->vram_debug = true;

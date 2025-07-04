@@ -2,14 +2,26 @@
 #include "alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <raylib.h>
 
-Video *video_init()
+Color convert_color(DmgPalette color)
+{
+	int hex_color = (color << 8) | 0xFF;
+	return GetColor(hex_color | 0xFF);
+}
+
+Video *video_init(bool render)
 {
 	Video *video;
 
 	if ((video = (Video *)malloc(sizeof(Video))) == NULL)
 		return NULL;
 	video->memory = NULL;
+	video->render = render;
+	if (video->render) {
+		InitWindow(800, 600, "GB Emulator");
+		SetTargetFPS(60);
+	}
 	return video;
 }
 
@@ -20,6 +32,8 @@ void video_bind_memory(Video *video, Memory *memory)
 
 void video_release(Video *video)
 {
+	if (video->render)
+		CloseWindow();
 	zfree(video);
 }
 
@@ -30,12 +44,9 @@ void video_reset(Video *video)
 	video->enabled = false;
 	video->stat = 0;
 	video->dots = 0;
+	video->frames = 0;
 	for (int i = 0; i < (GB_HEIGHT * GB_WIDTH); i++)
 		video->frame_buffer[i] = 0;
-}
-
-void video_switch_mode(Video *video)
-{
 }
 
 void video_memory_fetch(Video *video)
@@ -50,6 +61,21 @@ void video_memory_fetch(Video *video)
 		video->stat = MEM_READ(video, STAT_LCD);
 }
 
+void render_oam(Video *video)
+{
+}
+
+void video_render(Video *video)
+{
+	char debug_text[256];
+
+	sprintf(debug_text, "Frames: %d\n", video->frames);
+	BeginDrawing();
+	ClearBackground(convert_color(DMG_BLACK));
+	DrawText(debug_text, 0, 0, 15, convert_color(DMG_WHITE));
+	EndDrawing();
+}
+
 void video_tick(Video *video)
 {
 	video_memory_fetch(video);
@@ -60,7 +86,11 @@ void video_tick(Video *video)
 		}
 		video->dots++;
 		if (video->dots == GB_VIDEO_TOTAL_LENGTH) {
+			video->frames++;
 			video_reset(video);
+			if (video->render) {
+				video_render(video);
+			}
 		}
 	}
 }
