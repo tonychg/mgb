@@ -1,14 +1,8 @@
 #include "video.h"
 #include "alloc.h"
+#include "render.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <raylib.h>
-
-Color convert_color(DmgPalette color)
-{
-	int hex_color = (color << 8) | 0xFF;
-	return GetColor(hex_color | 0xFF);
-}
 
 Video *video_init(bool render)
 {
@@ -19,8 +13,7 @@ Video *video_init(bool render)
 	video->memory = NULL;
 	video->render = render;
 	if (video->render) {
-		InitWindow(800, 600, "GB Emulator");
-		SetTargetFPS(60);
+		render_init(800, 600, 1);
 	}
 	return video;
 }
@@ -70,10 +63,8 @@ void video_render(Video *video)
 	char debug_text[256];
 
 	sprintf(debug_text, "Frames: %d\n", video->frames);
-	BeginDrawing();
-	ClearBackground(convert_color(DMG_BLACK));
-	DrawText(debug_text, 0, 0, 15, convert_color(DMG_WHITE));
-	EndDrawing();
+	render_begin();
+	render_end();
 }
 
 void video_tick(Video *video)
@@ -113,4 +104,62 @@ void video_debug(Video *video)
 	       MEM_READ(video, LYC_LY));
 	printf("Frames = %8d | Dots = %d\n", video->frames, video->dots);
 	printf("        Stat = %08b\n", video->stat);
+}
+
+void video_render_tile(u8 *vram, int n, int x, int y, int scale)
+{
+	int j = 0;
+	int indice = n * 16;
+
+	for (int b = 0; b < 16; b = b + 2) {
+		int i = 0;
+		u8 right = vram[indice + b];
+		u8 left = vram[indice + b + 1];
+
+		for (int bit = 7; bit >= 0; bit--) {
+			int color = video_pixel_color(right, left, bit);
+			render_pixel(x * 8 + i, y * 8 + j, scale, color);
+			i++;
+		}
+		j++;
+	}
+}
+
+u8 video_pixel_color(u8 right, u8 left, u8 bit)
+{
+	u8 lsb, msb;
+	u8 pixel;
+	u8 mask = 1 << bit;
+
+	msb = ((left & mask) >> bit) << 1;
+	lsb = ((right & mask) >> bit);
+	pixel = msb | lsb;
+	return pixel;
+}
+
+void video_render_tiles(u8 *vram, int scale)
+{
+	render_begin();
+	for (int y = 0; y <= 23; y++) {
+		for (int x = 0; x < 16; x++) {
+			int i = (y * 16) + x;
+			video_render_tile(vram, i, x, y, scale);
+		}
+	}
+	render_end();
+}
+
+void video_render_tilemap(u8 *vram, u8 area, int scale)
+{
+	u8 *tilemap;
+
+	tilemap = vram + (area == 0 ? 0x9800 : 0x9C00);
+	render_begin();
+	for (int y = 0; y < 32; y++) {
+		for (int x = 0; x < 32; x++) {
+			int i = tilemap[y * 32 + x];
+			video_render_tile(vram + 0x8000, i, x, y, scale);
+		}
+	}
+	render_end();
 }

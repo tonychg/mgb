@@ -103,11 +103,41 @@ ArgsTest *parse_args_test(int argc, char **argv)
 	return args;
 }
 
+ArgsRender *parse_args_render(int argc, char **argv)
+{
+	ArgsRender *args = (ArgsRender *)malloc(sizeof(ArgsRender));
+
+	args->scale = 2;
+	args->dump = "data/dump.gb";
+	args->type = "tiles";
+	if (argc <= 2) {
+		return args;
+	}
+	for (int i = 2; i < argc; i++) {
+		if ((!strcmp(argv[i], "--dump") || !strcmp(argv[i], "-d")) &&
+		    i + 1 < argc) {
+			args->dump = argv[i + 1];
+		}
+		if ((!strcmp(argv[i], "--type") || !strcmp(argv[i], "-t")) &&
+		    i + 1 < argc) {
+			args->type = argv[i + 1];
+		}
+		if ((!strcmp(argv[i], "--scale") || !strcmp(argv[i], "-s")) &&
+		    i + 1 < argc) {
+			args->scale = atoi(argv[i + 1]);
+		}
+	}
+	return args;
+}
+
 Command *parse_command(int argc, char **argv)
 {
 	Command *cmd;
-	char *name = argv[1];
+	char *name;
 
+	if (argc == 1)
+		return NULL;
+	name = argv[1];
 	if ((cmd = (Command *)malloc(sizeof(Command))) == NULL)
 		return NULL;
 	if (!strcmp(name, "boot")) {
@@ -121,6 +151,10 @@ Command *parse_command(int argc, char **argv)
 	if (!strcmp(name, "rom")) {
 		cmd->args = parse_args_rom(argc, argv);
 		cmd->callback = gb_rom;
+	}
+	if (!strcmp(name, "render")) {
+		cmd->args = parse_args_render(argc, argv);
+		cmd->callback = gb_render;
 	}
 	return cmd;
 }

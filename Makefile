@@ -3,6 +3,7 @@ BUILD_DIR = build
 
 SRC = \
       $(SRC_SUBDIR)/list.c \
+      $(SRC_SUBDIR)/fs.c \
       $(SRC_SUBDIR)/alloc.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
@@ -14,6 +15,7 @@ SRC = \
       $(SRC_SUBDIR)/decoder.c \
       $(SRC_SUBDIR)/tests.c \
       $(SRC_SUBDIR)/video.c \
+      $(SRC_SUBDIR)/render.c \
       $(SRC_SUBDIR)/main.c \
 
 NAME        = $(BUILD_DIR)/gb

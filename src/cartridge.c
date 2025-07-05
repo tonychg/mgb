@@ -1,5 +1,6 @@
 #include "cartridge.h"
 #include "alloc.h"
+#include "fs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,25 +20,12 @@ Cartridge *cartridge_init()
 
 size_t cartridge_file_size(FILE *file)
 {
-	size_t numbytes;
-	fseek(file, 0L, SEEK_END);
-	numbytes = ftell(file);
-	fseek(file, 0L, SEEK_SET);
-	return numbytes;
+	return fs_size(file);
 }
 
 u8 *cartridge_read_file(FILE *file, size_t numbytes)
 {
-	u8 *buffer;
-
-	if ((buffer = (u8 *)calloc(numbytes, sizeof(u8))) == NULL)
-		return NULL;
-	if (fread(buffer, sizeof(u8), numbytes, file) == 0) {
-		zfree(buffer);
-		return NULL;
-	}
-	fclose(file);
-	return buffer;
+	return fs_read(file, numbytes);
 }
 
 void cartridge_decode_title(Cartridge *cartridge)

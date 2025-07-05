@@ -1,12 +1,13 @@
 #include "gb.h"
 #include "cartridge.h"
+#include "fs.h"
+#include "render.h"
 #include "tests.h"
 #include "unistd.h"
 #include "video.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "raylib.h"
 
 Gb *gb_create(ArgsBoot *args)
 {
@@ -76,6 +77,13 @@ void gb_goto(Gb *gb, u16 address)
 	}
 }
 
+void gb_start_at(Gb *gb)
+{
+	printf("Starting at $%04X\n", gb->args->start);
+	gb_goto(gb, gb->args->start);
+	gb->args->start = 0;
+}
+
 void gb_release(Gb *gb)
 {
 	memory_release(gb->memory);
@@ -135,6 +143,27 @@ char *gb_interactive(Gb *gb)
 	return NULL;
 }
 
+void gb_debug(Gb *gb)
+{
+	if (gb->args->cpu_debug)
+		cpu_debug(gb->cpu);
+	if (gb->args->delay_in_sec)
+		usleep(gb->args->delay_in_sec * 1000000);
+	if (gb->args->wram_debug) {
+		// Work RAM
+		memory_debug(gb->memory, 0xC000, 0xCFFF);
+		// Work RAM Bank
+		memory_debug(gb->memory, 0xD000, 0xDFFF);
+	}
+	if (gb->args->vram_debug) {
+		// Video RAM
+		memory_debug(gb->memory, 0x8000, 0x9FFF);
+	}
+	if (gb->args->memory_dump) {
+		memory_dump(gb->memory);
+	}
+}
+
 int gb_boot(void *args)
 {
 	Gb *gb = gb_create((ArgsBoot *)args);
@@ -142,34 +171,15 @@ int gb_boot(void *args)
 	gb_init(gb);
 	if (gb->args->debug)
 		cartridge_metadata(gb->cartridge);
-	if (gb->args->start != 0) {
-		printf("Starting at $%04X\n", gb->args->start);
-		gb_goto(gb, gb->args->start);
-		gb->args->start = 0;
-	}
+	if (gb->args->start != 0)
+		gb_start_at(gb);
 	while (!gb->video->render ||
 	       (gb->video->render && !WindowShouldClose())) {
 		if (gb->args->interactive) {
 			gb_interactive(gb);
 		}
 		gb_tick(gb);
-		if (gb->args->cpu_debug)
-			cpu_debug(gb->cpu);
-		if (gb->args->delay_in_sec)
-			usleep(gb->args->delay_in_sec * 1000000);
-		if (gb->args->wram_debug) {
-			// Work RAM
-			memory_debug(gb->memory, 0xC000, 0xCFFF);
-			// Work RAM Bank
-			memory_debug(gb->memory, 0xD000, 0xDFFF);
-		}
-		if (gb->args->vram_debug) {
-			// Video RAM
-			memory_debug(gb->memory, 0x8000, 0x9FFF);
-		}
-		if (gb->args->memory_dump) {
-			memory_dump(gb->memory);
-		}
+		gb_debug(gb);
 	}
 	gb_release(gb);
 	return 0;
@@ -190,5 +200,56 @@ int gb_test(void *args)
 	ArgsTest *cargs = (ArgsTest *)args;
 
 	test_opcode(cargs->opcode, cargs->verbose, cargs->is_prefixed);
+	return 0;
+}
+
+void gb_render_tiles(u8 *dump, int scale)
+{
+	u8 *vram = (dump + 0x8000);
+
+	render_init(128, 184, scale);
+	while (render_is_running()) {
+		video_render_tiles(vram, scale);
+	}
+	render_release();
+}
+
+void gb_render_window(u8 *dump, int scale)
+{
+	render_init(256, 256, scale);
+	while (render_is_running()) {
+		video_render_tilemap(dump, 1, scale);
+	}
+	render_release();
+}
+
+void gb_render_background(u8 *dump, int scale)
+{
+	render_init(256, 256, scale);
+	while (render_is_running()) {
+		video_render_tilemap(dump, 0, scale);
+	}
+	render_release();
+}
+
+int gb_render(void *args)
+{
+	u8 *buffer;
+	size_t size_in_bytes;
+	ArgsRender *cargs = (ArgsRender *)args;
+	FILE *dump = fopen(cargs->dump, "r");
+
+	if (dump == NULL)
+		return -1;
+	size_in_bytes = fs_size(dump);
+	buffer = fs_read(dump, size_in_bytes);
+	if (buffer != NULL) {
+		if (!strcmp(cargs->type, "tiles"))
+			gb_render_tiles(buffer, cargs->scale);
+		if (!strcmp(cargs->type, "bg"))
+			gb_render_background(buffer, cargs->scale);
+		if (!strcmp(cargs->type, "win"))
+			gb_render_window(buffer, cargs->scale);
+	}
 	return 0;
 }

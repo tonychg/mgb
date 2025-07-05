@@ -22,5 +22,6 @@ void gb_reset(Gb *gb);
 int gb_boot(void *args);
 int gb_test(void *args);
 int gb_rom(void *args);
+int gb_render(void *args);
 
 #endif

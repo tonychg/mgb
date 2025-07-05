@@ -19,13 +19,6 @@ enum VideoMode {
 	MODE_3,
 };
 
-typedef enum DmgPalette {
-	DMG_WHITE = 0x9A9E3F,
-	DMG_LIGHTGRAY = 0x496B22,
-	DMG_DARKGRAY = 0x0E450B,
-	DMG_BLACK = 0x1B2A09,
-} DmgPalette;
-
 typedef struct Video {
 	u32 ly;
 	u32 x;
@@ -50,5 +43,9 @@ void video_enable(Video *video);
 void video_disable(Video *video);
 void video_debug(Video *video);
 void video_render(Video *video);
+void video_render_tiles(u8 *vram, int scale);
+void video_render_frame(Video *video);
+void video_render_tilemap(u8 *vram, u8 area, int scale);
+u8 video_pixel_color(u8 right, u8 left, u8 bit);
 
 #endif

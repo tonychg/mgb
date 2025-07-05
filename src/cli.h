@@ -32,6 +32,12 @@ typedef struct ArgsTest {
 	bool is_prefixed;
 } ArgsTest;
 
+typedef struct ArgsRender {
+	int scale;
+	char *dump;
+	char *type;
+} ArgsRender;
+
 #define CLI_HELP                                                  \
 	"Usage: gameboy [rom,boot,test] [-p/--path] [-d/--debug]" \
 	"[-m/--multiplier] [INT]"                                 \
