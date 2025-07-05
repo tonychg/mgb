@@ -35,7 +35,6 @@ typedef struct ArgsTest {
 typedef struct ArgsRender {
 	int scale;
 	char *dump;
-	char *type;
 } ArgsRender;
 
 #define CLI_HELP                                                  \

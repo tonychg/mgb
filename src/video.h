@@ -45,7 +45,7 @@ void video_debug(Video *video);
 void video_render(Video *video);
 void video_render_tiles(u8 *vram, int scale);
 void video_render_frame(Video *video);
-void video_render_tilemap(u8 *vram, u8 area, int scale);
+void video_render_tilemap(u8 *vram, u8 area, int x, int y, int scale);
 u8 video_pixel_color(u8 right, u8 left, u8 bit);
 
 #endif

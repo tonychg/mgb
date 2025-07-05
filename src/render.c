@@ -1,5 +1,4 @@
 #include "render.h"
-#include <stdio.h>
 
 Color convert_color(DmgColors color)
 {
@@ -9,7 +8,6 @@ Color convert_color(DmgColors color)
 
 void render_pixel(int x, int y, int scale, u8 color)
 {
-	printf("scale=%d x=%d y=%d\n", scale, x * scale, y * scale);
 	DrawRectangle(x * scale, y * scale, scale, scale,
 		      convert_color(DMG_PALETTE[color]));
 }

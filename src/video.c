@@ -139,27 +139,24 @@ u8 video_pixel_color(u8 right, u8 left, u8 bit)
 
 void video_render_tiles(u8 *vram, int scale)
 {
-	render_begin();
 	for (int y = 0; y <= 23; y++) {
 		for (int x = 0; x < 16; x++) {
 			int i = (y * 16) + x;
 			video_render_tile(vram, i, x, y, scale);
 		}
 	}
-	render_end();
 }
 
-void video_render_tilemap(u8 *vram, u8 area, int scale)
+void video_render_tilemap(u8 *vram, u8 area, int x, int y, int scale)
 {
 	u8 *tilemap;
 
 	tilemap = vram + (area == 0 ? 0x9800 : 0x9C00);
-	render_begin();
-	for (int y = 0; y < 32; y++) {
-		for (int x = 0; x < 32; x++) {
-			int i = tilemap[y * 32 + x];
-			video_render_tile(vram + 0x8000, i, x, y, scale);
+	for (int j = 0; j < 32; j++) {
+		for (int i = 0; i < 32; i++) {
+			int indice = tilemap[j * 32 + i];
+			video_render_tile(vram + 0x8000, indice, i + (x / 8),
+					  j + (y / 8), scale);
 		}
 	}
-	render_end();
 }

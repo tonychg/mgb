@@ -203,35 +203,6 @@ int gb_test(void *args)
 	return 0;
 }
 
-void gb_render_tiles(u8 *dump, int scale)
-{
-	u8 *vram = (dump + 0x8000);
-
-	render_init(128, 184, scale);
-	while (render_is_running()) {
-		video_render_tiles(vram, scale);
-	}
-	render_release();
-}
-
-void gb_render_window(u8 *dump, int scale)
-{
-	render_init(256, 256, scale);
-	while (render_is_running()) {
-		video_render_tilemap(dump, 1, scale);
-	}
-	render_release();
-}
-
-void gb_render_background(u8 *dump, int scale)
-{
-	render_init(256, 256, scale);
-	while (render_is_running()) {
-		video_render_tilemap(dump, 0, scale);
-	}
-	render_release();
-}
-
 int gb_render(void *args)
 {
 	u8 *buffer;
@@ -244,12 +215,15 @@ int gb_render(void *args)
 	size_in_bytes = fs_size(dump);
 	buffer = fs_read(dump, size_in_bytes);
 	if (buffer != NULL) {
-		if (!strcmp(cargs->type, "tiles"))
-			gb_render_tiles(buffer, cargs->scale);
-		if (!strcmp(cargs->type, "bg"))
-			gb_render_background(buffer, cargs->scale);
-		if (!strcmp(cargs->type, "win"))
-			gb_render_window(buffer, cargs->scale);
+		render_init(256 + 128, 512, cargs->scale);
+		while (render_is_running()) {
+			render_begin();
+			video_render_tiles(buffer + 0x8000, cargs->scale);
+			video_render_tilemap(buffer, 0, 128, 0, cargs->scale);
+			video_render_tilemap(buffer, 1, 128, 256, cargs->scale);
+			render_end();
+		}
+		render_release();
 	}
 	return 0;
 }

@@ -109,7 +109,6 @@ ArgsRender *parse_args_render(int argc, char **argv)
 
 	args->scale = 2;
 	args->dump = "data/dump.gb";
-	args->type = "tiles";
 	if (argc <= 2) {
 		return args;
 	}
@@ -117,10 +116,6 @@ ArgsRender *parse_args_render(int argc, char **argv)
 		if ((!strcmp(argv[i], "--dump") || !strcmp(argv[i], "-d")) &&
 		    i + 1 < argc) {
 			args->dump = argv[i + 1];
-		}
-		if ((!strcmp(argv[i], "--type") || !strcmp(argv[i], "-t")) &&
-		    i + 1 < argc) {
-			args->type = argv[i + 1];
 		}
 		if ((!strcmp(argv[i], "--scale") || !strcmp(argv[i], "-s")) &&
 		    i + 1 < argc) {

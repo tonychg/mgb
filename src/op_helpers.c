@@ -1,7 +1,6 @@
 #include "cpu.h"
 #include "opcodes.h"
 #include "types.h"
-#include <stdio.h>
 
 u16 unsigned_16(u8 lsb, u8 msb)
 {
