@@ -169,6 +169,7 @@ int gb_boot(void *args)
 	Gb *gb = gb_create((ArgsBoot *)args);
 
 	gb_init(gb);
+
 	if (gb->args->debug)
 		cartridge_metadata(gb->cartridge);
 	if (gb->args->start != 0)

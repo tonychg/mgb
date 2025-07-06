@@ -12,8 +12,9 @@ Video *video_init(bool render)
 		return NULL;
 	video->memory = NULL;
 	video->render = render;
+	video->scale = 2;
 	if (video->render) {
-		render_init(800, 600, 1);
+		render_init(256 + 128, 512, video->scale);
 	}
 	return video;
 }
@@ -60,10 +61,10 @@ void render_oam(Video *video)
 
 void video_render(Video *video)
 {
-	char debug_text[256];
-
-	sprintf(debug_text, "Frames: %d\n", video->frames);
 	render_begin();
+	video_render_tiles(video->memory->bus + 0x8000, video->scale);
+	video_render_tilemap(video->memory->bus, 0, 128, 0, video->scale);
+	video_render_tilemap(video->memory->bus, 1, 128, 256, video->scale);
 	render_end();
 }
 
@@ -76,12 +77,12 @@ void video_tick(Video *video)
 			MEM_WRITE(video, LY_LCD, video->ly);
 		}
 		video->dots++;
-		if (video->dots == GB_VIDEO_TOTAL_LENGTH) {
-			video->frames++;
-			video_reset(video);
-			if (video->render) {
-				video_render(video);
-			}
+	}
+	if (video->dots == GB_VIDEO_TOTAL_LENGTH) {
+		video->frames++;
+		video_reset(video);
+		if (video->render) {
+			video_render(video);
 		}
 	}
 }

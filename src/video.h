@@ -30,6 +30,7 @@ typedef struct Video {
 	u8 frame_buffer[GB_HEIGHT * GB_WIDTH];
 	Memory *memory;
 
+	u8 scale;
 	u8 frames;
 	u32 dots;
 } Video;
