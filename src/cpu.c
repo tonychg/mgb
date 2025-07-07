@@ -326,7 +326,7 @@ void cpu_handle_timer(Cpu *cpu)
 {
 	TimerControl tc = timer_tac(cpu);
 
-	if (cpu->ticks % 256 == 0)
+	if (cpu->ticks != 0 && cpu->ticks % 256 == 0)
 		++cpu->memory->bus[DIV];
 	if (tc.tima_enabled && cpu->ticks % tc.clock_rate == 0) {
 		++cpu->memory->bus[TIMA];

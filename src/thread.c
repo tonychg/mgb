@@ -2,6 +2,7 @@
 #include "cartridge.h"
 #include "gb.h"
 #include "render.h"
+#include "timer.h"
 #include <stdio.h>
 
 void *thread_cpu(void *arg)
@@ -14,6 +15,7 @@ void *thread_cpu(void *arg)
 		if (gb->args->interactive) {
 			gb_interactive(gb);
 			cpu_debug(gb->cpu);
+			timer_debug(gb->cpu);
 		}
 		gb_tick(gb);
 		gb_debug(gb);
@@ -53,9 +55,11 @@ void thread_boot(ArgsBoot *args)
 		cartridge_metadata(gb->cartridge);
 	if (gb->args->start != 0)
 		gb_start_at(gb);
-	pthread_create(&gui, NULL, thread_gui, gb);
+	if (gb->video->render) {
+		pthread_create(&gui, NULL, thread_gui, gb);
+		pthread_join(gui, NULL);
+	}
 	pthread_create(&cpu, NULL, thread_cpu, gb);
 	pthread_join(cpu, NULL);
-	pthread_join(gui, NULL);
 	gb_release(gb);
 }
