@@ -216,15 +216,18 @@ int gb_render(void *args)
 	size_in_bytes = fs_size(dump);
 	buffer = fs_read(dump, size_in_bytes);
 	if (buffer != NULL) {
-		render_init(256 + 128, 512, cargs->scale);
+		Video *video = video_init(true);
+		Memory *memory = memory_init();
+		int i = 0;
+		memcpy(memory->bus, buffer, size_in_bytes);
+		video_bind_memory(video, memory);
 		while (render_is_running()) {
-			render_begin();
-			video_render_tiles(buffer + 0x8000, cargs->scale);
-			video_render_tilemap(buffer, 0, 128, 0, cargs->scale);
-			video_render_tilemap(buffer, 1, 128, 256, cargs->scale);
-			render_end();
+			printf("Rendering %d ...\n", i);
+			video_render(video);
+			i++;
 		}
-		render_release();
+		video_release(video);
+		memory_release(memory);
 	}
 	return 0;
 }

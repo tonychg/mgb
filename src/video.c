@@ -77,13 +77,13 @@ void video_tick(Video *video)
 			MEM_WRITE(video, LY_LCD, video->ly);
 		}
 		video->dots++;
+		if (video->render) {
+			video_render(video);
+		}
 	}
 	if (video->dots == GB_VIDEO_TOTAL_LENGTH) {
 		video->frames++;
 		video_reset(video);
-		if (video->render) {
-			video_render(video);
-		}
 	}
 }
 
