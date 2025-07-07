@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include "memory.h"
 #include "alloc.h"
+#include "timer.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -20,6 +21,7 @@ Cpu *cpu_init(void)
 	cpu->state = CPU_CORE_RUNNING;
 	cpu->opcode = 0;
 	cpu->cycles = 0;
+	cpu->ticks = 0;
 	cpu->irq = list_create();
 	return cpu;
 }
@@ -229,6 +231,7 @@ void cpu_tick(Cpu *cpu)
 		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | IR_VBLANK);
 	}
 	cpu_cycle(cpu);
+	cpu->ticks++;
 }
 
 bool cpu_has_interrupt(Cpu *cpu)
@@ -319,6 +322,22 @@ void cpu_req_interrupt(Cpu *cpu, enum Interrupt ir)
 	MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | ir);
 }
 
+void cpu_handle_timer(Cpu *cpu)
+{
+	TimerControl tc = timer_tac(cpu);
+
+	if (cpu->ticks % 256 == 0)
+		++cpu->memory->bus[DIV];
+	if (tc.tima_enabled && cpu->ticks % tc.clock_rate == 0) {
+		++cpu->memory->bus[TIMA];
+		// TIMA Overflow
+		if (cpu->memory->bus[TIMA] == 0) {
+			cpu->memory->bus[TIMA] = cpu->memory->bus[TMA];
+			cpu_req_interrupt(cpu, IR_TIMER);
+		}
+	}
+}
+
 void cpu_cycle(Cpu *cpu)
 {
 	Instruction instruction;
@@ -353,4 +372,5 @@ void cpu_cycle(Cpu *cpu)
 		cpu->cycles--;
 		break;
 	}
+	cpu_handle_timer(cpu);
 }

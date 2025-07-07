@@ -17,6 +17,7 @@ SRC = \
       $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/render.c \
       $(SRC_SUBDIR)/thread.c \
+      $(SRC_SUBDIR)/timer.c \
       $(SRC_SUBDIR)/main.c \
 
 NAME        = $(BUILD_DIR)/gb

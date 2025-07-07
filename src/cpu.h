@@ -56,6 +56,7 @@ typedef struct Cpu {
 
 	u8 opcode;
 	u8 cycles;
+	u64 ticks;
 	bool ime;
 	u64 ime_cycles;
 	List *irq;

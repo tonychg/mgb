@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "timer.h"
 #include "opcodes.h"
 
 void opcode_execute(Cpu *cpu, u8 opcode)
@@ -70,6 +71,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 		break;
 	case 0x10:
 		// STOP n8
+		timer_reset_div(cpu);
 		break;
 	case 0x11:
 		// LD DE,nn

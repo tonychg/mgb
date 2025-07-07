@@ -38,6 +38,11 @@ u8 memory_read(Memory *memory, u16 addr)
 
 void memory_write(Memory *memory, u16 addr, u8 byte)
 {
+	// Reset Divider register on write
+	// https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
+	if (addr == DIV) {
+		memory->bus[addr] = 0;
+	}
 	memory->bus[addr] = byte;
 }
 
