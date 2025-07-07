@@ -13,9 +13,6 @@ Video *video_init(bool render)
 	video->memory = NULL;
 	video->render = render;
 	video->scale = 2;
-	if (video->render) {
-		render_init(256 + 128, 512, video->scale);
-	}
 	return video;
 }
 
@@ -26,8 +23,6 @@ void video_bind_memory(Video *video, Memory *memory)
 
 void video_release(Video *video)
 {
-	if (video->render)
-		CloseWindow();
 	zfree(video);
 }
 
@@ -35,12 +30,8 @@ void video_reset(Video *video)
 {
 	video->ly = 144;
 	video->x = 0;
-	video->enabled = false;
-	video->stat = 0;
+	video->stat = 1;
 	video->dots = 0;
-	video->frames = 0;
-	for (int i = 0; i < (GB_HEIGHT * GB_WIDTH); i++)
-		video->frame_buffer[i] = 0;
 }
 
 void video_memory_fetch(Video *video)
@@ -55,17 +46,11 @@ void video_memory_fetch(Video *video)
 		video->stat = MEM_READ(video, STAT_LCD);
 }
 
-void render_oam(Video *video)
-{
-}
-
 void video_render(Video *video)
 {
-	render_begin();
 	video_render_tiles(video->memory->bus + 0x8000, video->scale);
 	video_render_tilemap(video->memory->bus, 0, 128, 0, video->scale);
 	video_render_tilemap(video->memory->bus, 1, 128, 256, video->scale);
-	render_end();
 }
 
 void video_tick(Video *video)
@@ -77,9 +62,6 @@ void video_tick(Video *video)
 			MEM_WRITE(video, LY_LCD, video->ly);
 		}
 		video->dots++;
-		if (video->render) {
-			video_render(video);
-		}
 	}
 	if (video->dots == GB_VIDEO_TOTAL_LENGTH) {
 		video->frames++;

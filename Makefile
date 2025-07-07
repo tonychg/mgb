@@ -16,6 +16,7 @@ SRC = \
       $(SRC_SUBDIR)/tests.c \
       $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/render.c \
+      $(SRC_SUBDIR)/thread.c \
       $(SRC_SUBDIR)/main.c \
 
 NAME        = $(BUILD_DIR)/gb
@@ -26,7 +27,7 @@ CFLAGS	    = -g -Wall
 OBJ         = $(SRC:.c=.o)
 RM          = rm -f
 MKDIR	    = mkdir -p
-LIB         = -lraylib -lcjson
+LIB         = -lraylib -lcjson -lpthread
 
 .PHONY:all
 all:    clean $(NAME)

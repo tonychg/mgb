@@ -26,7 +26,6 @@ bool render_is_running(void)
 void render_begin(void)
 {
 	BeginDrawing();
-	// ClearBackground(convert_color(DMG_BLACK));
 }
 
 void render_end(void)

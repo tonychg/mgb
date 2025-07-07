@@ -23,5 +23,10 @@ int gb_boot(void *args);
 int gb_test(void *args);
 int gb_rom(void *args);
 int gb_render(void *args);
+void gb_start_at(Gb *gb);
+void gb_debug(Gb *gb);
+char *gb_interactive(Gb *gb);
+void gb_release(Gb *gb);
+void gb_tick(Gb *gb);
 
 #endif

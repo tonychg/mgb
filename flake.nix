@@ -18,6 +18,7 @@
           python314Packages.jinja2
           raylib
           cjson
+          mgba
         ];
       };
     });

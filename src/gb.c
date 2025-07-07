@@ -1,4 +1,5 @@
 #include "gb.h"
+#include "thread.h"
 #include "cartridge.h"
 #include "fs.h"
 #include "render.h"
@@ -42,8 +43,6 @@ void gb_reset(Gb *gb)
 	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
 	video_reset(gb->video);
 	cpu_reset(gb->cpu);
-	if (gb->video->render)
-		video_render(gb->video);
 }
 
 u16 parse_hex_address(char *buf)
@@ -166,23 +165,7 @@ void gb_debug(Gb *gb)
 
 int gb_boot(void *args)
 {
-	Gb *gb = gb_create((ArgsBoot *)args);
-
-	gb_init(gb);
-
-	if (gb->args->debug)
-		cartridge_metadata(gb->cartridge);
-	if (gb->args->start != 0)
-		gb_start_at(gb);
-	while (!gb->video->render ||
-	       (gb->video->render && !WindowShouldClose())) {
-		if (gb->args->interactive) {
-			gb_interactive(gb);
-		}
-		gb_tick(gb);
-		gb_debug(gb);
-	}
-	gb_release(gb);
+	thread_boot((ArgsBoot *)args);
 	return 0;
 }
 
