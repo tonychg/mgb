@@ -16,62 +16,62 @@ void opcode_r16_set(u8 *r1, u8 *r2, u16 word);
 void opcode_r16_inc(u8 *r1, u8 *r2);
 void opcode_r16_dec(u8 *r1, u8 *r2);
 
-void opcode_increment(Cpu *cpu, u8 *reg);
-void opcode_inc_hl(Cpu *cpu);
-void opcode_decrement(Cpu *cpu, u8 *reg);
-void opcode_dec_hl(Cpu *cpu);
+void opcode_increment(struct cpu *cpu, u8 *reg);
+void opcode_inc_hl(struct cpu *cpu);
+void opcode_decrement(struct cpu *cpu, u8 *reg);
+void opcode_dec_hl(struct cpu *cpu);
 
-void opcode_rlc(Cpu *cpu, u8 *reg, bool is_a);
-void opcode_rlc_hl(Cpu *cpu);
-void opcode_rrc(Cpu *cpu, u8 *reg, bool is_a);
-void opcode_rrc_hl(Cpu *cpu);
-void opcode_rl(Cpu *cpu, u8 *reg, bool is_a);
-void opcode_rl_hl(Cpu *cpu);
-void opcode_rr(Cpu *cpu, u8 *reg, bool is_a);
-void opcode_rr_hl(Cpu *cpu);
-void opcode_rst(Cpu *cpu, u8 vec);
+void opcode_rlc(struct cpu *cpu, u8 *reg, bool is_a);
+void opcode_rlc_hl(struct cpu *cpu);
+void opcode_rrc(struct cpu *cpu, u8 *reg, bool is_a);
+void opcode_rrc_hl(struct cpu *cpu);
+void opcode_rl(struct cpu *cpu, u8 *reg, bool is_a);
+void opcode_rl_hl(struct cpu *cpu);
+void opcode_rr(struct cpu *cpu, u8 *reg, bool is_a);
+void opcode_rr_hl(struct cpu *cpu);
+void opcode_rst(struct cpu *cpu, u8 vec);
 
 void opcode_ld(u8 *reg, u8 byte);
-void opcode_ld_a16(Cpu *cpu, u8 *reg, u16 address);
-void opcode_ldh_a_n(Cpu *cpu);
-void opcode_ld_r8_a16(Cpu *cpu, u16 address, u8 byte);
-void opcode_ld_nn(Cpu *cpu, u16 *reg);
-void opcode_ld_spn(Cpu *cpu);
+void opcode_ld_a16(struct cpu *cpu, u8 *reg, u16 address);
+void opcode_ldh_a_n(struct cpu *cpu);
+void opcode_ld_r8_a16(struct cpu *cpu, u16 address, u8 byte);
+void opcode_ld_nn(struct cpu *cpu, u16 *reg);
+void opcode_ld_spn(struct cpu *cpu);
 
-void opcode_add_hl(Cpu *cpu, u16 word);
-void opcode_add_sp(Cpu *cpu, s8 value);
-void opcode_add(Cpu *cpu, u8 byte);
-void opcode_adc(Cpu *cpu, u8 byte);
-void opcode_sub(Cpu *cpu, u8 byte);
-void opcode_sbc(Cpu *cpu, u8 byte);
-void opcode_swap(Cpu *cpu, u8 *reg);
-void opcode_swap_hl(Cpu *cpu);
-void opcode_srl(Cpu *cpu, u8 *reg);
-void opcode_srl_hl(Cpu *cpu);
-void opcode_sla(Cpu *cpu, u8 *reg);
-void opcode_sla_hl(Cpu *cpu);
-void opcode_sra(Cpu *cpu, u8 *reg);
-void opcode_sra_hl(Cpu *cpu);
+void opcode_add_hl(struct cpu *cpu, u16 word);
+void opcode_add_sp(struct cpu *cpu, s8 value);
+void opcode_add(struct cpu *cpu, u8 byte);
+void opcode_adc(struct cpu *cpu, u8 byte);
+void opcode_sub(struct cpu *cpu, u8 byte);
+void opcode_sbc(struct cpu *cpu, u8 byte);
+void opcode_swap(struct cpu *cpu, u8 *reg);
+void opcode_swap_hl(struct cpu *cpu);
+void opcode_srl(struct cpu *cpu, u8 *reg);
+void opcode_srl_hl(struct cpu *cpu);
+void opcode_sla(struct cpu *cpu, u8 *reg);
+void opcode_sla_hl(struct cpu *cpu);
+void opcode_sra(struct cpu *cpu, u8 *reg);
+void opcode_sra_hl(struct cpu *cpu);
 
-void opcode_and(Cpu *cpu, u8 byte);
-void opcode_xor(Cpu *cpu, u8 byte);
-void opcode_and(Cpu *cpu, u8 byte);
-void opcode_or(Cpu *cpu, u8 byte);
-void opcode_bit(Cpu *cpu, u8 *reg, int bit);
-void opcode_bit_hl(Cpu *cpu, int bit);
-void opcode_set(Cpu *cpu, u8 *reg, int bit);
-void opcode_set_hl(Cpu *cpu, int bit);
-void opcode_res(Cpu *cpu, u8 *reg, int bit);
-void opcode_res_hl(Cpu *cpu, int bit);
-void opcode_cp(Cpu *cpu, u8 byte);
+void opcode_and(struct cpu *cpu, u8 byte);
+void opcode_xor(struct cpu *cpu, u8 byte);
+void opcode_and(struct cpu *cpu, u8 byte);
+void opcode_or(struct cpu *cpu, u8 byte);
+void opcode_bit(struct cpu *cpu, u8 *reg, int bit);
+void opcode_bit_hl(struct cpu *cpu, int bit);
+void opcode_set(struct cpu *cpu, u8 *reg, int bit);
+void opcode_set_hl(struct cpu *cpu, int bit);
+void opcode_res(struct cpu *cpu, u8 *reg, int bit);
+void opcode_res_hl(struct cpu *cpu, int bit);
+void opcode_cp(struct cpu *cpu, u8 byte);
 
-void opcode_call_nn(Cpu *cpu);
-void opcode_stack_push(Cpu *cpu, u8 *r1, u8 *r2);
-void opcode_stack_push_pc(Cpu *cpu, u16 *pc);
-void opcode_stack_pop(Cpu *cpu, u8 *r1, u8 *r2);
-void opcode_stack_pop_pc(Cpu *cpu, u16 *pc);
+void opcode_call_nn(struct cpu *cpu);
+void opcode_stack_push(struct cpu *cpu, u8 *r1, u8 *r2);
+void opcode_stack_push_pc(struct cpu *cpu, u16 *pc);
+void opcode_stack_pop(struct cpu *cpu, u8 *r1, u8 *r2);
+void opcode_stack_pop_pc(struct cpu *cpu, u16 *pc);
 
-void opcode_daa(Cpu *cpu);
+void opcode_daa(struct cpu *cpu);
 
 #define AF(cpu) opcode_r16_get(&cpu->a, &cpu->f)
 #define BC(cpu) opcode_r16_get(&cpu->b, &cpu->c)
@@ -94,7 +94,7 @@ void opcode_daa(Cpu *cpu);
 #define DEC_HL(cpu) opcode_r16_dec(&cpu->h, &cpu->l)
 
 // opcodes.c
-void opcode_execute(Cpu *cpu, u8 opcode);
-void opcode_execute_cb(Cpu *cpu, u8 opcode);
+void opcode_execute(struct cpu *cpu, u8 opcode);
+void opcode_execute_cb(struct cpu *cpu, u8 opcode);
 
 #endif

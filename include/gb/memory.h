@@ -4,7 +4,7 @@
 #include "cartridge.h"
 #include "types.h"
 
-typedef enum HardwareRegister {
+enum hardware_register {
 	P1_JOYP = 0xFF00,
 	SB = 0xFF01,
 	SC = 0xFF02,
@@ -64,24 +64,25 @@ typedef enum HardwareRegister {
 	PCM12 = 0xFF76,
 	PCM34 = 0xFF77,
 	IE = 0xFFFF,
-} HardwareRegister;
+};
 
-typedef struct Memory {
+struct memory {
 	u8 *bus;
 	u8 wram_bank;
 	u8 vram_bank;
-} Memory;
+};
 
-Memory *memory_init(void);
-void memory_reset(Memory *memory);
-u8 memory_read(Memory *memory, u16 addr);
-void memory_write(Memory *memory, u16 addr, u8 byte);
-void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian);
-void memory_bind_cartridge(Memory *memory, Cartridge *cartridge);
-void memory_release(Memory *memory);
-u8 memory_hardware_register(Memory *memory, HardwareRegister reg);
-void memory_dump(Memory *memory);
-void memory_debug(Memory *memory, u16 start, u16 end);
+struct memory *memory_init(void);
+void memory_reset(struct memory *memory);
+u8 memory_read(struct memory *memory, u16 addr);
+void memory_write(struct memory *memory, u16 addr, u8 byte);
+void memory_write_word(struct memory *memory, u16 addr, u16 word,
+		       bool big_endian);
+void memory_bind_cartridge(struct memory *memory, struct cartridge *cartridge);
+void memory_release(struct memory *memory);
+u8 memory_hardware_register(struct memory *memory, enum hardware_register reg);
+void memory_dump(struct memory *memory);
+void memory_debug(struct memory *memory, u16 start, u16 end);
 
 #define MEM_READ(ptr, addr) memory_read(ptr->memory, addr)
 #define MEM_WRITE(ptr, addr, byte) memory_write(ptr->memory, addr, byte)

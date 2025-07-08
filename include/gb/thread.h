@@ -4,6 +4,6 @@
 #include "cli.h"
 #include <pthread.h>
 
-void thread_boot(ArgsBoot *args);
+void thread_boot(struct args_boot *args);
 
 #endif

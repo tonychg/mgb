@@ -12,40 +12,40 @@ enum {
 	GB_VIDEO_TOTAL_LENGTH = 70224,
 };
 
-enum VideoMode {
+enum video_mode {
 	MODE_0,
 	MODE_1,
 	MODE_2,
 	MODE_3,
 };
 
-typedef struct Video {
+struct video {
 	u32 ly;
 	u32 x;
-	enum VideoMode mode;
+	enum video_mode mode;
 	u8 stat;
 	bool enabled;
 	bool render;
 
 	u8 frame_buffer[GB_HEIGHT * GB_WIDTH];
-	Memory *memory;
+	struct memory *memory;
 
 	u8 scale;
 	u8 frames;
 	u32 dots;
-} Video;
+};
 
-Video *video_init(bool render);
-void video_release(Video *video);
-void video_reset(Video *video);
-void video_bind_memory(Video *video, Memory *memory);
-void video_tick(Video *video);
-void video_enable(Video *video);
-void video_disable(Video *video);
-void video_debug(Video *video);
-void video_render(Video *video);
+struct video *video_init(bool render);
+void video_release(struct video *video);
+void video_reset(struct video *video);
+void video_bind_memory(struct video *video, struct memory *memory);
+void video_tick(struct video *video);
+void video_enable(struct video *video);
+void video_disable(struct video *video);
+void video_debug(struct video *video);
+void video_render(struct video *video);
 void video_render_tiles(u8 *vram, int scale);
-void video_render_frame(Video *video);
+void video_render_frame(struct video *video);
 void video_render_tilemap(u8 *vram, u8 area, int x, int y, int scale);
 u8 video_pixel_color(u8 right, u8 left, u8 bit);
 

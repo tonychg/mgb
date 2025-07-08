@@ -1,4 +1,5 @@
 #include "gb/alloc.h"
+#include <stdlib.h>
 
 void zfree(void *ptr)
 {

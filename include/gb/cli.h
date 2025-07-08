@@ -3,12 +3,12 @@
 
 #include <stdbool.h>
 
-typedef struct Command {
+struct command {
 	int (*callback)(void *args);
 	void *args;
-} Command;
+};
 
-typedef struct ArgsBoot {
+struct args_boot {
 	char *rom_path;
 	bool debug;
 	bool render;
@@ -20,28 +20,28 @@ typedef struct ArgsBoot {
 	double delay_in_sec;
 	int multiplier;
 	int start;
-} ArgsBoot;
+};
 
-typedef struct ArgsRom {
+struct args_rom {
 	char *rom_path;
-} ArgsRom;
+};
 
-typedef struct ArgsTest {
+struct args_test {
 	int opcode;
 	bool verbose;
 	bool is_prefixed;
-} ArgsTest;
+};
 
-typedef struct ArgsRender {
+struct args_render {
 	int scale;
 	char *dump;
-} ArgsRender;
+};
 
 #define CLI_HELP                                                  \
 	"Usage: gameboy [rom,boot,test] [-p/--path] [-d/--debug]" \
 	"[-m/--multiplier] [INT]"                                 \
 	"\n"
 
-Command *parse_args(int argc, char **argv);
+struct command *parse_args(int argc, char **argv);
 
 #endif

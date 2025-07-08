@@ -1,10 +1,11 @@
 #include "gb/list.h"
+#include <stdlib.h>
 
-List *list_create(void)
+struct list *list_create(void)
 {
-	List *list;
+	struct list *list;
 
-	if ((list = (List *)malloc(sizeof(List))) == NULL)
+	if ((list = (struct list *)malloc(sizeof(struct list))) == NULL)
 		return NULL;
 	list->head = NULL;
 	list->free = NULL;
@@ -12,7 +13,7 @@ List *list_create(void)
 	return list;
 }
 
-void list_link_node_head(List *list, ListNode *node)
+void list_link_node_head(struct list *list, struct list_node *node)
 {
 	if (list->len == 0) {
 		list->head = list->tail = node;
@@ -26,18 +27,19 @@ void list_link_node_head(List *list, ListNode *node)
 	list->len++;
 }
 
-List *list_add_node_head(List *list, void *data)
+struct list *list_add_node_head(struct list *list, void *data)
 {
-	ListNode *node;
+	struct list_node *node;
 
-	if ((node = (ListNode *)malloc(sizeof(ListNode))) == NULL)
+	if ((node = (struct list_node *)malloc(sizeof(struct list_node))) ==
+	    NULL)
 		return NULL;
 	node->data = data;
 	list_link_node_head(list, node);
 	return list;
 }
 
-void list_link_node_tail(List *list, ListNode *node)
+void list_link_node_tail(struct list *list, struct list_node *node)
 {
 	if (list->len == 0) {
 		list->head = list->tail = node;
@@ -51,18 +53,19 @@ void list_link_node_tail(List *list, ListNode *node)
 	list->len++;
 }
 
-List *list_add_node_tail(List *list, void *data)
+struct list *list_add_node_tail(struct list *list, void *data)
 {
-	ListNode *node;
+	struct list_node *node;
 
-	if ((node = (ListNode *)malloc(sizeof(ListNode))) == NULL)
+	if ((node = (struct list_node *)malloc(sizeof(struct list_node))) ==
+	    NULL)
 		return NULL;
 	node->data = data;
 	list_link_node_tail(list, node);
 	return list;
 }
 
-void list_unlink(List *list, ListNode *node)
+void list_unlink(struct list *list, struct list_node *node)
 {
 	if (node->prev)
 		node->prev->next = node->next;
@@ -77,28 +80,28 @@ void list_unlink(List *list, ListNode *node)
 	list->len--;
 }
 
-ListNode *list_pop_node_head(List *list)
+struct list_node *list_pop_node_head(struct list *list)
 {
-	ListNode *node;
+	struct list_node *node;
 
 	node = list->head;
 	list_unlink(list, node);
 	return node;
 }
 
-ListNode *list_pop_node_tail(List *list)
+struct list_node *list_pop_node_tail(struct list *list)
 {
-	ListNode *node;
+	struct list_node *node;
 
 	node = list->tail;
 	list_unlink(list, node);
 	return node;
 }
 
-void list_empty(List *list)
+void list_empty(struct list *list)
 {
 	unsigned long len;
-	ListNode *next, *current;
+	struct list_node *next, *current;
 
 	current = list->head;
 	len = list->len;
@@ -113,7 +116,7 @@ void list_empty(List *list)
 	list->len = 0;
 }
 
-void list_release(List *list)
+void list_release(struct list *list)
 {
 	if (list == NULL)
 		return;
@@ -121,11 +124,12 @@ void list_release(List *list)
 	free(list);
 }
 
-ListIterator *list_iter(List *list, int direction)
+struct list_iterator *list_iter(struct list *list, int direction)
 {
-	ListIterator *it;
+	struct list_iterator *it;
 
-	if ((it = (ListIterator *)malloc(sizeof(ListIterator))) == NULL)
+	if ((it = (struct list_iterator *)malloc(
+		     sizeof(struct list_iterator))) == NULL)
 		return NULL;
 	it->direction = direction;
 	if (direction == IT_FORWARD)
@@ -135,9 +139,9 @@ ListIterator *list_iter(List *list, int direction)
 	return it;
 }
 
-ListNode *list_next(ListIterator *it)
+struct list_node *list_next(struct list_iterator *it)
 {
-	ListNode *current = it->next;
+	struct list_node *current = it->next;
 
 	if (current != NULL) {
 		if (it->direction == IT_FORWARD)
@@ -148,7 +152,7 @@ ListNode *list_next(ListIterator *it)
 	return current;
 }
 
-void list_release_iter(ListIterator *it)
+void list_release_iter(struct list_iterator *it)
 {
 	free(it);
 }
@@ -160,9 +164,9 @@ void list_release_iter(ListIterator *it)
 
 void test_list()
 {
-	ListNode *node, *head, *tail;
-	ListIterator *it;
-	List *list = list_create();
+	struct list_node *node, *head, *tail;
+	struct list_iterator *it;
+	struct list *list = list_create();
 	list_add_node_head(list, "1");
 	list_add_node_head(list, "2");
 	list_add_node_head(list, "3");

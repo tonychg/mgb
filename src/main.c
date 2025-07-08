@@ -18,7 +18,7 @@ int main()
 int main(int argc, char **argv)
 {
 	int exit_code = 0;
-	Command *cmd = parse_args(argc, argv);
+	struct command *cmd = parse_args(argc, argv);
 
 	if (cmd == NULL) {
 		exit_code = -1;

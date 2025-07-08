@@ -7,7 +7,7 @@
 
 void *thread_cpu(void *arg)
 {
-	Gb *gb = (Gb *)arg;
+	struct gb *gb = (struct gb *)arg;
 
 	if (gb->args->debug)
 		printf("Create CPU thread\n");
@@ -27,7 +27,7 @@ void *thread_cpu(void *arg)
 
 void *thread_gui(void *arg)
 {
-	Gb *gb = (Gb *)arg;
+	struct gb *gb = (struct gb *)arg;
 
 	if (gb->args->debug)
 		printf("Create GUI thread\n");
@@ -43,11 +43,11 @@ void *thread_gui(void *arg)
 	pthread_exit(NULL);
 }
 
-void thread_boot(ArgsBoot *args)
+void thread_boot(struct args_boot *args)
 {
 	pthread_t cpu;
 	pthread_t gui;
-	Gb *gb;
+	struct gb *gb;
 
 	gb = gb_create(args);
 	gb_init(gb);

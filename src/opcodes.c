@@ -2,7 +2,7 @@
 #include "gb/opcodes.h"
 #include "gb/timer.h"
 
-void opcode_execute(Cpu *cpu, u8 opcode)
+void opcode_execute(struct cpu *cpu, u8 opcode)
 {
 	switch (opcode) {
 	case 0x00:
@@ -1132,7 +1132,7 @@ void opcode_execute(Cpu *cpu, u8 opcode)
 	}
 }
 
-void opcode_execute_cb(Cpu *cpu, u8 opcode)
+void opcode_execute_cb(struct cpu *cpu, u8 opcode)
 {
 	switch (opcode) {
 	case 0x00:

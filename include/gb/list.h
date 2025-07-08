@@ -1,39 +1,38 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
-#include <stdlib.h>
 #include <stdbool.h>
 
-typedef struct ListNode {
+struct list_node {
 	void *data;
-	struct ListNode *next;
-	struct ListNode *prev;
-} ListNode;
+	struct list_node *next;
+	struct list_node *prev;
+};
 
-typedef struct List {
-	ListNode *head;
-	ListNode *tail;
+struct list {
+	struct list_node *head;
+	struct list_node *tail;
 	void (*free)(void *ptr);
 	unsigned long len;
-} List;
+};
 
-typedef struct ListIterator {
-	ListNode *next;
+struct list_iterator {
+	struct list_node *next;
 	int direction;
-} ListIterator;
+};
 
-List *list_create(void);
-void list_link_node_head(List *list, ListNode *node);
-List *list_add_node_head(List *list, void *data);
-void list_link_node_tail(List *list, ListNode *node);
-List *list_add_node_tail(List *list, void *data);
-ListNode *list_pop_node_head(List *list);
-ListNode *list_pop_node_tail(List *list);
-void list_empty(List *list);
-void list_release(List *list);
-ListIterator *list_iter(List *list, int direction);
-ListNode *list_next(ListIterator *it);
-void list_release_iter(ListIterator *it);
+struct list *list_create(void);
+void list_link_node_head(struct list *list, struct list_node *node);
+struct list *list_add_node_head(struct list *list, void *data);
+void list_link_node_tail(struct list *list, struct list_node *node);
+struct list *list_add_node_tail(struct list *list, void *data);
+struct list_node *list_pop_node_head(struct list *list);
+struct list_node *list_pop_node_tail(struct list *list);
+void list_empty(struct list *list);
+void list_release(struct list *list);
+struct list_iterator *list_iter(struct list *list, int direction);
+struct list_node *list_next(struct list_iterator *it);
+void list_release_iter(struct list_iterator *it);
 
 #define IT_FORWARD 0
 #define IT_BACKWARD 1

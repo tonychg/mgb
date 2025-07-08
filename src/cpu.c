@@ -4,6 +4,7 @@
 #include "gb/opcodes.h"
 #include "gb/timer.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -12,11 +13,11 @@ void cpu_sleep_ns(int nanoseconds)
 	nanosleep((const struct timespec[]){ { 0, nanoseconds } }, NULL);
 }
 
-Cpu *cpu_init(void)
+struct cpu *cpu_init(void)
 {
-	Cpu *cpu;
+	struct cpu *cpu;
 
-	if ((cpu = (Cpu *)malloc(sizeof(Cpu))) == NULL)
+	if ((cpu = (struct cpu *)malloc(sizeof(struct cpu))) == NULL)
 		return NULL;
 	cpu->state = CPU_CORE_RUNNING;
 	cpu->opcode = 0;
@@ -26,12 +27,12 @@ Cpu *cpu_init(void)
 	return cpu;
 }
 
-void cpu_bind_memory(Cpu *cpu, Memory *memory)
+void cpu_bind_memory(struct cpu *cpu, struct memory *memory)
 {
 	cpu->memory = memory;
 }
 
-void cpu_reset(Cpu *cpu)
+void cpu_reset(struct cpu *cpu)
 {
 	cpu->sp = 0xFFFE;
 	cpu->pc = 0x100;
@@ -51,42 +52,42 @@ void cpu_reset(Cpu *cpu)
 	cpu->multiplier = 1;
 }
 
-void cpu_release(Cpu *cpu)
+void cpu_release(struct cpu *cpu)
 {
 	zfree(cpu);
 }
 
-void cpu_flag_set(Cpu *cpu, int flag)
+void cpu_flag_set(struct cpu *cpu, int flag)
 {
 	cpu->f = flag;
 }
 
-void cpu_flag_toggle(Cpu *cpu, int flag)
+void cpu_flag_toggle(struct cpu *cpu, int flag)
 {
 	cpu->f |= flag;
 }
 
-void cpu_flag_untoggle(Cpu *cpu, int flag)
+void cpu_flag_untoggle(struct cpu *cpu, int flag)
 {
 	cpu->f &= (~flag);
 }
 
-void cpu_flag_clear(Cpu *cpu)
+void cpu_flag_clear(struct cpu *cpu)
 {
 	cpu_flag_set(cpu, FLAG_NONE);
 }
 
-bool cpu_flag_is_set(Cpu *cpu, int flag)
+bool cpu_flag_is_set(struct cpu *cpu, int flag)
 {
 	return (cpu->f & flag) != 0;
 }
 
-void cpu_flag_flip(Cpu *cpu, int flag)
+void cpu_flag_flip(struct cpu *cpu, int flag)
 {
 	cpu->f ^= flag;
 }
 
-void cpu_flag_set_or_clear(Cpu *cpu, int flag)
+void cpu_flag_set_or_clear(struct cpu *cpu, int flag)
 {
 	if (cpu_flag_is_set(cpu, flag))
 		cpu_flag_set(cpu, flag);
@@ -94,55 +95,55 @@ void cpu_flag_set_or_clear(Cpu *cpu, int flag)
 		cpu_flag_clear(cpu);
 }
 
-void cpu_pc_decrement(Cpu *cpu)
+void cpu_pc_decrement(struct cpu *cpu)
 {
 	cpu->pc--;
 }
 
-void cpu_pc_increment(Cpu *cpu)
+void cpu_pc_increment(struct cpu *cpu)
 {
 	cpu->pc++;
 }
 
-u8 cpu_read_pc_addr(Cpu *cpu)
+u8 cpu_read_pc_addr(struct cpu *cpu)
 {
 	u8 byte = MEM_READ(cpu, cpu->pc);
 	cpu_pc_increment(cpu);
 	return byte;
 }
 
-u16 cpu_read_word(Cpu *cpu)
+u16 cpu_read_word(struct cpu *cpu)
 {
 	return (u16)cpu_read_pc_addr(cpu) | (u16)cpu_read_pc_addr(cpu) << 8;
 }
 
-u16 cpu_read_word_no_inc(Cpu *cpu)
+u16 cpu_read_word_no_inc(struct cpu *cpu)
 {
 	return (u16)MEM_READ(cpu, cpu->pc + 1) | (u16)MEM_READ(cpu, cpu->pc + 2)
 							 << 8;
 }
 
-u8 cpu_read_byte(Cpu *cpu)
+u8 cpu_read_byte(struct cpu *cpu)
 {
 	return cpu_read_pc_addr(cpu);
 }
 
-u8 cpu_read_byte_no_inc(Cpu *cpu)
+u8 cpu_read_byte_no_inc(struct cpu *cpu)
 {
 	return MEM_READ(cpu, cpu->pc + 1);
 }
 
-void cpu_jump_word(Cpu *cpu, u16 r16)
+void cpu_jump_word(struct cpu *cpu, u16 r16)
 {
 	cpu->pc = r16;
 }
 
-void cpu_enable_display(Cpu *cpu)
+void cpu_enable_display(struct cpu *cpu)
 {
 	MEM_WRITE(cpu, LY_LCD, 0x94);
 }
 
-void cpu_debug(Cpu *cpu)
+void cpu_debug(struct cpu *cpu)
 {
 	printf("   Z = %d | N = %d\n", cpu_flag_is_set(cpu, FLAG_ZERO),
 	       cpu_flag_is_set(cpu, FLAG_SUBS));
@@ -163,7 +164,7 @@ void cpu_debug(Cpu *cpu)
 	printf("IME = %d  | HALT = %d\n", cpu->ime, cpu->halted);
 }
 
-char *cpu_resolve_operand(Cpu *cpu, const char *op)
+char *cpu_resolve_operand(struct cpu *cpu, const char *op)
 {
 	static char buffer[20];
 
@@ -181,7 +182,7 @@ char *cpu_resolve_operand(Cpu *cpu, const char *op)
 	return buffer;
 }
 
-void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
+void cpu_debug_instruction(struct cpu *cpu, struct instruction instruction)
 {
 	printf("00:%04X", cpu->pc);
 	for (int i = 0; i < instruction.length; i++) {
@@ -196,10 +197,10 @@ void cpu_debug_instruction(Cpu *cpu, Instruction instruction)
 	printf("\n");
 }
 
-Instruction cpu_prefetch(Cpu *cpu)
+struct instruction cpu_prefetch(struct cpu *cpu)
 {
 	u8 opcode;
-	Instruction instruction;
+	struct instruction instruction;
 
 	opcode = MEM_READ(cpu, cpu->pc);
 	if (opcode == 0xCB) {
@@ -214,7 +215,7 @@ Instruction cpu_prefetch(Cpu *cpu)
 	return instruction;
 }
 
-void cpu_execute(Cpu *cpu, Instruction instruction)
+void cpu_execute(struct cpu *cpu, struct instruction instruction)
 {
 	cpu_pc_increment(cpu);
 	if (!instruction.prefixed) {
@@ -225,17 +226,17 @@ void cpu_execute(Cpu *cpu, Instruction instruction)
 	}
 }
 
-bool cpu_has_interrupt(Cpu *cpu)
+bool cpu_has_interrupt(struct cpu *cpu)
 {
 	return cpu->ime && (MEM_READ(cpu, IF) & MEM_READ(cpu, IE));
 }
 
-bool cpu_has_pending_interrupt(Cpu *cpu)
+bool cpu_has_pending_interrupt(struct cpu *cpu)
 {
 	return cpu->irq->len > 0;
 }
 
-void cpu_handler_vblank(Cpu *cpu)
+void cpu_handler_vblank(struct cpu *cpu)
 {
 	if (cpu->debug)
 		printf("IR_VBLANK handle\n");
@@ -243,7 +244,7 @@ void cpu_handler_vblank(Cpu *cpu)
 	cpu->pc = 0x40;
 }
 
-void cpu_handler_lcd(Cpu *cpu)
+void cpu_handler_lcd(struct cpu *cpu)
 {
 	if (cpu->debug)
 		printf("IR_LCD handle\n");
@@ -251,7 +252,7 @@ void cpu_handler_lcd(Cpu *cpu)
 	cpu->pc = 0x48;
 }
 
-void cpu_handler_timer(Cpu *cpu)
+void cpu_handler_timer(struct cpu *cpu)
 {
 	if (cpu->debug)
 		printf("IR_TIMER handle\n");
@@ -259,7 +260,7 @@ void cpu_handler_timer(Cpu *cpu)
 	cpu->pc = 0x50;
 }
 
-void cpu_handler_serial(Cpu *cpu)
+void cpu_handler_serial(struct cpu *cpu)
 {
 	if (cpu->debug)
 		printf("IR_SERIAL handle\n");
@@ -267,7 +268,7 @@ void cpu_handler_serial(Cpu *cpu)
 	cpu->pc = 0x58;
 }
 
-void cpu_handler_joypad(Cpu *cpu)
+void cpu_handler_joypad(struct cpu *cpu)
 {
 	if (cpu->debug)
 		printf("IR_JOYPAD handle\n");
@@ -275,12 +276,12 @@ void cpu_handler_joypad(Cpu *cpu)
 	cpu->pc = 0x60;
 }
 
-void cpu_ir_handle(Cpu *cpu, void (*ir_handler)(Cpu *cpu))
+void cpu_ir_handle(struct cpu *cpu, void (*ir_handler)(struct cpu *cpu))
 {
 	(*ir_handler)(cpu);
 }
 
-void cpu_ack_interrupt(Cpu *cpu)
+void cpu_ack_interrupt(struct cpu *cpu)
 {
 	if (IR_REQUESTED(cpu, IR_VBLANK)) {
 		list_add_node_head(cpu->irq, &cpu_handler_vblank);
@@ -307,15 +308,15 @@ void cpu_ack_interrupt(Cpu *cpu)
 	cpu->state = CPU_CORE_INTERRUPT_DISPATCH;
 }
 
-void cpu_req_interrupt(Cpu *cpu, enum Interrupt ir)
+void cpu_req_interrupt(struct cpu *cpu, enum interrupt ir)
 {
 	cpu->ime = true;
 	MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | ir);
 }
 
-void cpu_handle_timer(Cpu *cpu)
+void cpu_handle_timer(struct cpu *cpu)
 {
-	TimerControl tc = timer_tac(cpu);
+	struct timer_control tc = timer_tac(cpu);
 
 	if (cpu->ticks != 0 && cpu->ticks % 256 == 0)
 		++cpu->memory->bus[DIV];
@@ -329,7 +330,7 @@ void cpu_handle_timer(Cpu *cpu)
 	}
 }
 
-void cpu_tick(Cpu *cpu)
+void cpu_tick(struct cpu *cpu)
 {
 	if (MEM_READ(cpu, LY_LCD) == 144) {
 		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | IR_VBLANK);
@@ -339,9 +340,9 @@ void cpu_tick(Cpu *cpu)
 	cpu->ticks++;
 }
 
-void cpu_cycle(Cpu *cpu)
+void cpu_cycle(struct cpu *cpu)
 {
-	Instruction instruction;
+	struct instruction instruction;
 
 	if (cpu_has_interrupt(cpu)) {
 		cpu_ack_interrupt(cpu);
@@ -349,7 +350,7 @@ void cpu_cycle(Cpu *cpu)
 	switch (cpu->state) {
 	case CPU_CORE_RUNNING:
 		if (cpu_has_pending_interrupt(cpu)) {
-			ListNode *ir = list_pop_node_head(cpu->irq);
+			struct list_node *ir = list_pop_node_head(cpu->irq);
 			cpu_ir_handle(cpu, ir->data);
 		}
 		instruction = cpu_prefetch(cpu);

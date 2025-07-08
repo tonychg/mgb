@@ -2,12 +2,13 @@
 #include "gb/alloc.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-Memory *memory_init()
+struct memory *memory_init()
 {
-	Memory *memory;
+	struct memory *memory;
 
-	if ((memory = (Memory *)malloc(sizeof(Memory))) == NULL)
+	if ((memory = (struct memory *)malloc(sizeof(struct memory))) == NULL)
 		return NULL;
 	memory->bus = (u8 *)calloc(0xFFFF + 1, sizeof(u8));
 	if (memory->bus == NULL)
@@ -17,7 +18,7 @@ Memory *memory_init()
 	return memory;
 }
 
-void memory_reset(Memory *memory)
+void memory_reset(struct memory *memory)
 {
 	for (int i = 0; i <= 0xFFFF; i++) {
 		memory->bus[i] = 0x00;
@@ -31,12 +32,12 @@ void memory_reset(Memory *memory)
 	}
 }
 
-u8 memory_read(Memory *memory, u16 addr)
+u8 memory_read(struct memory *memory, u16 addr)
 {
 	return memory->bus[addr];
 }
 
-void memory_write(Memory *memory, u16 addr, u8 byte)
+void memory_write(struct memory *memory, u16 addr, u8 byte)
 {
 	// Reset Divider register on write
 	// https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
@@ -46,7 +47,8 @@ void memory_write(Memory *memory, u16 addr, u8 byte)
 	memory->bus[addr] = byte;
 }
 
-void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian)
+void memory_write_word(struct memory *memory, u16 addr, u16 word,
+		       bool big_endian)
 {
 	u8 high = word >> 8;
 	u8 low = 0xFF & word;
@@ -60,23 +62,23 @@ void memory_write_word(Memory *memory, u16 addr, u16 word, bool big_endian)
 	}
 }
 
-void memory_bind_cartridge(Memory *memory, Cartridge *cartridge)
+void memory_bind_cartridge(struct memory *memory, struct cartridge *cartridge)
 {
 	memcpy(memory->bus, cartridge->buffer, 0x7FFF);
 }
 
-u8 memory_hardware_register(Memory *memory, HardwareRegister reg)
+u8 memory_hardware_register(struct memory *memory, enum hardware_register reg)
 {
 	return memory_read(memory, reg);
 }
 
-void memory_release(Memory *memory)
+void memory_release(struct memory *memory)
 {
 	zfree(memory->bus);
 	zfree(memory);
 }
 
-void memory_debug(Memory *memory, u16 start, u16 end)
+void memory_debug(struct memory *memory, u16 start, u16 end)
 {
 	for (int i = 0; start + i <= end; i++) {
 		if (memory->bus[start + i] != 0)
@@ -91,7 +93,7 @@ void memory_debug(Memory *memory, u16 start, u16 end)
 	printf("\n");
 }
 
-void memory_dump(Memory *memory)
+void memory_dump(struct memory *memory)
 {
 	FILE *file;
 
@@ -107,7 +109,7 @@ void memory_dump(Memory *memory)
 void test_memory()
 {
 	printf("# Testing memory.c\n");
-	Memory *memory = memory_init();
+	struct memory *memory = memory_init();
 	u8 joyp_reg = memory_hardware_register(memory, P1_JOYP);
 	assert(joyp_reg == 0);
 	memory_release(memory);

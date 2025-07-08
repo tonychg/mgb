@@ -324,9 +324,9 @@ char *cpu_opcode_cb_to_string(u8 opcode)
 	return buffer;
 }
 
-Instruction cpu_op_decode(u8 opcode)
+struct instruction cpu_op_decode(u8 opcode)
 {
-	Instruction instruction;
+	struct instruction instruction;
 
 	instruction.opcode = opcode;
 	instruction.length = cpu_instruction_length(opcode);
@@ -338,9 +338,9 @@ Instruction cpu_op_decode(u8 opcode)
 	return instruction;
 }
 
-Instruction cpu_op_decode_cb(u8 opcode)
+struct instruction cpu_op_decode_cb(u8 opcode)
 {
-	Instruction instruction;
+	struct instruction instruction;
 
 	instruction.opcode = opcode;
 	instruction.length = cpu_instruction_cb_length(opcode);

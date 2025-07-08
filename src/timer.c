@@ -1,10 +1,10 @@
 #include "gb/timer.h"
 #include <stdio.h>
 
-TimerControl timer_tac(Cpu *cpu)
+struct timer_control timer_tac(struct cpu *cpu)
 {
 	u8 tac;
-	TimerControl tc;
+	struct timer_control tc;
 
 	tac = MEM_READ(cpu, TAC);
 	tc.tima_enabled = (tac & (1 << 2)) == 0 ? false : true;
@@ -12,7 +12,7 @@ TimerControl timer_tac(Cpu *cpu)
 	return tc;
 }
 
-void timer_debug(Cpu *cpu)
+void timer_debug(struct cpu *cpu)
 {
 	printf("DIV = %d TIMA = %d ", cpu->memory->bus[DIV],
 	       cpu->memory->bus[TIMA]);
@@ -20,7 +20,7 @@ void timer_debug(Cpu *cpu)
 	       cpu->memory->bus[TMA]);
 }
 
-void timer_reset_div(Cpu *cpu)
+void timer_reset_div(struct cpu *cpu)
 {
 	MEM_WRITE(cpu, DIV, 0x0);
 }

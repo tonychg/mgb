@@ -1,6 +1,6 @@
 #include "gb/render.h"
 
-Color convert_color(DmgColors color)
+Color convert_color(enum dmg_colors color)
 {
 	int hex_color = (color << 8) | 0xFF;
 	return GetColor(hex_color | 0xFF);

@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-Gb *gb_create(ArgsBoot *args)
+struct gb *gb_create(struct args_boot *args)
 {
-	Gb *gb;
+	struct gb *gb;
 
-	if ((gb = (Gb *)malloc(sizeof(Gb))) == NULL)
+	if ((gb = (struct gb *)malloc(sizeof(struct gb))) == NULL)
 		return NULL;
 	gb->cpu = NULL;
 	gb->memory = NULL;
@@ -24,7 +24,7 @@ Gb *gb_create(ArgsBoot *args)
 	return gb;
 }
 
-void gb_init(Gb *gb)
+void gb_init(struct gb *gb)
 {
 	gb->cpu = cpu_init();
 	gb->memory = memory_init();
@@ -37,7 +37,7 @@ void gb_init(Gb *gb)
 	gb_reset(gb);
 }
 
-void gb_reset(Gb *gb)
+void gb_reset(struct gb *gb)
 {
 	memory_reset(gb->cpu->memory);
 	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
@@ -55,7 +55,7 @@ u16 parse_hex_address(char *buf)
 	return strtol(addr, NULL, 16);
 }
 
-void print_byte_at(Cpu *cpu, char *buf)
+void print_byte_at(struct cpu *cpu, char *buf)
 {
 	u16 addr = parse_hex_address(buf);
 	u8 byte = MEM_READ(cpu, addr);
@@ -63,27 +63,27 @@ void print_byte_at(Cpu *cpu, char *buf)
 	printf("Reading [$%04X] = $%02X\n", addr, byte);
 }
 
-void gb_tick(Gb *gb)
+void gb_tick(struct gb *gb)
 {
 	cpu_tick(gb->cpu);
 	video_tick(gb->video);
 }
 
-void gb_goto(Gb *gb, u16 address)
+void gb_goto(struct gb *gb, u16 address)
 {
 	while (gb->cpu->pc != address) {
 		gb_tick(gb);
 	}
 }
 
-void gb_start_at(Gb *gb)
+void gb_start_at(struct gb *gb)
 {
 	printf("Starting at $%04X\n", gb->args->start);
 	gb_goto(gb, gb->args->start);
 	gb->args->start = 0;
 }
 
-void gb_release(Gb *gb)
+void gb_release(struct gb *gb)
 {
 	memory_release(gb->memory);
 	cpu_release(gb->cpu);
@@ -91,7 +91,7 @@ void gb_release(Gb *gb)
 	cartridge_release(gb->cartridge);
 }
 
-char *gb_interactive(Gb *gb)
+char *gb_interactive(struct gb *gb)
 {
 	char buf[256];
 
@@ -142,7 +142,7 @@ char *gb_interactive(Gb *gb)
 	return NULL;
 }
 
-void gb_debug(Gb *gb)
+void gb_debug(struct gb *gb)
 {
 	if (gb->args->cpu_debug)
 		cpu_debug(gb->cpu);
@@ -155,7 +155,7 @@ void gb_debug(Gb *gb)
 		memory_debug(gb->memory, 0xD000, 0xDFFF);
 	}
 	if (gb->args->vram_debug) {
-		// Video RAM
+		// struct video RAM
 		memory_debug(gb->memory, 0x8000, 0x9FFF);
 	}
 	if (gb->args->memory_dump) {
@@ -165,14 +165,14 @@ void gb_debug(Gb *gb)
 
 int gb_boot(void *args)
 {
-	thread_boot((ArgsBoot *)args);
+	thread_boot((struct args_boot *)args);
 	return 0;
 }
 
 int gb_rom(void *args)
 {
-	ArgsRom *cargs = (ArgsRom *)args;
-	Cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
+	struct args_rom *cargs = (struct args_rom *)args;
+	struct cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
 
 	cartridge_metadata(cartridge);
 	cartridge_release(cartridge);
@@ -181,7 +181,7 @@ int gb_rom(void *args)
 
 int gb_test(void *args)
 {
-	ArgsTest *cargs = (ArgsTest *)args;
+	struct args_test *cargs = (struct args_test *)args;
 
 	test_opcode(cargs->opcode, cargs->verbose, cargs->is_prefixed);
 	return 0;
@@ -191,7 +191,7 @@ int gb_render(void *args)
 {
 	u8 *buffer;
 	size_t size_in_bytes;
-	ArgsRender *cargs = (ArgsRender *)args;
+	struct args_render *cargs = (struct args_render *)args;
 	FILE *dump = fopen(cargs->dump, "r");
 
 	if (dump == NULL)
@@ -199,8 +199,8 @@ int gb_render(void *args)
 	size_in_bytes = fs_size(dump);
 	buffer = fs_read(dump, size_in_bytes);
 	if (buffer != NULL) {
-		Video *video = video_init(true);
-		Memory *memory = memory_init();
+		struct video *video = video_init(true);
+		struct memory *memory = memory_init();
 		int i = 0;
 		memcpy(memory->bus, buffer, size_in_bytes);
 		video_bind_memory(video, memory);

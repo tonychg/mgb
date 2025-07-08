@@ -1,4 +1,4 @@
-SRC_SUBDIR = gb
+SRC_SUBDIR = src
 BUILD_DIR = build
 
 SRC = \

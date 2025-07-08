@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
-Cartridge *cartridge_init()
+struct cartridge *cartridge_init()
 {
-	Cartridge *cartridge;
+	struct cartridge *cartridge;
 
-	if ((cartridge = (struct Cartridge *)malloc(
-		     sizeof(struct Cartridge))) == NULL)
+	if ((cartridge = (struct cartridge *)malloc(
+		     sizeof(struct cartridge))) == NULL)
 		return NULL;
 	cartridge->buffer = NULL;
 	cartridge->rom_size = 0;
@@ -28,7 +28,7 @@ u8 *cartridge_read_file(FILE *file, size_t numbytes)
 	return fs_read(file, numbytes);
 }
 
-void cartridge_decode_title(Cartridge *cartridge)
+void cartridge_decode_title(struct cartridge *cartridge)
 {
 	memcpy(cartridge->title, cartridge->buffer + 0x134, sizeof(u8) * 16);
 }
@@ -43,9 +43,9 @@ u32 cartridge_rom_size(u8 code)
 	return CARTRIDGE_RAM_SIZES[code];
 }
 
-Cartridge *cartridge_load_from_file(char *path)
+struct cartridge *cartridge_load_from_file(char *path)
 {
-	Cartridge *cartridge = cartridge_init();
+	struct cartridge *cartridge = cartridge_init();
 	FILE *file = fopen(path, "r");
 	size_t numbytes;
 
@@ -66,7 +66,7 @@ Cartridge *cartridge_load_from_file(char *path)
 	return cartridge;
 }
 
-void cartridge_metadata(Cartridge *cartridge)
+void cartridge_metadata(struct cartridge *cartridge)
 {
 	printf("Title = %s\n", cartridge->title);
 	printf("Size = %lu bytes\n", cartridge->size);
@@ -76,7 +76,7 @@ void cartridge_metadata(Cartridge *cartridge)
 	       cartridge->ram_size);
 }
 
-void cartridge_release(Cartridge *cartridge)
+void cartridge_release(struct cartridge *cartridge)
 {
 	zfree(cartridge->buffer);
 	zfree(cartridge);

@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-ArgsBoot *parse_args_boot(int argc, char **argv)
+struct args_boot *parse_args_boot(int argc, char **argv)
 {
-	ArgsBoot *args = (ArgsBoot *)malloc(sizeof(ArgsBoot));
+	struct args_boot *args =
+		(struct args_boot *)malloc(sizeof(struct args_boot));
 
 	if (args == NULL)
 		return NULL;
@@ -62,9 +63,10 @@ ArgsBoot *parse_args_boot(int argc, char **argv)
 	return args;
 }
 
-ArgsRom *parse_args_rom(int argc, char **argv)
+struct args_rom *parse_args_rom(int argc, char **argv)
 {
-	ArgsRom *args = (ArgsRom *)malloc(sizeof(ArgsRom));
+	struct args_rom *args =
+		(struct args_rom *)malloc(sizeof(struct args_rom));
 
 	if (args == NULL)
 		return NULL;
@@ -81,9 +83,10 @@ ArgsRom *parse_args_rom(int argc, char **argv)
 	return args;
 }
 
-ArgsTest *parse_args_test(int argc, char **argv)
+struct args_test *parse_args_test(int argc, char **argv)
 {
-	ArgsTest *args = (ArgsTest *)malloc(sizeof(ArgsTest));
+	struct args_test *args =
+		(struct args_test *)malloc(sizeof(struct args_test));
 
 	args->opcode = 0x00;
 	args->verbose = true;
@@ -103,9 +106,9 @@ ArgsTest *parse_args_test(int argc, char **argv)
 	return args;
 }
 
-ArgsRender *parse_args_render(int argc, char **argv)
+struct args_render *parse_args_render(int argc, char **argv)
 {
-	ArgsRender *args = (ArgsRender *)malloc(sizeof(ArgsRender));
+	struct args_render *args = (struct args_render *)malloc(sizeof(struct args_render));
 
 	args->scale = 2;
 	args->dump = "data/dump.gb";
@@ -125,15 +128,15 @@ ArgsRender *parse_args_render(int argc, char **argv)
 	return args;
 }
 
-Command *parse_command(int argc, char **argv)
+struct command *parse_command(int argc, char **argv)
 {
-	Command *cmd;
+	struct command *cmd;
 	char *name;
 
 	if (argc == 1)
 		return NULL;
 	name = argv[1];
-	if ((cmd = (Command *)malloc(sizeof(Command))) == NULL)
+	if ((cmd = (struct command *)malloc(sizeof(struct command))) == NULL)
 		return NULL;
 	if (!strcmp(name, "boot")) {
 		cmd->args = parse_args_boot(argc, argv);
@@ -154,7 +157,7 @@ Command *parse_command(int argc, char **argv)
 	return cmd;
 }
 
-Command *parse_args(int argc, char **argv)
+struct command *parse_args(int argc, char **argv)
 {
 	if (argc < 2) {
 		printf(CLI_HELP);

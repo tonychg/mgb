@@ -4,7 +4,7 @@
 #include "types.h"
 #include <stddef.h>
 
-enum CartridgeType {
+enum cartridge_type {
 	ROM_ONLY = 0x00,
 	MBC1,
 	MBC1_RAM,
@@ -44,7 +44,7 @@ static const u32 CARTRIDGE_RAM_SIZES[6] = {
 	65536 // 8 Banks of 8KiB each
 };
 
-typedef struct Cartridge {
+struct cartridge {
 	u8 *buffer;
 	char title[16];
 	u8 cgb;
@@ -53,11 +53,11 @@ typedef struct Cartridge {
 	size_t size;
 	u32 rom_size;
 	u32 ram_size;
-} Cartridge;
+};
 
-Cartridge *cartridge_init(void);
-Cartridge *cartridge_load_from_file(char *path);
-void cartridge_metadata(Cartridge *cartridge);
-void cartridge_release(Cartridge *cartridge);
+struct cartridge *cartridge_init(void);
+struct cartridge *cartridge_load_from_file(char *path);
+void cartridge_metadata(struct cartridge *cartridge);
+void cartridge_release(struct cartridge *cartridge);
 
 #endif

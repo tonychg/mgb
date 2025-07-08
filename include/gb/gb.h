@@ -6,27 +6,25 @@
 #include "video.h"
 #include "cli.h"
 
-typedef struct Gb {
-	Cpu *cpu;
-	Video *video;
+struct gb {
+	struct cpu *cpu;
+	struct video *video;
+	struct memory *memory;
+	struct cartridge *cartridge;
+	struct args_boot *args;
+};
 
-	Memory *memory;
-	Cartridge *cartridge;
-
-	ArgsBoot *args;
-} Gb;
-
-Gb *gb_create(ArgsBoot *args);
-void gb_init(Gb *gb);
-void gb_reset(Gb *gb);
+struct gb *gb_create(struct args_boot *args);
+void gb_init(struct gb *gb);
+void gb_reset(struct gb *gb);
 int gb_boot(void *args);
 int gb_test(void *args);
 int gb_rom(void *args);
 int gb_render(void *args);
-void gb_start_at(Gb *gb);
-void gb_debug(Gb *gb);
-char *gb_interactive(Gb *gb);
-void gb_release(Gb *gb);
-void gb_tick(Gb *gb);
+void gb_start_at(struct gb *gb);
+void gb_debug(struct gb *gb);
+char *gb_interactive(struct gb *gb);
+void gb_release(struct gb *gb);
+void gb_tick(struct gb *gb);
 
 #endif

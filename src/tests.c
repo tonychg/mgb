@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <cjson/cJSON.h>
 
-TestSuite *test_suite_init()
+struct test_suite *test_suite_init()
 {
-	TestSuite *suite;
+	struct test_suite *suite;
 
-	if ((suite = (TestSuite *)malloc(sizeof(TestSuite))) == NULL)
+	if ((suite = (struct test_suite *)malloc(sizeof(struct test_suite))) == NULL)
 		return NULL;
 	suite->name = NULL;
 	suite->failed = 0;
@@ -18,11 +18,11 @@ TestSuite *test_suite_init()
 	return suite;
 }
 
-TestCase *test_case_init()
+struct test_case *test_case_init()
 {
-	TestCase *test;
+	struct test_case *test;
 
-	if ((test = (TestCase *)malloc(sizeof(TestCase))) == NULL)
+	if ((test = (struct test_case *)malloc(sizeof(struct test_case))) == NULL)
 		return NULL;
 	if ((test->initial = cpu_init()) == NULL)
 		return NULL;
@@ -38,7 +38,7 @@ TestCase *test_case_init()
 	return test;
 }
 
-void test_case_release(TestCase *test)
+void test_case_release(struct test_case *test)
 {
 	memory_release(test->initial->memory);
 	memory_release(test->final->memory);
@@ -76,7 +76,7 @@ char *test_case_read(char *path)
 	return buffer;
 }
 
-void test_case_reset_cpu_from_case(Cpu *cpu, cJSON *state)
+void test_case_reset_cpu_from_case(struct cpu *cpu, cJSON *state)
 {
 	cJSON *a = cJSON_GetObjectItemCaseSensitive(state, "a");
 	cJSON *b = cJSON_GetObjectItemCaseSensitive(state, "b");
@@ -119,7 +119,7 @@ void test_case_reset_cpu_from_case(Cpu *cpu, cJSON *state)
 	}
 }
 
-void assert_register(TestSuite *suite, TestCase *test, const char *reg,
+void assert_register(struct test_suite *suite, struct test_case *test, const char *reg,
 		     int result, int expected)
 {
 	if (result != expected) {
@@ -131,8 +131,8 @@ void assert_register(TestSuite *suite, TestCase *test, const char *reg,
 	}
 }
 
-void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
-		   Memory *expected)
+void assert_memory(struct test_suite *suite, struct test_case *test, struct memory *result,
+		   struct memory *expected)
 {
 	for (int addr = 0; addr < 0xFFFF; addr++) {
 		if (result->bus[addr] != expected->bus[addr]) {
@@ -147,12 +147,12 @@ void assert_memory(TestSuite *suite, TestCase *test, Memory *result,
 	}
 }
 
-void test_case_run_cycle(cJSON *cycle, Cpu *cpu)
+void test_case_run_cycle(cJSON *cycle, struct cpu *cpu)
 {
 	cpu_cycle(cpu);
 }
 
-void test_case_assert(TestCase *test, TestSuite *suite)
+void test_case_assert(struct test_case *test, struct test_suite *suite)
 {
 	assert_register(suite, test, "a", test->initial->a, test->final->a);
 	assert_register(suite, test, "b", test->initial->b, test->final->b);
@@ -172,7 +172,7 @@ void test_case_assert(TestCase *test, TestSuite *suite)
 	}
 }
 
-TestSuite *test_suite_run(char *path, TestSuite *suite)
+struct test_suite *test_suite_run(char *path, struct test_suite *suite)
 {
 	char *buffer;
 	int i = 0;
@@ -185,7 +185,7 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 	suite->name = path;
 	cJSON_ArrayForEach(test_case, json)
 	{
-		TestCase *test = test_case_init();
+		struct test_case *test = test_case_init();
 		test->index = i;
 		if (test == NULL) {
 			printf("Failed to init test case\n");
@@ -215,9 +215,9 @@ TestSuite *test_suite_run(char *path, TestSuite *suite)
 	return suite;
 }
 
-TestSuite *test_opcode(int opcode, bool verbose, bool is_prefixed)
+struct test_suite *test_opcode(int opcode, bool verbose, bool is_prefixed)
 {
-	TestSuite *suite;
+	struct test_suite *suite;
 	char path[50];
 	char *opcode_decoded = is_prefixed ? cpu_opcode_cb_to_string(opcode) :
 					     cpu_opcode_to_string(opcode);
@@ -252,7 +252,7 @@ void test_cpu(bool verbose)
 	int total_failed = 0;
 	int total_passed = 0;
 	int opcode;
-	TestSuite *suite;
+	struct test_suite *suite;
 
 	printf("# Testing cpu.c\n");
 	printf("# Testing non-prefixed instructions\n");

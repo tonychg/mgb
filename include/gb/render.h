@@ -4,12 +4,12 @@
 #include "types.h"
 #include <raylib.h>
 
-typedef enum DmgColors {
+enum dmg_colors {
 	DMG_WHITE = 0x9A9E3F,
 	DMG_LIGHTGRAY = 0x496B22,
 	DMG_DARKGRAY = 0x0E450B,
 	DMG_BLACK = 0x1B2A09,
-} DmgColors;
+};
 
 static const int DMG_PALETTE[4] = {
 	DMG_WHITE,
