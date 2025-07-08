@@ -55,11 +55,11 @@ void thread_boot(ArgsBoot *args)
 		cartridge_metadata(gb->cartridge);
 	if (gb->args->start != 0)
 		gb_start_at(gb);
+	pthread_create(&cpu, NULL, thread_cpu, gb);
 	if (gb->video->render) {
 		pthread_create(&gui, NULL, thread_gui, gb);
 		pthread_join(gui, NULL);
 	}
-	pthread_create(&cpu, NULL, thread_cpu, gb);
 	pthread_join(cpu, NULL);
 	gb_release(gb);
 }
