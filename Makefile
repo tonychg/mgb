@@ -32,7 +32,7 @@ MKDIR	    = mkdir -p
 LIB         = -lraylib -lcjson -lpthread
 
 .PHONY:all
-all:    clean $(NAME)
+all:    $(NAME)
 test: CFLAGS = -Wall -g -DTEST
 
 build:
