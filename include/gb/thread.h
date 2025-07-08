@@ -1,5 +1,5 @@
-#ifndef __THREAD_H__
-#define __THREAD_H__
+#ifndef _THREAD_H
+#define _THREAD_H
 
 #include "cli.h"
 #include <pthread.h>

@@ -1,5 +1,5 @@
-#ifndef __CARTRIDGE_H__
-#define __CARTRIDGE_H__
+#ifndef _CARTRIDGE_H
+#define _CARTRIDGE_H
 
 #include "types.h"
 #include <stddef.h>

@@ -1,5 +1,5 @@
-#ifndef __TIMER_H__
-#define __TIMER_H__
+#ifndef _TIMER_H
+#define _TIMER_H
 
 #include "types.h"
 #include "cpu.h"

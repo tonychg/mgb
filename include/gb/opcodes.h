@@ -1,5 +1,5 @@
-#ifndef __OPCODE_H__
-#define __OPCODE_H__
+#ifndef _OPCODE_H
+#define _OPCODE_H
 
 #include "cpu.h"
 

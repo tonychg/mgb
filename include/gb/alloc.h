@@ -1,5 +1,5 @@
-#ifndef __ALLOC_H__
-#define __ALLOC_H__
+#ifndef _ALLOC_H
+#define _ALLOC_H
 
 void zfree(void *ptr);
 

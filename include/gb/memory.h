@@ -1,5 +1,5 @@
-#ifndef __MEMORY_H__
-#define __MEMORY_H__
+#ifndef _MEMORY_H
+#define _MEMORY_H
 
 #include "cartridge.h"
 #include "types.h"

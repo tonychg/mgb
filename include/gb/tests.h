@@ -1,5 +1,5 @@
-#ifndef __TEST_H__
-#define __TEST_H__
+#ifndef _TEST_H
+#define _TEST_H
 
 #include <assert.h>
 #include <stdbool.h>

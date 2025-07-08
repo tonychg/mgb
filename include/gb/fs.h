@@ -1,5 +1,5 @@
-#ifndef __FS_H__
-#define __FS_H__
+#ifndef _FS_H
+#define _FS_H
 
 #include "types.h"
 #include <stdio.h>

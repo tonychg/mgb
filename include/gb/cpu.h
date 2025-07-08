@@ -1,5 +1,5 @@
-#ifndef __CPU_H__
-#define __CPU_H__
+#ifndef _CPU_H
+#define _CPU_H
 
 #include "types.h"
 #include "list.h"

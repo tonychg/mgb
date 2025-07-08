@@ -1,5 +1,5 @@
-#ifndef __VIDEO_H__
-#define __VIDEO_H__
+#ifndef _VIDEO_H
+#define _VIDEO_H
 
 #include "types.h"
 #include "memory.h"

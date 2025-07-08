@@ -1,5 +1,5 @@
-#ifndef __CLI_H__
-#define __CLI_H__
+#ifndef _CLI_H
+#define _CLI_H
 
 #include <stdbool.h>
 

@@ -1,5 +1,5 @@
-#ifndef __RENDER_H__
-#define __RENDER_H__
+#ifndef _RENDER_H
+#define _RENDER_H
 
 #include "types.h"
 #include <raylib.h>

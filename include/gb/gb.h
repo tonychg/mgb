@@ -1,5 +1,5 @@
-#ifndef __GB_H__
-#define __GB_H__
+#ifndef _GB_H
+#define _GB_H
 
 #include "cartridge.h"
 #include "cpu.h"
