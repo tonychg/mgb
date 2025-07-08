@@ -2,17 +2,17 @@ SRC_SUBDIR = src
 BUILD_DIR = build
 
 SRC = \
+      $(SRC_SUBDIR)/sm83/cpu.c \
+      $(SRC_SUBDIR)/sm83/opcodes.c \
+      $(SRC_SUBDIR)/sm83/op_helpers.c \
+      $(SRC_SUBDIR)/sm83/decoder.c \
       $(SRC_SUBDIR)/list.c \
       $(SRC_SUBDIR)/fs.c \
       $(SRC_SUBDIR)/alloc.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
-      $(SRC_SUBDIR)/cpu.c \
-      $(SRC_SUBDIR)/opcodes.c \
-      $(SRC_SUBDIR)/op_helpers.c \
       $(SRC_SUBDIR)/cli.c \
       $(SRC_SUBDIR)/gb.c \
-      $(SRC_SUBDIR)/decoder.c \
       $(SRC_SUBDIR)/tests.c \
       $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/render.c \
