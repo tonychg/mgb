@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #ifdef TEST
-#include "tests.h"
+#include "gb/tests.h"
 
 int main()
 {

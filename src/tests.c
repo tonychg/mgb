@@ -225,9 +225,9 @@ TestSuite *test_opcode(int opcode, bool verbose, bool is_prefixed)
 	suite = test_suite_init();
 	suite->verbose = verbose;
 	if (is_prefixed) {
-		sprintf(path, "sm83/v1/cb %02x.json", opcode);
+		sprintf(path, "misc/sm83/v1/cb %02x.json", opcode);
 	} else {
-		sprintf(path, "sm83/v1/%02x.json", opcode);
+		sprintf(path, "misc/sm83/v1/%02x.json", opcode);
 	}
 	if ((suite = test_suite_run(path, suite)) == NULL)
 		return suite;

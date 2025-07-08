@@ -1,6 +1,6 @@
 [submodule "sm83"]
-	path = sm83
+	path = misc/sm83
 	url = https://github.com/SingleStepTests/sm83
 [submodule "gb-test-roms"]
-	path = gb-test-roms
+	path = misc/gb-test-roms
 	url = https://github.com/retrio/gb-test-roms.git

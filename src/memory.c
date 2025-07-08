@@ -102,7 +102,7 @@ void memory_dump(Memory *memory)
 }
 
 #ifdef TEST
-#include "tests.h"
+#include "gb/tests.h"
 
 void test_memory()
 {
