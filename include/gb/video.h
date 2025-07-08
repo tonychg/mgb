@@ -40,8 +40,6 @@ void video_release(struct video *video);
 void video_reset(struct video *video);
 void video_bind_memory(struct video *video, struct memory *memory);
 void video_tick(struct video *video);
-void video_enable(struct video *video);
-void video_disable(struct video *video);
 void video_debug(struct video *video);
 void video_render(struct video *video);
 void video_render_tiles(u8 *vram, int scale);

@@ -39,9 +39,9 @@ void video_memory_fetch(struct video *video)
 	u8 lcdc_lcd = MEM_READ(video, LCDC_LCD);
 
 	if ((lcdc_lcd >> 7) == 1)
-		video_enable(video);
+		video->enabled = true;
 	else
-		video_disable(video);
+		video->enabled = false;
 	if (video->enabled)
 		video->stat = MEM_READ(video, STAT_LCD);
 }
@@ -67,16 +67,6 @@ void video_tick(struct video *video)
 		video->frames++;
 		video_reset(video);
 	}
-}
-
-void video_enable(struct video *video)
-{
-	video->enabled = true;
-}
-
-void video_disable(struct video *video)
-{
-	video->enabled = false;
 }
 
 void video_debug(struct video *video)
