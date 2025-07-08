@@ -7,20 +7,22 @@
 
 #define CLOCK_PERIOD_NS 2384
 
-#define FLAG_ZERO 0b10000000
-#define FLAG_SUBS 0b01000000
-#define FLAG_HALF 0b00100000
-#define FLAG_CARRY 0b00010000
-#define FLAG_NONE 0
+enum sm83_flag_register {
+	FLAG_NONE = 0,
+	FLAG_ZERO = 1 << 7,
+	FLAG_SUBS = 1 << 6,
+	FLAG_HALF = 1 << 5,
+	FLAG_CARRY = 1 << 4,
+};
 
-enum execution_state {
+enum sm83_state {
 	CPU_CORE_RUNNING,
 	CPU_CORE_EXECUTE,
 	CPU_CORE_INTERRUPT_DISPATCH,
 	CPU_CORE_HALT,
 };
 
-enum interrupt {
+enum sm83_interrupt {
 	IR_VBLANK = 1 << 0,
 	IR_LCD = 1 << 1,
 	IR_TIMER = 1 << 2,
@@ -28,7 +30,7 @@ enum interrupt {
 	IR_JOYPAD = 1 << 4,
 };
 
-struct instruction {
+struct sm83_instruction {
 	u8 opcode;
 	u8 length;
 	const char *mnemonic;
@@ -61,7 +63,7 @@ struct cpu {
 
 	bool halted;
 	bool debug;
-	enum execution_state state;
+	enum sm83_state state;
 
 	int multiplier;
 };
@@ -76,8 +78,8 @@ void cpu_bind_memory(struct cpu *cpu, struct memory *memory);
 void cpu_reset(struct cpu *cpu);
 void cpu_sleep_ns(int nanoseconds);
 void cpu_debug(struct cpu *cpu);
-struct instruction cpu_prefetch(struct cpu *cpu);
-void cpu_execute(struct cpu *cpu, struct instruction instruction);
+struct sm83_instruction cpu_prefetch(struct cpu *cpu);
+void cpu_execute(struct cpu *cpu, struct sm83_instruction instruction);
 void cpu_tick(struct cpu *cpu);
 void cpu_cycle(struct cpu *cpu);
 void cpu_release(struct cpu *cpu);
@@ -91,15 +93,16 @@ void cpu_flag_flip(struct cpu *cpu, int flag);
 void cpu_flag_set_or_clear(struct cpu *cpu, int flag);
 
 u8 cpu_read_pc_addr(struct cpu *cpu);
-void cpu_debug_instruction(struct cpu *cpu, struct instruction instruction);
+void cpu_debug_instruction(struct cpu *cpu,
+			   struct sm83_instruction instruction);
 u16 cpu_read_word(struct cpu *cpu);
 u8 cpu_read_byte(struct cpu *cpu);
 
 void cpu_enable_display(struct cpu *cpu);
 
 // decoder.c
-struct instruction cpu_op_decode(u8 opcode);
-struct instruction cpu_op_decode_cb(u8 opcode);
+struct sm83_instruction cpu_op_decode(u8 opcode);
+struct sm83_instruction cpu_op_decode_cb(u8 opcode);
 char *cpu_opcode_to_string(u8 opcode);
 char *cpu_opcode_cb_to_string(u8 opcode);
 

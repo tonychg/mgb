@@ -157,7 +157,7 @@ static char *cpu_resolve_operand(struct cpu *cpu, const char *op)
 	return buffer;
 }
 
-void cpu_debug_instruction(struct cpu *cpu, struct instruction instruction)
+void cpu_debug_instruction(struct cpu *cpu, struct sm83_instruction instruction)
 {
 	printf("00:%04X", cpu->pc);
 	for (int i = 0; i < instruction.length; i++) {
@@ -172,10 +172,10 @@ void cpu_debug_instruction(struct cpu *cpu, struct instruction instruction)
 	printf("\n");
 }
 
-struct instruction cpu_prefetch(struct cpu *cpu)
+struct sm83_instruction cpu_prefetch(struct cpu *cpu)
 {
 	u8 opcode;
-	struct instruction instruction;
+	struct sm83_instruction instruction;
 
 	opcode = MEM_READ(cpu, cpu->pc);
 	if (opcode == 0xCB) {
@@ -190,7 +190,7 @@ struct instruction cpu_prefetch(struct cpu *cpu)
 	return instruction;
 }
 
-void cpu_execute(struct cpu *cpu, struct instruction instruction)
+void cpu_execute(struct cpu *cpu, struct sm83_instruction instruction)
 {
 	++cpu->pc;
 	if (!instruction.prefixed) {
@@ -283,7 +283,7 @@ static void cpu_ack_interrupt(struct cpu *cpu)
 	cpu->state = CPU_CORE_INTERRUPT_DISPATCH;
 }
 
-static void cpu_req_interrupt(struct cpu *cpu, enum interrupt ir)
+static void cpu_req_interrupt(struct cpu *cpu, enum sm83_interrupt ir)
 {
 	cpu->ime = true;
 	MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | ir);
@@ -317,7 +317,7 @@ void cpu_tick(struct cpu *cpu)
 
 void cpu_cycle(struct cpu *cpu)
 {
-	struct instruction instruction;
+	struct sm83_instruction instruction;
 
 	if (cpu_has_interrupt(cpu)) {
 		cpu_ack_interrupt(cpu);
