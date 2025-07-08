@@ -225,15 +225,6 @@ void cpu_execute(Cpu *cpu, Instruction instruction)
 	}
 }
 
-void cpu_tick(Cpu *cpu)
-{
-	if (MEM_READ(cpu, LY_LCD) == 144) {
-		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | IR_VBLANK);
-	}
-	cpu_cycle(cpu);
-	cpu->ticks++;
-}
-
 bool cpu_has_interrupt(Cpu *cpu)
 {
 	return cpu->ime && (MEM_READ(cpu, IF) & MEM_READ(cpu, IE));
@@ -338,6 +329,16 @@ void cpu_handle_timer(Cpu *cpu)
 	}
 }
 
+void cpu_tick(Cpu *cpu)
+{
+	if (MEM_READ(cpu, LY_LCD) == 144) {
+		MEM_WRITE(cpu, IF, MEM_READ(cpu, IF) | IR_VBLANK);
+	}
+	cpu_cycle(cpu);
+	cpu_handle_timer(cpu);
+	cpu->ticks++;
+}
+
 void cpu_cycle(Cpu *cpu)
 {
 	Instruction instruction;
@@ -372,5 +373,4 @@ void cpu_cycle(Cpu *cpu)
 		cpu->cycles--;
 		break;
 	}
-	cpu_handle_timer(cpu);
 }
