@@ -1,5 +1,5 @@
-#include "cli.h"
-#include "gb.h"
+#include "gb/cli.h"
+#include "gb/gb.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

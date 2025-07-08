@@ -1,5 +1,5 @@
-#include "memory.h"
-#include "alloc.h"
+#include "gb/memory.h"
+#include "gb/alloc.h"
 #include <string.h>
 #include <stdio.h>
 

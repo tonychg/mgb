@@ -1,6 +1,6 @@
-#include "cpu.h"
-#include "opcodes.h"
-#include "types.h"
+#include "gb/cpu.h"
+#include "gb/opcodes.h"
+#include "gb/types.h"
 
 u16 unsigned_16(u8 lsb, u8 msb)
 {

@@ -1,5 +1,5 @@
-#include "fs.h"
-#include "alloc.h"
+#include "gb/fs.h"
+#include "gb/alloc.h"
 #include <stdlib.h>
 
 size_t fs_size(FILE *file)

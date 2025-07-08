@@ -1,6 +1,6 @@
-#include "video.h"
-#include "alloc.h"
-#include "render.h"
+#include "gb/video.h"
+#include "gb/alloc.h"
+#include "gb/render.h"
 #include <stdio.h>
 #include <stdlib.h>
 

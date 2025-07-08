@@ -1,6 +1,6 @@
-#include "cartridge.h"
-#include "alloc.h"
-#include "fs.h"
+#include "gb/alloc.h"
+#include "gb/fs.h"
+#include "gb/cartridge.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

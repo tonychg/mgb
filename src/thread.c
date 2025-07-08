@@ -1,8 +1,8 @@
-#include "thread.h"
-#include "cartridge.h"
-#include "gb.h"
-#include "render.h"
-#include "timer.h"
+#include "gb/thread.h"
+#include "gb/cartridge.h"
+#include "gb/gb.h"
+#include "gb/render.h"
+#include "gb/timer.h"
 #include <stdio.h>
 
 void *thread_cpu(void *arg)

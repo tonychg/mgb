@@ -1,11 +1,11 @@
-#include "cpu.h"
-#include "memory.h"
-#include "alloc.h"
-#include "timer.h"
+#include "gb/cpu.h"
+#include "gb/memory.h"
+#include "gb/alloc.h"
+#include "gb/opcodes.h"
+#include "gb/timer.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "opcodes.h"
 
 void cpu_sleep_ns(int nanoseconds)
 {

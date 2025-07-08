@@ -1,4 +1,4 @@
-#include "timer.h"
+#include "gb/timer.h"
 #include <stdio.h>
 
 TimerControl timer_tac(Cpu *cpu)

@@ -1,6 +1,6 @@
-#include "cpu.h"
-#include "timer.h"
-#include "opcodes.h"
+#include "gb/cpu.h"
+#include "gb/opcodes.h"
+#include "gb/timer.h"
 
 void opcode_execute(Cpu *cpu, u8 opcode)
 {

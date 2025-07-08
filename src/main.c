@@ -12,8 +12,8 @@ int main()
 #endif
 }
 #else
-#include "cli.h"
-#include "alloc.h"
+#include "gb/cli.h"
+#include "gb/alloc.h"
 
 int main(int argc, char **argv)
 {

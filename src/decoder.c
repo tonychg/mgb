@@ -1,4 +1,4 @@
-#include "cpu.h"
+#include "gb/cpu.h"
 #include <stdio.h>
 
 static const char *OP_TABLES_MNEMONIC[256] = {

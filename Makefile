@@ -20,11 +20,12 @@ SRC = \
       $(SRC_SUBDIR)/timer.c \
       $(SRC_SUBDIR)/main.c \
 
+INCLUDE	    = -Iinclude
 NAME        = $(BUILD_DIR)/gb
 TEST	    = $(BUILD_DIR)/test.bin
 DEBUG       = $(BUILD_DIR)/debug.bin
 CC          = gcc
-CFLAGS	    = -g -Wall
+CFLAGS	    = -Wall
 OBJ         = $(SRC:.c=.o)
 RM          = rm -f
 MKDIR	    = mkdir -p
@@ -38,19 +39,19 @@ build:
 	$(MKDIR) $(BUILD_DIR)
 
 $(OBJ): %.o: %.c
-	$(CC) $(CFLAGS) -c $^ -o $@
+	$(CC) $(INCLUDE) $(CFLAGS) -c $^ -o $@
 
 $(OBJ_TEST):
-	$(CC) $(CFLAGS_TEST) -c $^ -o $@
+	$(CC) $(INCLUDE) $(CFLAGS_TEST) -c $^ -o $@
 
 $(NAME):    build $(OBJ)
-	$(CC) $(LIB) -o $(NAME) $(OBJ)
+	$(CC) $(INCLUDE) $(LIB) -o $(NAME) $(OBJ)
 
 debug:  clean build $(OBJ)
-	$(CC) $(LIB) $(CFLAGS) $(OBJ) -o $(DEBUG)
+	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(DEBUG)
 
 test:	clean build $(OBJ)
-	$(CC) $(LIB) $(CFLAGS) $(OBJ) -o $(TEST)
+	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(TEST)
 	./$(TEST)
 
 .PHONY:clean

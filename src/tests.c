@@ -1,6 +1,6 @@
-#include "memory.h"
-#include "tests.h"
-#include "alloc.h"
+#include "gb/memory.h"
+#include "gb/tests.h"
+#include "gb/alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cjson/cJSON.h>

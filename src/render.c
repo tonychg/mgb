@@ -1,4 +1,4 @@
-#include "render.h"
+#include "gb/render.h"
 
 Color convert_color(DmgColors color)
 {
