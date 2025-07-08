@@ -5,11 +5,12 @@
 #include <stdlib.h>
 #include <cjson/cJSON.h>
 
-struct test_suite *test_suite_init()
+static struct test_suite *test_suite_init()
 {
 	struct test_suite *suite;
 
-	if ((suite = (struct test_suite *)malloc(sizeof(struct test_suite))) == NULL)
+	if ((suite = (struct test_suite *)malloc(sizeof(struct test_suite))) ==
+	    NULL)
 		return NULL;
 	suite->name = NULL;
 	suite->failed = 0;
@@ -18,11 +19,12 @@ struct test_suite *test_suite_init()
 	return suite;
 }
 
-struct test_case *test_case_init()
+static struct test_case *test_case_init()
 {
 	struct test_case *test;
 
-	if ((test = (struct test_case *)malloc(sizeof(struct test_case))) == NULL)
+	if ((test = (struct test_case *)malloc(sizeof(struct test_case))) ==
+	    NULL)
 		return NULL;
 	if ((test->initial = cpu_init()) == NULL)
 		return NULL;
@@ -38,7 +40,7 @@ struct test_case *test_case_init()
 	return test;
 }
 
-void test_case_release(struct test_case *test)
+static void test_case_release(struct test_case *test)
 {
 	memory_release(test->initial->memory);
 	memory_release(test->final->memory);
@@ -47,7 +49,7 @@ void test_case_release(struct test_case *test)
 	zfree(test);
 }
 
-size_t get_file_size(FILE *file)
+static size_t get_file_size(FILE *file)
 {
 	size_t length;
 
@@ -57,7 +59,7 @@ size_t get_file_size(FILE *file)
 	return length;
 }
 
-char *test_case_read(char *path)
+static char *test_case_read(char *path)
 {
 	char *buffer;
 	size_t length;
@@ -76,7 +78,7 @@ char *test_case_read(char *path)
 	return buffer;
 }
 
-void test_case_reset_cpu_from_case(struct cpu *cpu, cJSON *state)
+static void test_case_reset_cpu_from_case(struct cpu *cpu, cJSON *state)
 {
 	cJSON *a = cJSON_GetObjectItemCaseSensitive(state, "a");
 	cJSON *b = cJSON_GetObjectItemCaseSensitive(state, "b");
@@ -119,8 +121,8 @@ void test_case_reset_cpu_from_case(struct cpu *cpu, cJSON *state)
 	}
 }
 
-void assert_register(struct test_suite *suite, struct test_case *test, const char *reg,
-		     int result, int expected)
+static void assert_register(struct test_suite *suite, struct test_case *test,
+			    const char *reg, int result, int expected)
 {
 	if (result != expected) {
 		if (suite->verbose)
@@ -131,8 +133,8 @@ void assert_register(struct test_suite *suite, struct test_case *test, const cha
 	}
 }
 
-void assert_memory(struct test_suite *suite, struct test_case *test, struct memory *result,
-		   struct memory *expected)
+void assert_memory(struct test_suite *suite, struct test_case *test,
+		   struct memory *result, struct memory *expected)
 {
 	for (int addr = 0; addr < 0xFFFF; addr++) {
 		if (result->bus[addr] != expected->bus[addr]) {
@@ -147,12 +149,12 @@ void assert_memory(struct test_suite *suite, struct test_case *test, struct memo
 	}
 }
 
-void test_case_run_cycle(cJSON *cycle, struct cpu *cpu)
+static void test_case_run_cycle(cJSON *cycle, struct cpu *cpu)
 {
 	cpu_cycle(cpu);
 }
 
-void test_case_assert(struct test_case *test, struct test_suite *suite)
+static void test_case_assert(struct test_case *test, struct test_suite *suite)
 {
 	assert_register(suite, test, "a", test->initial->a, test->final->a);
 	assert_register(suite, test, "b", test->initial->b, test->final->b);
@@ -172,7 +174,7 @@ void test_case_assert(struct test_case *test, struct test_suite *suite)
 	}
 }
 
-struct test_suite *test_suite_run(char *path, struct test_suite *suite)
+static struct test_suite *test_suite_run(char *path, struct test_suite *suite)
 {
 	char *buffer;
 	int i = 0;

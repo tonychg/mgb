@@ -81,8 +81,6 @@ void cpu_execute(struct cpu *cpu, struct instruction instruction);
 void cpu_tick(struct cpu *cpu);
 void cpu_cycle(struct cpu *cpu);
 void cpu_release(struct cpu *cpu);
-void cpu_pc_decrement(struct cpu *cpu);
-void cpu_pc_increment(struct cpu *cpu);
 
 void cpu_flag_set(struct cpu *cpu, int flag);
 void cpu_flag_toggle(struct cpu *cpu, int flag);

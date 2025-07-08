@@ -55,7 +55,7 @@ u16 parse_hex_address(char *buf)
 	return strtol(addr, NULL, 16);
 }
 
-void print_byte_at(struct cpu *cpu, char *buf)
+static void print_byte_at(struct cpu *cpu, char *buf)
 {
 	u16 addr = parse_hex_address(buf);
 	u8 byte = MEM_READ(cpu, addr);

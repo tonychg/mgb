@@ -242,42 +242,42 @@ static int OPCODE_CB_MACHINE_CYCLES[256] = {
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
 };
 
-int cpu_instruction_length(u8 opcode)
+static int cpu_instruction_length(u8 opcode)
 {
 	return OPCODE_LENGTH[opcode];
 }
 
-int cpu_instruction_cb_length(u8 opcode)
+static int cpu_instruction_cb_length(u8 opcode)
 {
 	return 2;
 }
 
-const char *cpu_opcode_mnemonic(u8 opcode)
+static const char *cpu_opcode_mnemonic(u8 opcode)
 {
 	return OP_TABLES_MNEMONIC[opcode];
 }
 
-const char *cpu_opcode_cb_mnemonic(u8 opcode)
+static const char *cpu_opcode_cb_mnemonic(u8 opcode)
 {
 	return OP_TABLES_CB_MNEMONIC[opcode];
 }
 
-const char *cpu_opcode_op_1(u8 opcode)
+static const char *cpu_opcode_op_1(u8 opcode)
 {
 	return OP_TABLES_OP_1[opcode];
 }
 
-const char *cpu_opcode_cb_op_1(u8 opcode)
+static const char *cpu_opcode_cb_op_1(u8 opcode)
 {
 	return OP_TABLES_CB_OP_1[opcode];
 }
 
-const char *cpu_opcode_op_2(u8 opcode)
+static const char *cpu_opcode_op_2(u8 opcode)
 {
 	return OP_TABLES_OP_2[opcode];
 }
 
-const char *cpu_opcode_cb_op_2(u8 opcode)
+static const char *cpu_opcode_cb_op_2(u8 opcode)
 {
 	return OP_TABLES_CB_OP_2[opcode];
 }

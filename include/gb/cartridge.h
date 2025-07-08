@@ -55,7 +55,6 @@ struct cartridge {
 	u32 ram_size;
 };
 
-struct cartridge *cartridge_init(void);
 struct cartridge *cartridge_load_from_file(char *path);
 void cartridge_metadata(struct cartridge *cartridge);
 void cartridge_release(struct cartridge *cartridge);

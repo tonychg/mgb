@@ -5,7 +5,7 @@
 #include "gb/timer.h"
 #include <stdio.h>
 
-void *thread_cpu(void *arg)
+static void *thread_cpu(void *arg)
 {
 	struct gb *gb = (struct gb *)arg;
 
@@ -25,7 +25,7 @@ void *thread_cpu(void *arg)
 	pthread_exit(NULL);
 }
 
-void *thread_gui(void *arg)
+static void *thread_gui(void *arg)
 {
 	struct gb *gb = (struct gb *)arg;
 

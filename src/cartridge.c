@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-struct cartridge *cartridge_init()
+static struct cartridge *cartridge_init(void)
 {
 	struct cartridge *cartridge;
 
@@ -18,27 +18,27 @@ struct cartridge *cartridge_init()
 	return cartridge;
 }
 
-size_t cartridge_file_size(FILE *file)
+static size_t cartridge_file_size(FILE *file)
 {
 	return fs_size(file);
 }
 
-u8 *cartridge_read_file(FILE *file, size_t numbytes)
+static u8 *cartridge_read_file(FILE *file, size_t numbytes)
 {
 	return fs_read(file, numbytes);
 }
 
-void cartridge_decode_title(struct cartridge *cartridge)
+static void cartridge_decode_title(struct cartridge *cartridge)
 {
 	memcpy(cartridge->title, cartridge->buffer + 0x134, sizeof(u8) * 16);
 }
 
-u32 cartridge_ram_size(u8 code)
+static u32 cartridge_ram_size(u8 code)
 {
 	return 32768 * (1 << code);
 }
 
-u32 cartridge_rom_size(u8 code)
+static u32 cartridge_rom_size(u8 code)
 {
 	return CARTRIDGE_RAM_SIZES[code];
 }

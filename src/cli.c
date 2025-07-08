@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct args_boot *parse_args_boot(int argc, char **argv)
+static struct args_boot *parse_args_boot(int argc, char **argv)
 {
 	struct args_boot *args =
 		(struct args_boot *)malloc(sizeof(struct args_boot));
@@ -63,7 +63,7 @@ struct args_boot *parse_args_boot(int argc, char **argv)
 	return args;
 }
 
-struct args_rom *parse_args_rom(int argc, char **argv)
+static struct args_rom *parse_args_rom(int argc, char **argv)
 {
 	struct args_rom *args =
 		(struct args_rom *)malloc(sizeof(struct args_rom));
@@ -83,7 +83,7 @@ struct args_rom *parse_args_rom(int argc, char **argv)
 	return args;
 }
 
-struct args_test *parse_args_test(int argc, char **argv)
+static struct args_test *parse_args_test(int argc, char **argv)
 {
 	struct args_test *args =
 		(struct args_test *)malloc(sizeof(struct args_test));
@@ -106,9 +106,10 @@ struct args_test *parse_args_test(int argc, char **argv)
 	return args;
 }
 
-struct args_render *parse_args_render(int argc, char **argv)
+static struct args_render *parse_args_render(int argc, char **argv)
 {
-	struct args_render *args = (struct args_render *)malloc(sizeof(struct args_render));
+	struct args_render *args =
+		(struct args_render *)malloc(sizeof(struct args_render));
 
 	args->scale = 2;
 	args->dump = "data/dump.gb";
@@ -128,7 +129,7 @@ struct args_render *parse_args_render(int argc, char **argv)
 	return args;
 }
 
-struct command *parse_command(int argc, char **argv)
+static struct command *parse_command(int argc, char **argv)
 {
 	struct command *cmd;
 	char *name;

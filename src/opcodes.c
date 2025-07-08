@@ -142,7 +142,7 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->cycles = 3;
 		} else {
-			cpu_pc_increment(cpu);
+			++cpu->pc;
 		}
 		break;
 	case 0x21:
@@ -183,7 +183,7 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->cycles = 3;
 		} else {
-			cpu_pc_increment(cpu);
+			++cpu->pc;
 		}
 		break;
 	case 0x29:
@@ -227,7 +227,7 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->cycles = 3;
 		} else {
-			cpu_pc_increment(cpu);
+			++cpu->pc;
 		}
 		break;
 	case 0x31:
@@ -267,7 +267,7 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = MEM_READ_PC_S8(cpu);
 			cpu->cycles = 3;
 		} else {
-			cpu_pc_increment(cpu);
+			++cpu->pc;
 		}
 		break;
 	case 0x39:
@@ -833,8 +833,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = cpu_read_word(cpu);
 			cpu->cycles = 4;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xC3:
@@ -849,8 +849,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = result;
 			cpu->cycles = 6;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xC5:
@@ -882,8 +882,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = cpu_read_word(cpu);
 			cpu->cycles = 4;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xCB:
@@ -897,8 +897,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = result;
 			cpu->cycles = 6;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xCD:
@@ -930,8 +930,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = cpu_read_word(cpu);
 			cpu->cycles = 4;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xD3:
@@ -943,8 +943,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			opcode_call_nn(cpu);
 			cpu->cycles = 6;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xD5:
@@ -977,8 +977,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			cpu->pc = cpu_read_word(cpu);
 			cpu->cycles = 4;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xDB:
@@ -990,8 +990,8 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 			opcode_call_nn(cpu);
 			cpu->cycles = 6;
 		} else {
-			cpu_pc_increment(cpu);
-			cpu_pc_increment(cpu);
+			++cpu->pc;
+			++cpu->pc;
 		}
 		break;
 	case 0xDD:
@@ -1008,7 +1008,7 @@ void opcode_execute(struct cpu *cpu, u8 opcode)
 	case 0xE0:
 		// LD (0xFF00+n),A
 		MEM_WRITE(cpu, (u16)(0xFF00 + MEM_READ(cpu, cpu->pc)), cpu->a);
-		cpu_pc_increment(cpu);
+		++cpu->pc;
 		break;
 	case 0xE1:
 		// POP HL

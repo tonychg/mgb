@@ -586,9 +586,9 @@ void opcode_call_nn(struct cpu *cpu)
 	u16 nn;
 
 	nn_lsb = MEM_READ(cpu, cpu->pc);
-	cpu_pc_increment(cpu);
+	++cpu->pc;
 	nn_msb = MEM_READ(cpu, cpu->pc);
-	cpu_pc_increment(cpu);
+	++cpu->pc;
 	nn = unsigned_16(nn_lsb, nn_msb);
 	--cpu->sp;
 	MEM_WRITE(cpu, cpu->sp, msb(cpu->pc));
