@@ -133,16 +133,6 @@ u8 cpu_read_byte_no_inc(struct cpu *cpu)
 	return MEM_READ(cpu, cpu->pc + 1);
 }
 
-void cpu_jump_word(struct cpu *cpu, u16 r16)
-{
-	cpu->pc = r16;
-}
-
-void cpu_enable_display(struct cpu *cpu)
-{
-	MEM_WRITE(cpu, LY_LCD, 0x94);
-}
-
 void cpu_debug(struct cpu *cpu)
 {
 	printf("   Z = %d | N = %d\n", cpu_flag_is_set(cpu, FLAG_ZERO),
