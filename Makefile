@@ -23,7 +23,6 @@ SRC = \
 INCLUDE	    = -Iinclude
 NAME        = $(BUILD_DIR)/gb
 TEST	    = $(BUILD_DIR)/test.bin
-DEBUG       = $(BUILD_DIR)/debug.bin
 CC          = gcc
 CFLAGS	    = -Wall
 OBJ         = $(SRC:.c=.o)
@@ -47,15 +46,12 @@ $(OBJ_TEST):
 $(NAME):    build $(OBJ)
 	$(CC) $(INCLUDE) $(LIB) -o $(NAME) $(OBJ)
 
-debug:  clean build $(OBJ)
-	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(DEBUG)
-
 test:	clean build $(OBJ)
-	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(TEST)
-	@./$(TEST)
+	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(NAME)
+	@$(NAME)
 
 .PHONY:clean
 clean:
 	$(RM) $(OBJ)
 
-re: clean test all
+re: clean all
