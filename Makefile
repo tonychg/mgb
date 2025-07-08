@@ -1,4 +1,4 @@
-SRC_SUBDIR = src
+SRC_SUBDIR = gb
 BUILD_DIR = build
 
 SRC = \
@@ -52,7 +52,7 @@ debug:  clean build $(OBJ)
 
 test:	clean build $(OBJ)
 	$(CC) $(INCLUDE) $(LIB) $(CFLAGS) $(OBJ) -o $(TEST)
-	./$(TEST)
+	@./$(TEST)
 
 .PHONY:clean
 clean:
