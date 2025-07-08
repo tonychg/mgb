@@ -16,7 +16,6 @@ SRC = \
       $(SRC_SUBDIR)/tests.c \
       $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/render.c \
-      $(SRC_SUBDIR)/thread.c \
       $(SRC_SUBDIR)/timer.c \
       $(SRC_SUBDIR)/main.c \
 

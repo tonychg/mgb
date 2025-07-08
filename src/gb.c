@@ -1,14 +1,16 @@
+#include "unistd.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
 #include "gb/gb.h"
 #include "gb/cartridge.h"
 #include "gb/fs.h"
 #include "gb/render.h"
 #include "gb/tests.h"
 #include "gb/video.h"
-#include "gb/thread.h"
-#include "unistd.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "gb/timer.h"
 
 struct gb *gb_create(struct args_boot *args)
 {
@@ -24,7 +26,15 @@ struct gb *gb_create(struct args_boot *args)
 	return gb;
 }
 
-void gb_init(struct gb *gb)
+static void gb_reset(struct gb *gb)
+{
+	memory_reset(gb->cpu->memory);
+	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
+	video_reset(gb->video);
+	cpu_reset(gb->cpu);
+}
+
+static void gb_init(struct gb *gb)
 {
 	gb->cpu = cpu_init();
 	gb->memory = memory_init();
@@ -37,15 +47,7 @@ void gb_init(struct gb *gb)
 	gb_reset(gb);
 }
 
-void gb_reset(struct gb *gb)
-{
-	memory_reset(gb->cpu->memory);
-	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
-	video_reset(gb->video);
-	cpu_reset(gb->cpu);
-}
-
-u16 parse_hex_address(char *buf)
+static u16 parse_hex_address(char *buf)
 {
 	char addr[4];
 
@@ -63,27 +65,27 @@ static void print_byte_at(struct cpu *cpu, char *buf)
 	printf("Reading [$%04X] = $%02X\n", addr, byte);
 }
 
-void gb_tick(struct gb *gb)
+static void gb_tick(struct gb *gb)
 {
 	cpu_tick(gb->cpu);
 	video_tick(gb->video);
 }
 
-void gb_goto(struct gb *gb, u16 address)
+static void gb_goto(struct gb *gb, u16 address)
 {
 	while (gb->cpu->pc != address) {
 		gb_tick(gb);
 	}
 }
 
-void gb_start_at(struct gb *gb)
+static void gb_start_at(struct gb *gb)
 {
 	printf("Starting at $%04X\n", gb->args->start);
 	gb_goto(gb, gb->args->start);
 	gb->args->start = 0;
 }
 
-void gb_release(struct gb *gb)
+static void gb_release(struct gb *gb)
 {
 	memory_release(gb->memory);
 	cpu_release(gb->cpu);
@@ -91,7 +93,7 @@ void gb_release(struct gb *gb)
 	cartridge_release(gb->cartridge);
 }
 
-char *gb_interactive(struct gb *gb)
+static char *gb_interactive(struct gb *gb)
 {
 	char buf[256];
 
@@ -142,7 +144,7 @@ char *gb_interactive(struct gb *gb)
 	return NULL;
 }
 
-void gb_debug(struct gb *gb)
+static void gb_debug(struct gb *gb)
 {
 	if (gb->args->cpu_debug)
 		cpu_debug(gb->cpu);
@@ -163,9 +165,63 @@ void gb_debug(struct gb *gb)
 	}
 }
 
+static void *gb_thread_cpu(void *arg)
+{
+	struct gb *gb = (struct gb *)arg;
+
+	if (gb->args->debug)
+		printf("Create CPU thread\n");
+	while (1) {
+		if (gb->args->interactive) {
+			gb_interactive(gb);
+			cpu_debug(gb->cpu);
+			timer_debug(gb->cpu);
+		}
+		gb_tick(gb);
+		gb_debug(gb);
+	}
+	if (gb->args->debug)
+		printf("Exit CPU thread\n");
+	pthread_exit(NULL);
+}
+
+static void *gb_thread_gui(void *arg)
+{
+	struct gb *gb = (struct gb *)arg;
+
+	if (gb->args->debug)
+		printf("Create GUI thread\n");
+	render_init(256 + 128, 512, gb->video->scale);
+	while (render_is_running()) {
+		render_begin();
+		video_render(gb->video);
+		render_end();
+	}
+	if (gb->args->debug)
+		printf("Exit GUI thread\n");
+	render_release();
+	pthread_exit(NULL);
+}
+
 int gb_boot(void *args)
 {
-	thread_boot((struct args_boot *)args);
+	pthread_t cpu;
+	pthread_t gui;
+	struct gb *gb;
+
+	gb = gb_create(args);
+	gb_init(gb);
+	if (gb->args->debug)
+		cartridge_metadata(gb->cartridge);
+	if (gb->args->start != 0)
+		gb_start_at(gb);
+	pthread_create(&cpu, NULL, gb_thread_cpu, gb);
+	if (gb->video->render) {
+		pthread_create(&gui, NULL, gb_thread_gui, gb);
+		pthread_join(gui, NULL);
+	}
+	pthread_join(cpu, NULL);
+	gb_release(gb);
 	return 0;
 }
 
