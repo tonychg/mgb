@@ -30,7 +30,8 @@ enum sm83_state {
 	SM83_CORE_WRITE_0,
 	SM83_CORE_WRITE_1,
 	SM83_CORE_HALT,
-	SM83_CORE_IDLE,
+	SM83_CORE_IDLE_0,
+	SM83_CORE_IDLE_1,
 };
 
 enum sm83_flag_register {
