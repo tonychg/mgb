@@ -156,7 +156,11 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		++cpu->pc;
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
-	case SM83_CORE_READ:
+	case SM83_CORE_READ_0:
+		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
+		sm83_isa_execute(cpu, cpu->instruction.opcode);
+		break;
+	case SM83_CORE_READ_1:
 		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
@@ -176,7 +180,10 @@ void sm83_cpu_step(struct sm83_core *cpu)
 			cpu->pc = irq_ack;
 		}
 		break;
-	case SM83_CORE_IDLE:
+	case SM83_CORE_IDLE_0:
+		sm83_isa_execute(cpu, cpu->instruction.opcode);
+		break;
+	case SM83_CORE_IDLE_1:
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
 	}

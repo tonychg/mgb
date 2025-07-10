@@ -28,9 +28,9 @@ static void op_r16_dec(u8 *r1, u8 *r2)
 static void op_ld(struct sm83_core *cpu, u8 *reg, u16 addr)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = addr;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		*reg = cpu->bus;
 		++cpu->pc;
@@ -93,10 +93,10 @@ static void op_ldh_a_n(struct sm83_core *cpu)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = unsigned_16(cpu->bus, 0xFF);
 		++cpu->pc;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->a = cpu->bus;
 	}
@@ -107,10 +107,10 @@ static void op_ld_nn_sp(struct sm83_core *cpu, u16 *reg)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		cpu->acc = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_WRITE_0;
 		cpu->acc |= cpu->bus << 8;
 		cpu->bus = lsb(*reg);
@@ -130,10 +130,10 @@ static void op_ld_r16_nn(struct sm83_core *cpu, u8 *r1, u8 *r2)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		*r2 = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		*r1 = cpu->memory->load8(cpu, cpu->pc);
 		++cpu->pc;
@@ -165,10 +165,10 @@ static void op_ld_sp_nn(struct sm83_core *cpu)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		cpu->acc = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->acc |= cpu->bus << 8;
 		cpu->sp = cpu->acc;
@@ -179,8 +179,8 @@ static void op_ld_sp_nn(struct sm83_core *cpu)
 static void op_ld_ffn_a(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
-	} else if (cpu->state == SM83_CORE_READ) {
+		cpu->state = SM83_CORE_READ_0;
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_WRITE_0;
 		cpu->ptr = (u16)(0xFF00 + cpu->bus);
 		cpu->bus = cpu->a;
@@ -193,9 +193,9 @@ static void op_ld_ffn_a(struct sm83_core *cpu)
 static void op_ld_a_ffc(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = (u16)(0xFF00 + cpu->c);
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->a = cpu->bus;
 		cpu->pc++;
@@ -219,10 +219,10 @@ static void op_ld_nn_a(struct sm83_core *cpu)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		cpu->acc = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_WRITE_0;
 		cpu->acc |= cpu->bus << 8;
 		cpu->ptr = cpu->acc;
@@ -237,8 +237,8 @@ static void op_ld_nn_a(struct sm83_core *cpu)
 static void op_ld_sp_hl(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
-	} else if (cpu->state == SM83_CORE_READ) {
+		cpu->state = SM83_CORE_READ_0;
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->sp = HL(cpu);
 	}
@@ -249,10 +249,10 @@ static void op_ld_a_nn(struct sm83_core *cpu)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		cpu->acc = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_IDLE_0;
 		cpu->acc |= cpu->bus << 8;
 		++cpu->pc;
@@ -282,10 +282,10 @@ static void op_jp_n_nn(struct sm83_core *cpu, bool condition)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = cpu->pc;
 		cpu->acc = cpu->bus;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		if (condition) {
 			cpu->state = SM83_CORE_IDLE_0;
 			cpu->acc |= cpu->bus << 8;
@@ -303,12 +303,12 @@ static void op_jr_n_e8(struct sm83_core *cpu, bool condition)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
 		if (condition) {
-			cpu->state = SM83_CORE_READ;
+			cpu->state = SM83_CORE_READ_0;
 			cpu->ptr = cpu->pc;
 		} else {
 			cpu->state = SM83_CORE_PC;
 		}
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->pc = cpu->pc + 1 + (s8)cpu->bus;
 	} else if (cpu->state == SM83_CORE_PC) {
@@ -346,9 +346,9 @@ static void op_inc_rr(struct sm83_core *cpu, u8 *high, u8 *low)
 static void op_inc_hl(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = HL(cpu);
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_IDLE_0;
 		cpu->bus++;
 	} else if (cpu->state == SM83_CORE_IDLE_0) {
@@ -412,9 +412,9 @@ static void op_dec_sp(struct sm83_core *cpu)
 static void op_dec_hl(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = HL(cpu);
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_IDLE_0;
 		cpu->bus++;
 	} else if (cpu->state == SM83_CORE_IDLE_0) {
@@ -569,11 +569,22 @@ static void op_rr_hl(struct sm83_core *cpu)
 
 static void op_rst(struct sm83_core *cpu, u8 vec)
 {
-	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, msb(cpu->pc));
-	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
-	cpu->pc = unsigned_16(vec, 0x00);
+	if (cpu->state == SM83_CORE_FETCH) {
+		cpu->state = SM83_CORE_IDLE_0;
+		cpu->sp--;
+	} else if (cpu->state == SM83_CORE_IDLE_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		cpu->ptr = cpu->sp;
+		cpu->bus = msb(cpu->pc);
+		cpu->sp--;
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_WRITE_1;
+		cpu->ptr = cpu->sp;
+		cpu->bus = lsb(cpu->pc);
+		cpu->pc = unsigned_16(vec, 0x00);
+	} else if (cpu->state == SM83_CORE_WRITE_1) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 static void op_swap(struct sm83_core *cpu, u8 *reg)
@@ -757,9 +768,9 @@ static void op_or_n(struct sm83_core *cpu)
 static void op_or_hl(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = HL(cpu);
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		op_or(cpu, cpu->bus);
 	}
@@ -971,10 +982,10 @@ static void op_call_nn(struct sm83_core *cpu, bool condition)
 	if (cpu->state == SM83_CORE_FETCH) {
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->acc = cpu->bus;
 		cpu->ptr = cpu->pc;
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		if (condition) {
 			cpu->state = SM83_CORE_WRITE_0;
 			cpu->acc |= cpu->bus << 8;
@@ -1011,25 +1022,54 @@ static void op_push_rr(struct sm83_core *cpu, u8 *msb, u8 *lsb)
 	}
 }
 
-static void op_stack_pop(struct sm83_core *cpu, u8 *r1, u8 *r2)
+static void op_ret(struct sm83_core *cpu, bool condition, bool ime)
 {
-	*r2 = cpu->memory->load8(cpu, cpu->sp);
-	cpu->sp++;
-	*r1 = cpu->memory->load8(cpu, cpu->sp);
-	cpu->sp++;
+	if (!condition) {
+		if (cpu->state == SM83_CORE_FETCH) {
+			cpu->state = SM83_CORE_IDLE_0;
+		} else if (cpu->state == SM83_CORE_IDLE_0) {
+			cpu->state = SM83_CORE_FETCH;
+		}
+	} else {
+		if (cpu->state == SM83_CORE_FETCH) {
+			cpu->state = SM83_CORE_READ_0;
+			cpu->ptr = cpu->sp++;
+		} else if (cpu->state == SM83_CORE_READ_0) {
+			cpu->state = SM83_CORE_READ_1;
+			cpu->ptr = cpu->sp++;
+			cpu->pc++;
+		} else if (cpu->state == SM83_CORE_READ_1) {
+			cpu->state = SM83_CORE_IDLE_0;
+			cpu->acc = cpu->bus;
+			cpu->pc++;
+		} else if (cpu->state == SM83_CORE_IDLE_0) {
+			cpu->state = SM83_CORE_IDLE_1;
+			cpu->acc |= cpu->bus << 8;
+			if (ime)
+				cpu->ime = true;
+		} else if (cpu->state == SM83_CORE_IDLE_1) {
+			cpu->state = SM83_CORE_FETCH;
+			cpu->pc = cpu->acc;
+		}
+	}
 }
 
-static void op_stack_pop_pc(struct sm83_core *cpu, u16 *pc)
+static void op_pop(struct sm83_core *cpu, u8 *r1, u8 *r2)
 {
-	u16 result;
-	u8 low, high;
-
-	low = cpu->memory->load8(cpu, cpu->sp);
-	cpu->sp++;
-	high = cpu->memory->load8(cpu, cpu->sp);
-	cpu->sp++;
-	result = unsigned_16(low, high);
-	*pc = result;
+	if (cpu->state == SM83_CORE_FETCH) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = cpu->sp;
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_READ_1;
+		*r2 = cpu->bus;
+		cpu->sp++;
+		cpu->pc++;
+	} else if (cpu->state == SM83_CORE_READ_1) {
+		cpu->state = SM83_CORE_FETCH;
+		*r1 = cpu->bus;
+		cpu->sp++;
+		cpu->pc++;
+	}
 }
 
 /*
@@ -1062,9 +1102,9 @@ static void op_cp_n(struct sm83_core *cpu)
 static void op_cp_a_hl(struct sm83_core *cpu)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		cpu->state = SM83_CORE_READ;
+		cpu->state = SM83_CORE_READ_0;
 		cpu->ptr = HL(cpu);
-	} else if (cpu->state == SM83_CORE_READ) {
+	} else if (cpu->state == SM83_CORE_READ_0) {
 		cpu->state = SM83_CORE_FETCH;
 		op_cp(cpu, cpu->bus);
 	}
@@ -1275,7 +1315,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 	case 0x2A:
 		// LD A,[HL+]
 		op_ld(cpu, &cpu->a, HL(cpu));
-		if (cpu->state == SM83_CORE_READ)
+		if (cpu->state == SM83_CORE_READ_0)
 			INC_HL(cpu);
 		break;
 	case 0x2B:
@@ -1349,7 +1389,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 	case 0x3A:
 		// LD A,(HLD)
 		op_ld(cpu, &cpu->a, HL(cpu));
-		if (cpu->state == SM83_CORE_READ)
+		if (cpu->state == SM83_CORE_READ_0)
 			DEC_HL(cpu);
 		break;
 	case 0x3B:
@@ -1891,14 +1931,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xC0:
 		// RET NZ
-		if (!cpu_flag_is_set(cpu, FLAG_Z)) {
-			op_stack_pop_pc(cpu, &cpu->pc);
-			cpu->cycles = 5;
-		}
+		op_ret(cpu, !cpu_flag_is_set(cpu, FLAG_Z), false);
 		break;
 	case 0xC1:
 		// POP BC
-		op_stack_pop(cpu, &cpu->b, &cpu->c);
+		op_pop(cpu, &cpu->b, &cpu->c);
 		break;
 	case 0xC2:
 		// JP NZ,nn
@@ -1926,14 +1963,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xC8:
 		// RET Z
-		if (cpu_flag_is_set(cpu, FLAG_Z)) {
-			op_stack_pop_pc(cpu, &cpu->pc);
-			cpu->cycles = 5;
-		}
+		op_ret(cpu, cpu_flag_is_set(cpu, FLAG_Z), false);
 		break;
 	case 0xC9:
 		// RET
-		op_stack_pop_pc(cpu, &cpu->pc);
+		op_ret(cpu, true, false);
 		break;
 	case 0xCA:
 		// JP Z,nn
@@ -1960,14 +1994,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xD0:
 		// RET NC
-		if (!cpu_flag_is_set(cpu, FLAG_C)) {
-			op_stack_pop_pc(cpu, &cpu->pc);
-			cpu->cycles = 5;
-		}
+		op_ret(cpu, !cpu_flag_is_set(cpu, FLAG_C), false);
 		break;
 	case 0xD1:
 		// POP DE
-		op_stack_pop(cpu, &cpu->d, &cpu->e);
+		op_pop(cpu, &cpu->d, &cpu->e);
 		break;
 	case 0xD2:
 		// JP NC,nn
@@ -1994,14 +2025,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xD8:
 		// RET C
-		if (cpu_flag_is_set(cpu, FLAG_C)) {
-			op_stack_pop_pc(cpu, &cpu->pc);
-			cpu->cycles = 5;
-		}
+		op_ret(cpu, cpu_flag_is_set(cpu, FLAG_C), false);
 		break;
 	case 0xD9:
 		// RETI
-		op_stack_pop_pc(cpu, &cpu->pc);
+		op_ret(cpu, true, true);
 		cpu->ime = true;
 		break;
 	case 0xDA:
@@ -2032,7 +2060,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xE1:
 		// POP HL
-		op_stack_pop(cpu, &cpu->h, &cpu->l);
+		op_pop(cpu, &cpu->h, &cpu->l);
 		break;
 	case 0xE2:
 		// LD (0xFF00+C),A
@@ -2091,7 +2119,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xF1:
 		// POP AF
-		op_stack_pop(cpu, &cpu->a, &cpu->f);
+		op_pop(cpu, &cpu->a, &cpu->f);
 		cpu->f &= 0xF0;
 		break;
 	case 0xF2:
