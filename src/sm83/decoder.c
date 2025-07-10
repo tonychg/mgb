@@ -270,7 +270,7 @@ static struct sm83_instruction cpu_decode_prefixed(u8 opcode)
 	return instruction;
 }
 
-struct sm83_instruction cpu_decode(struct sm83_core *cpu)
+struct sm83_instruction sm83_decode(struct sm83_core *cpu)
 {
 	struct sm83_instruction instruction;
 

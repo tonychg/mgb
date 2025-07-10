@@ -1135,8 +1135,11 @@ static void op_daa(struct sm83_core *cpu)
 	cpu->a = a;
 }
 
-void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
+void sm83_isa_execute(struct sm83_core *cpu)
 {
+	u8 opcode;
+
+	opcode = cpu->instruction.opcode;
 	switch (opcode) {
 	case 0x00:
 		// NOOP
@@ -1975,6 +1978,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xCB:
 		// Prefix
+		if (cpu->state == SM83_CORE_FETCH) {
+			cpu->state = SM83_CORE_PC;
+		} else {
+			sm83_isa_cb_execute(cpu);
+		}
 		break;
 	case 0xCC:
 		// CALL Z,nn
@@ -2179,8 +2187,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 	}
 }
 
-void sm83_isa_cb_execute(struct sm83_core *cpu, u8 opcode)
+void sm83_isa_cb_execute(struct sm83_core *cpu)
 {
+	u8 opcode;
+
+	opcode = cpu->instruction.opcode;
 	switch (opcode) {
 	case 0x00:
 		// RLC B

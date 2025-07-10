@@ -92,7 +92,6 @@ struct sm83_core {
 
 /* sm83.c */
 struct sm83_core *sm83_init(void);
-struct sm83_instruction sm83_cpu_fetch(struct sm83_core *cpu);
 void sm83_cpu_step(struct sm83_core *cpu);
 void sm83_cpu_execute(struct sm83_core *cpu);
 void sm83_cpu_reset(struct sm83_core *cpu);
@@ -100,11 +99,11 @@ void sm83_cpu_plug_memory(struct sm83_core *cpu, struct sm83_memory *bus);
 void sm83_destroy(struct sm83_core *cpu);
 
 /* sm83_isa.c */
-void sm83_isa_execute(struct sm83_core *cpu, u8 opcode);
-void sm83_isa_cb_execute(struct sm83_core *cpu, u8 opcode);
+void sm83_isa_execute(struct sm83_core *cpu);
+void sm83_isa_cb_execute(struct sm83_core *cpu);
 
 /* decoder.c */
-struct sm83_instruction cpu_decode(struct sm83_core *cpu);
+struct sm83_instruction sm83_decode(struct sm83_core *cpu);
 
 /* debugger.c */
 char *sm83_disassemble(struct sm83_core *cpu);
