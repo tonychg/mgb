@@ -118,13 +118,9 @@ struct sm83_core *sm83_init(void)
 
 struct sm83_instruction sm83_cpu_fetch(struct sm83_core *cpu)
 {
-	static struct sm83_instruction instruction;
+	struct sm83_instruction instruction;
 
-	if (cpu->bus == 0xCB) {
-		instruction = cpu_decode_prefixed(cpu->bus);
-	} else {
-		instruction = cpu_decode(cpu->bus);
-	}
+	instruction = cpu_decode(cpu);
 	return instruction;
 }
 
@@ -153,16 +149,23 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
 	case SM83_CORE_READ:
-		cpu->bus = cpu->memory->load8(cpu, cpu->pc);
+		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
 	case SM83_CORE_WRITE:
-		cpu->memory->write8(cpu, cpu->pc, cpu->bus);
+		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
 	case SM83_CORE_HALT:
+		irq_ack = sm83_irq_ack(cpu);
+		if (irq_ack) {
+			cpu->ime = false;
+			sm83_stack_push_pc(cpu, &cpu->pc);
+			cpu->pc = irq_ack;
+		}
 		break;
 	case SM83_CORE_IDLE:
+		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
 	}
 	sm83_update_timer_registers(cpu);

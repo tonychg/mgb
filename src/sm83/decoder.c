@@ -242,9 +242,9 @@ static int OPCODE_CB_MACHINE_CYCLES[256] = {
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
 };
 
-struct sm83_instruction cpu_decode(u8 opcode)
+static struct sm83_instruction cpu_decode_non_prefixed(u8 opcode)
 {
-	static struct sm83_instruction instruction;
+	struct sm83_instruction instruction;
 
 	instruction.opcode = opcode;
 	instruction.length = OPCODE_LENGTH[opcode];
@@ -256,9 +256,9 @@ struct sm83_instruction cpu_decode(u8 opcode)
 	return instruction;
 }
 
-struct sm83_instruction cpu_decode_prefixed(u8 opcode)
+static struct sm83_instruction cpu_decode_prefixed(u8 opcode)
 {
-	static struct sm83_instruction instruction;
+	struct sm83_instruction instruction;
 
 	instruction.opcode = opcode;
 	instruction.length = 2;
@@ -267,5 +267,18 @@ struct sm83_instruction cpu_decode_prefixed(u8 opcode)
 	instruction.op2 = OP_TABLES_CB_OP_2[opcode];
 	instruction.cycles = OPCODE_CB_MACHINE_CYCLES[opcode];
 	instruction.prefixed = true;
+	return instruction;
+}
+
+struct sm83_instruction cpu_decode(struct sm83_core *cpu)
+{
+	struct sm83_instruction instruction;
+
+	if (cpu->bus == 0xCB) {
+		instruction = cpu_decode_prefixed(
+			cpu->memory->load8(cpu, cpu->pc + 1));
+	} else {
+		instruction = cpu_decode_non_prefixed(cpu->bus);
+	}
 	return instruction;
 }

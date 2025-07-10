@@ -103,8 +103,7 @@ void sm83_isa_cb_execute(struct sm83_core *cpu, u8 opcode);
 void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc);
 
 /* decoder.c */
-struct sm83_instruction cpu_decode(u8 opcode);
-struct sm83_instruction cpu_decode_prefixed(u8 opcode);
+struct sm83_instruction cpu_decode(struct sm83_core *cpu);
 
 /* debugger.c */
 char *sm83_disassemble(struct sm83_core *cpu);

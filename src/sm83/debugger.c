@@ -33,7 +33,8 @@ void sm83_cpu_debug(struct sm83_core *cpu)
 	printf("  IME = %d  | HALT = %d\n", cpu->ime, cpu->halted);
 	printf("  DIV = %d  | TIMA = %d\n", cpu->memory->load8(cpu, 0xFF04),
 	       cpu->memory->load8(cpu, 0xFF05));
-	printf("  Cycles = %lu\n", cpu->cycles);
+	printf("  M-cycles = %lu | T-cycles = %lu\n", cpu->cycles,
+	       cpu->cycles * 4);
 	decoded = sm83_disassemble(cpu);
 	printf("%s\n", decoded);
 	zfree(decoded);
@@ -49,12 +50,12 @@ static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
 		return NULL;
 	if (!strcmp(op, "a16") || !strcmp(op, "n16")) {
 		sprintf(buffer, "%s[$%04X]", op,
-			cpu->memory->load16(cpu, indice));
+			cpu->memory->load16(cpu, indice + 1));
 	} else if (!strcmp(op, "a8") || !strcmp(op, "n8")) {
 		sprintf(buffer, "%s[$%02X]", op,
-			cpu->memory->load8(cpu, indice));
+			cpu->memory->load8(cpu, indice + 1));
 	} else if (!strcmp(op, "e8")) {
-		u8 byte = cpu->memory->load8(cpu, indice);
+		u8 byte = cpu->memory->load8(cpu, indice + 1);
 		s8 offset = (s8)byte;
 		sprintf(buffer, "%s[$%02X] [%d]", op, byte, offset);
 	} else {
@@ -78,16 +79,16 @@ char *sm83_disassemble(struct sm83_core *cpu)
 	sprintf(buffer + strlen(buffer), " -> ");
 	if (cpu->instruction.op1 && cpu->instruction.op2) {
 		char *op1 = sm83_resolve_operand(cpu, cpu->instruction.op1,
-						 cpu->index + 1);
+						 cpu->index);
 		char *op2 = sm83_resolve_operand(cpu, cpu->instruction.op2,
-						 cpu->index + 2);
+						 cpu->index);
 		sprintf(buffer + strlen(buffer), "%s %s %s",
 			cpu->instruction.mnemonic, op1, op2);
 		zfree(op1);
 		zfree(op2);
 	} else if (cpu->instruction.op1) {
 		char *op1 = sm83_resolve_operand(cpu, cpu->instruction.op1,
-						 cpu->index + 1);
+						 cpu->index);
 		sprintf(buffer + strlen(buffer), "%s %s",
 			cpu->instruction.mnemonic, op1);
 		zfree(op1);
@@ -196,7 +197,7 @@ void sm83_debugger_start(u8 *rom)
 	debugger = sm83_debugger_init(rom);
 	if (!debugger)
 		printd("Failed to init debugger");
-	for (int cycle = 0; cycle < 10; cycle++) {
+	for (int cycle = 0; cycle < 256; cycle++) {
 		sm83_cpu_step(debugger->cpu);
 		sm83_cpu_debug(debugger->cpu);
 	}
