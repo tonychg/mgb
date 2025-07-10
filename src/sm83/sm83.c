@@ -81,6 +81,14 @@ static void sm83_update_timer_registers(struct sm83_core *cpu)
 	}
 }
 
+static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
+{
+	cpu->sp--;
+	cpu->memory->write8(cpu, cpu->sp, msb(cpu->pc));
+	cpu->sp--;
+	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
+}
+
 void sm83_cpu_reset(struct sm83_core *cpu)
 {
 	cpu->sp = 0xFFFE;
@@ -152,7 +160,11 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;
-	case SM83_CORE_WRITE:
+	case SM83_CORE_WRITE_0:
+		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
+		sm83_isa_execute(cpu, cpu->instruction.opcode);
+		break;
+	case SM83_CORE_WRITE_1:
 		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
 		sm83_isa_execute(cpu, cpu->instruction.opcode);
 		break;

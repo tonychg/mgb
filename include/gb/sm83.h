@@ -9,7 +9,6 @@ struct sm83_memory {
 	u8 (*load8)(struct sm83_core *, u16 addr);
 	u16 (*load16)(struct sm83_core *, u16 addr);
 	void (*write8)(struct sm83_core *, u16 addr, u8 value);
-	void (*write16)(struct sm83_core *, u16 addr, u16 value);
 	s8 (*loads8)(struct sm83_core *);
 	u8 (*read_segment)(struct sm83_core *);
 };
@@ -28,7 +27,8 @@ enum sm83_state {
 	SM83_CORE_FETCH,
 	SM83_CORE_PC,
 	SM83_CORE_READ,
-	SM83_CORE_WRITE,
+	SM83_CORE_WRITE_0,
+	SM83_CORE_WRITE_1,
 	SM83_CORE_HALT,
 	SM83_CORE_IDLE,
 };
@@ -100,7 +100,6 @@ void sm83_destroy(struct sm83_core *cpu);
 /* sm83_isa.c */
 void sm83_isa_execute(struct sm83_core *cpu, u8 opcode);
 void sm83_isa_cb_execute(struct sm83_core *cpu, u8 opcode);
-void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc);
 
 /* decoder.c */
 struct sm83_instruction cpu_decode(struct sm83_core *cpu);

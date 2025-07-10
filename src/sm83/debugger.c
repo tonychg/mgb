@@ -131,12 +131,6 @@ static u16 load16(struct sm83_core *cpu, u16 addr)
 			   cpu->memory->load8(cpu, addr + 1));
 }
 
-static void write16(struct sm83_core *cpu, u16 addr, u16 value)
-{
-	cpu->memory->write8(cpu, addr, lsb(value));
-	cpu->memory->write8(cpu, addr + 1, msb(value));
-}
-
 static s8 loads8(struct sm83_core *cpu)
 {
 	return (cpu->pc + 1) + (s8)cpu->memory->load8(cpu, cpu->pc);
@@ -185,7 +179,6 @@ static struct sm83_debugger *sm83_debugger_init(u8 *rom)
 	debugger->cpu->memory->loads8 = &loads8;
 	debugger->cpu->memory->write8 = &write8;
 	debugger->cpu->memory->load16 = &load16;
-	debugger->cpu->memory->write16 = &write16;
 	debugger->cpu->memory->read_segment = &read_segment;
 	return debugger;
 }
