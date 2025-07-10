@@ -10,21 +10,21 @@
 #define DEC_DE(cpu) op_r16_dec(&cpu->d, &cpu->e)
 #define DEC_HL(cpu) op_r16_dec(&cpu->h, &cpu->l)
 
-static u8 cpu_read_imm8(struct sm83_core *cpu)
-{
-	u8 value = cpu->memory->read_segment(cpu);
-	++cpu->pc;
-	return value;
-}
-
-static u16 cpu_read_imm16(struct sm83_core *cpu)
-{
-	u8 lsb = cpu->memory->read_segment(cpu);
-	++cpu->pc;
-	u8 msb = cpu->memory->read_segment(cpu);
-	++cpu->pc;
-	return unsigned_16(lsb, msb);
-}
+// static u8 cpu_read_imm8(struct sm83_core *cpu)
+// {
+// 	u8 value = cpu->memory->read_segment(cpu);
+// 	++cpu->pc;
+// 	return value;
+// }
+//
+// static u16 cpu_read_imm16(struct sm83_core *cpu)
+// {
+// 	u8 lsb = cpu->memory->read_segment(cpu);
+// 	++cpu->pc;
+// 	u8 msb = cpu->memory->read_segment(cpu);
+// 	++cpu->pc;
+// 	return unsigned_16(lsb, msb);
+// }
 
 static void op_r16_inc(u8 *r1, u8 *r2)
 {
@@ -125,7 +125,7 @@ static void op_ld_spn(struct sm83_core *cpu)
 		cpu->state = SM83_CORE_PC;
 	} else if (cpu->state == SM83_CORE_PC) {
 		cpu->state = SM83_CORE_IDLE;
-		s8 n = (s8)cpu_read_imm8(cpu);
+		s8 n = (s8)cpu->bus;
 		u16 result = cpu->sp + n;
 		cpu_flag_clear(cpu);
 		if (((cpu->sp ^ n ^ result) & 0x100) == 0x100)
@@ -229,6 +229,18 @@ static void op_ld_a_nn(struct sm83_core *cpu)
 	}
 }
 
+static void op_ld_hl_n(struct sm83_core *cpu)
+{
+	if (cpu->state == SM83_CORE_FETCH) {
+		cpu->state = SM83_CORE_PC;
+	} else if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_WRITE;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_WRITE) {
+		cpu->state = SM83_CORE_FETCH;
+	}
+}
+
 /*
  * Jump instructions
  */
@@ -271,6 +283,9 @@ static void op_jr_n_e8(struct sm83_core *cpu, bool condition)
 	}
 }
 
+/*
+ * IDU
+ */
 static void op_increment(struct sm83_core *cpu, u8 *reg)
 {
 	u8 result = *reg + 1;
@@ -321,6 +336,9 @@ static void op_dec_hl(struct sm83_core *cpu)
 		cpu_flag_toggle(cpu, FLAG_H);
 }
 
+/*
+ * Bitwise Operations
+ */
 static void op_rlc(struct sm83_core *cpu, u8 *reg, bool is_a)
 {
 	u8 result = *reg;
@@ -461,102 +479,6 @@ static void op_rst(struct sm83_core *cpu, u8 vec)
 	cpu->sp--;
 	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
 	cpu->pc = unsigned_16(vec, 0x00);
-}
-
-static void op_add_hl(struct sm83_core *cpu, u16 word)
-{
-	int result = HL(cpu) + word;
-
-	cpu_flag_set_or_clear(cpu, FLAG_Z);
-	if (result & 0x10000) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if ((HL(cpu) ^ word ^ (result & 0xFFFF)) & 0x1000) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-	SET_HL(cpu, (u16)result);
-}
-
-static void op_add_sp(struct sm83_core *cpu, s8 value)
-{
-	int result = cpu->sp + value;
-
-	cpu_flag_clear(cpu);
-	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-	cpu->sp = (u16)result;
-}
-
-static void op_add(struct sm83_core *cpu, u8 byte)
-{
-	int result = cpu->a + byte;
-	int carrybits = cpu->a ^ byte ^ result;
-
-	cpu->a = (u8)result;
-	cpu_flag_clear(cpu);
-	if ((u8)result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	if ((carrybits & 0x100) != 0) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if ((carrybits & 0x10) != 0) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-}
-
-static void op_adc(struct sm83_core *cpu, u8 byte)
-{
-	int carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
-	int result = cpu->a + byte + carry;
-
-	cpu_flag_clear(cpu);
-	if ((u8)result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	if (result > 0xFF) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if (((cpu->a & 0x0F) + (byte & 0x0F) + carry) > 0x0F) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-	cpu->a = (u8)result;
-}
-
-static void op_sub(struct sm83_core *cpu, u8 byte)
-{
-	int result = cpu->a - byte;
-	int carrybits = cpu->a ^ byte ^ result;
-
-	cpu->a = (u8)result;
-	cpu_flag_set(cpu, FLAG_N);
-	if ((u8)result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	if ((carrybits & 0x100) != 0) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if ((carrybits & 0x10) != 0) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-}
-
-static void op_sbc(struct sm83_core *cpu, u8 byte)
-{
-	int carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
-	int result = cpu->a - byte - carry;
-
-	cpu_flag_set(cpu, FLAG_N);
-	if ((u8)result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	if (result < 0) {
-		cpu_flag_toggle(cpu, FLAG_C);
-	}
-	if (((cpu->a & 0x0F) - (byte & 0x0F) - carry) < 0) {
-		cpu_flag_toggle(cpu, FLAG_H);
-	}
-	cpu->a = (u8)result;
 }
 
 static void op_swap(struct sm83_core *cpu, u8 *reg)
@@ -751,20 +673,108 @@ static void op_res_hl(struct sm83_core *cpu, int bit)
 	op_ld_hl_r8(cpu, result);
 }
 
-static void op_cp(struct sm83_core *cpu, u8 byte)
+/*
+ * Arithmetic operations
+ */
+static void op_add_hl(struct sm83_core *cpu, u16 word)
 {
-	cpu_flag_set(cpu, FLAG_N);
-	if (cpu->a < byte) {
+	int result = HL(cpu) + word;
+
+	cpu_flag_set_or_clear(cpu, FLAG_Z);
+	if (result & 0x10000) {
 		cpu_flag_toggle(cpu, FLAG_C);
 	}
-	if (cpu->a == byte) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if ((HL(cpu) ^ word ^ (result & 0xFFFF)) & 0x1000) {
+		cpu_flag_toggle(cpu, FLAG_H);
 	}
-	if (((cpu->a - byte) & 0xF) > (cpu->a & 0xF)) {
+	SET_HL(cpu, (u16)result);
+}
+
+static void op_add_sp(struct sm83_core *cpu, s8 value)
+{
+	int result = cpu->sp + value;
+
+	cpu_flag_clear(cpu);
+	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if (((cpu->sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10) {
+		cpu_flag_toggle(cpu, FLAG_H);
+	}
+	cpu->sp = (u16)result;
+}
+
+static void op_add(struct sm83_core *cpu, u8 byte)
+{
+	int result = cpu->a + byte;
+	int carrybits = cpu->a ^ byte ^ result;
+
+	cpu->a = (u8)result;
+	cpu_flag_clear(cpu);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_Z);
+	if ((carrybits & 0x100) != 0) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if ((carrybits & 0x10) != 0) {
 		cpu_flag_toggle(cpu, FLAG_H);
 	}
 }
 
+static void op_adc(struct sm83_core *cpu, u8 byte)
+{
+	int carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
+	int result = cpu->a + byte + carry;
+
+	cpu_flag_clear(cpu);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_Z);
+	if (result > 0xFF) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if (((cpu->a & 0x0F) + (byte & 0x0F) + carry) > 0x0F) {
+		cpu_flag_toggle(cpu, FLAG_H);
+	}
+	cpu->a = (u8)result;
+}
+
+static void op_sub(struct sm83_core *cpu, u8 byte)
+{
+	int result = cpu->a - byte;
+	int carrybits = cpu->a ^ byte ^ result;
+
+	cpu->a = (u8)result;
+	cpu_flag_set(cpu, FLAG_N);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_Z);
+	if ((carrybits & 0x100) != 0) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if ((carrybits & 0x10) != 0) {
+		cpu_flag_toggle(cpu, FLAG_H);
+	}
+}
+
+static void op_sbc(struct sm83_core *cpu, u8 byte)
+{
+	int carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
+	int result = cpu->a - byte - carry;
+
+	cpu_flag_set(cpu, FLAG_N);
+	if ((u8)result == 0)
+		cpu_flag_toggle(cpu, FLAG_Z);
+	if (result < 0) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if (((cpu->a & 0x0F) - (byte & 0x0F) - carry) < 0) {
+		cpu_flag_toggle(cpu, FLAG_H);
+	}
+	cpu->a = (u8)result;
+}
+
+/*
+ * Stack operations
+ */
 static void op_call_nn(struct sm83_core *cpu)
 {
 	u8 nn_lsb, nn_msb;
@@ -811,6 +821,31 @@ static void op_stack_pop_pc(struct sm83_core *cpu, u16 *pc)
 	*pc = result;
 }
 
+void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
+{
+	cpu->sp--;
+	cpu->memory->write8(cpu, cpu->sp, msb(cpu->pc));
+	cpu->sp--;
+	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
+}
+
+/*
+ * Special register operations
+ */
+static void op_cp(struct sm83_core *cpu, u8 byte)
+{
+	cpu_flag_set(cpu, FLAG_N);
+	if (cpu->a < byte) {
+		cpu_flag_toggle(cpu, FLAG_C);
+	}
+	if (cpu->a == byte) {
+		cpu_flag_toggle(cpu, FLAG_Z);
+	}
+	if (((cpu->a - byte) & 0xF) > (cpu->a & 0xF)) {
+		cpu_flag_toggle(cpu, FLAG_H);
+	}
+}
+
 static void op_daa(struct sm83_core *cpu)
 {
 	int a = cpu->a;
@@ -834,14 +869,6 @@ static void op_daa(struct sm83_core *cpu)
 	if (a == 0)
 		cpu_flag_toggle(cpu, FLAG_Z);
 	cpu->a = a;
-}
-
-void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
-{
-	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, msb(cpu->pc));
-	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
 }
 
 void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
@@ -1044,7 +1071,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x2E:
 		// LD L,n
-		cpu->l = cpu_read_imm8(cpu);
+		op_ld(cpu, &cpu->l, cpu->pc);
 		break;
 	case 0x2F:
 		// CPL
@@ -1080,7 +1107,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x36:
 		// LD (HL),n
-		op_ld_hl_r8(cpu, cpu_read_imm8(cpu));
+		op_ld_hl_n(cpu);
 		break;
 	case 0x37:
 		// SCF
@@ -1660,15 +1687,16 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xC4:
 		// CALL NZ,nn
-		if (!cpu_flag_is_set(cpu, FLAG_Z)) {
-			u16 result = cpu_read_imm16(cpu);
-			sm83_stack_push_pc(cpu, &cpu->pc);
-			cpu->pc = result;
-			cpu->cycles = 6;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		// TODO
+		// if (!cpu_flag_is_set(cpu, FLAG_Z)) {
+		// 	u16 result = cpu_read_imm16(cpu);
+		// 	sm83_stack_push_pc(cpu, &cpu->pc);
+		// 	cpu->pc = result;
+		// 	cpu->cycles = 6;
+		// } else {
+		// 	++cpu->pc;
+		// 	++cpu->pc;
+		// }
 		break;
 	case 0xC5:
 		// PUSH BC
@@ -1676,7 +1704,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xC6:
 		// ADD A,n
-		op_add(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_add(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xC7:
 		// RST 00H
@@ -1702,15 +1731,16 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xCC:
 		// CALL Z,nn
-		if (cpu_flag_is_set(cpu, FLAG_Z)) {
-			u16 result = cpu_read_imm16(cpu);
-			sm83_stack_push_pc(cpu, &cpu->pc);
-			cpu->pc = result;
-			cpu->cycles = 6;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		// TODO
+		// if (cpu_flag_is_set(cpu, FLAG_Z)) {
+		// 	u16 result = cpu_read_imm16(cpu);
+		// 	sm83_stack_push_pc(cpu, &cpu->pc);
+		// 	cpu->pc = result;
+		// 	cpu->cycles = 6;
+		// } else {
+		// 	++cpu->pc;
+		// 	++cpu->pc;
+		// }
 		break;
 	case 0xCD:
 		// CALL nn
@@ -1718,7 +1748,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xCE:
 		// ADC A, n
-		op_adc(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_adc(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xCF:
 		// RST 08H
@@ -1758,7 +1789,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xD6:
 		// SUB n
-		op_sub(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_sub(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xD7:
 		// RST 10H
@@ -1798,7 +1830,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xDE:
 		// SBC n
-		op_sbc(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_sbc(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xDF:
 		// RST 18H
@@ -1828,7 +1861,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xE6:
 		// AND n
-		op_and(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_and(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xE7:
 		// RST 20H
@@ -1836,7 +1870,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xE8:
 		// ADD SP,n
-		op_add_sp(cpu, (s8)cpu_read_imm8(cpu));
+		// TODO
+		// op_add_sp(cpu, (s8)cpu_read_imm8(cpu));
 		break;
 	case 0xE9:
 		// JP (HL)
@@ -1857,7 +1892,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xEE:
 		// XOR n
-		op_xor(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_xor(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xEF:
 		// RST 28H
@@ -1890,7 +1926,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xF6:
 		// OR n
-		op_or(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_or(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xF7:
 		// RST 30H
@@ -1921,7 +1958,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xFE:
 		// CP
-		op_cp(cpu, cpu_read_imm8(cpu));
+		// TODO
+		// op_cp(cpu, cpu_read_imm8(cpu));
 		break;
 	case 0xFF:
 		// RST 38H
