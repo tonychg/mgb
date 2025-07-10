@@ -197,7 +197,7 @@ void sm83_debugger_start(u8 *rom)
 	debugger = sm83_debugger_init(rom);
 	if (!debugger)
 		printd("Failed to init debugger");
-	for (int cycle = 0; cycle < 256; cycle++) {
+	for (int cycle = 0; cycle < 50; cycle++) {
 		sm83_cpu_step(debugger->cpu);
 		sm83_cpu_debug(debugger->cpu);
 	}

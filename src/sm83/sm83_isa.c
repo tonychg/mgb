@@ -38,7 +38,7 @@ static void op_r16_dec(u8 *r1, u8 *r2)
 	op_r16_set(r1, r2, result);
 }
 
-/* 
+/*
  * Load instructions
  */
 static void op_ld_hl_r8(struct sm83_core *cpu, u8 value)
@@ -93,7 +93,7 @@ static void op_ld_nn(struct sm83_core *cpu, u16 *reg)
 		cpu->acc = cpu->bus;
 	} else if (cpu->state == SM83_CORE_READ) {
 		cpu->state = SM83_CORE_WRITE;
-		cpu->acc |= cpu->memory->load8(cpu, cpu->bus) << 8;
+		cpu->acc |= cpu->bus << 8;
 		++cpu->pc;
 	} else if (cpu->state == SM83_CORE_WRITE) {
 		cpu->state = SM83_CORE_IDLE;
@@ -146,10 +146,10 @@ static void op_ld_sp_nn(struct sm83_core *cpu)
 	} else if (cpu->state == SM83_CORE_PC) {
 		cpu->state = SM83_CORE_READ;
 		cpu->ptr = cpu->pc;
-		cpu->acc = cpu->memory->load8(cpu, cpu->bus);
+		cpu->acc = cpu->bus;
 	} else if (cpu->state == SM83_CORE_READ) {
 		cpu->state = SM83_CORE_FETCH;
-		cpu->acc |= cpu->memory->load8(cpu, cpu->bus) << 8;
+		cpu->acc |= cpu->bus << 8;
 		cpu->sp = cpu->acc;
 		++cpu->pc;
 	}
@@ -188,13 +188,13 @@ static void op_ld_nn_a(struct sm83_core *cpu)
 	} else if (cpu->state == SM83_CORE_PC) {
 		cpu->state = SM83_CORE_READ;
 		cpu->ptr = cpu->pc;
-		cpu->acc = cpu->memory->load8(cpu, cpu->bus);
-		++cpu->pc;
+		cpu->acc = cpu->bus;
 	} else if (cpu->state == SM83_CORE_READ) {
 		cpu->state = SM83_CORE_WRITE;
-		cpu->acc |= cpu->memory->load8(cpu, cpu->bus) << 8;
+		cpu->acc |= cpu->bus << 8;
 		cpu->ptr = cpu->acc;
 		cpu->bus = cpu->a;
+		++cpu->pc;
 	} else if (cpu->state == SM83_CORE_WRITE) {
 		cpu->state = SM83_CORE_FETCH;
 		++cpu->pc;
@@ -221,11 +221,53 @@ static void op_ld_a_nn(struct sm83_core *cpu)
 		cpu->acc = cpu->bus;
 	} else if (cpu->state == SM83_CORE_READ) {
 		cpu->state = SM83_CORE_IDLE;
-		cpu->acc |= cpu->memory->load8(cpu, cpu->bus) << 8;
+		cpu->acc |= cpu->bus << 8;
 		++cpu->pc;
 	} else if (cpu->state == SM83_CORE_IDLE) {
 		cpu->state = SM83_CORE_FETCH;
 		cpu->a = cpu->acc;
+	}
+}
+
+/*
+ * Jump instructions
+ */
+static void op_jp_n_nn(struct sm83_core *cpu, bool condition)
+{
+	if (cpu->state == SM83_CORE_FETCH) {
+		cpu->state = SM83_CORE_PC;
+	} else if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ;
+		cpu->ptr = cpu->pc;
+		cpu->acc = cpu->bus;
+	} else if (cpu->state == SM83_CORE_READ) {
+		if (condition) {
+			cpu->state = SM83_CORE_IDLE;
+			cpu->acc |= cpu->bus << 8;
+			++cpu->pc;
+		} else {
+			cpu->state = SM83_CORE_FETCH;
+		}
+	} else if (cpu->state == SM83_CORE_IDLE) {
+		cpu->state = SM83_CORE_FETCH;
+		cpu->pc = cpu->acc;
+	}
+}
+
+static void op_jr_n_e8(struct sm83_core *cpu, bool condition)
+{
+	if (cpu->state == SM83_CORE_FETCH) {
+		if (condition) {
+			cpu->state = SM83_CORE_READ;
+			cpu->ptr = cpu->pc;
+		} else {
+			cpu->state = SM83_CORE_PC;
+		}
+	} else if (cpu->state == SM83_CORE_READ) {
+		cpu->state = SM83_CORE_FETCH;
+		cpu->pc = cpu->pc + 1 + (s8)cpu->bus;
+	} else if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
 	}
 }
 
@@ -903,7 +945,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x18:
 		// JR e8
-		cpu->pc = cpu->memory->loads8(cpu);
+		op_jr_n_e8(cpu, true);
 		break;
 	case 0x19:
 		// ADD HL, DE
@@ -937,12 +979,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x20:
 		// JR NZ,e8
-		if (!cpu_flag_is_set(cpu, FLAG_Z)) {
-			cpu->pc = cpu->memory->loads8(cpu);
-			cpu->cycles = 3;
-		} else {
-			++cpu->pc;
-		}
+		op_jr_n_e8(cpu, !cpu_flag_is_set(cpu, FLAG_Z));
 		break;
 	case 0x21:
 		// LD HL,nn
@@ -978,12 +1015,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x28:
 		// JR Z,e8
-		if (cpu_flag_is_set(cpu, FLAG_Z)) {
-			cpu->pc = cpu->memory->loads8(cpu);
-			cpu->cycles = 3;
-		} else {
-			++cpu->pc;
-		}
+		op_jr_n_e8(cpu, cpu_flag_is_set(cpu, FLAG_Z));
 		break;
 	case 0x29:
 		// ADD HL,HL
@@ -1022,13 +1054,8 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		cpu_flag_toggle(cpu, FLAG_N);
 		break;
 	case 0x30:
-		// JR NC,n
-		if (!cpu_flag_is_set(cpu, FLAG_C)) {
-			cpu->pc = cpu->memory->loads8(cpu);
-			cpu->cycles = 3;
-		} else {
-			++cpu->pc;
-		}
+		// JR NC,e8
+		op_jr_n_e8(cpu, !cpu_flag_is_set(cpu, FLAG_C));
 		break;
 	case 0x31:
 		// LD sp,nn
@@ -1063,12 +1090,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0x38:
 		// JR C,n
-		if (cpu_flag_is_set(cpu, FLAG_C)) {
-			cpu->pc = cpu->memory->loads8(cpu);
-			cpu->cycles = 3;
-		} else {
-			++cpu->pc;
-		}
+		op_jr_n_e8(cpu, cpu_flag_is_set(cpu, FLAG_C));
 		break;
 	case 0x39:
 		// ADD HL,SP
@@ -1630,27 +1652,11 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xC2:
 		// JP NZ,nn
-		if (!cpu_flag_is_set(cpu, FLAG_Z)) {
-			cpu->pc = cpu_read_imm16(cpu);
-			cpu->cycles = 4;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		op_jp_n_nn(cpu, !cpu_flag_is_set(cpu, FLAG_Z));
 		break;
 	case 0xC3:
 		// JP nn
-		if (cpu->state == SM83_CORE_FETCH) {
-			cpu->state = SM83_CORE_PC;
-		} else if (cpu->state == SM83_CORE_PC) {
-			cpu->state = SM83_CORE_READ;
-			cpu->acc = cpu->bus;
-			cpu->ptr = cpu->pc;
-		} else if (cpu->state == SM83_CORE_READ) {
-			cpu->state = SM83_CORE_FETCH;
-			cpu->acc |= cpu->bus << 8;
-			cpu->pc = cpu->acc;
-		}
+		op_jp_n_nn(cpu, true);
 		break;
 	case 0xC4:
 		// CALL NZ,nn
@@ -1689,13 +1695,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xCA:
 		// JP Z,nn
-		if (cpu_flag_is_set(cpu, FLAG_Z)) {
-			cpu->pc = cpu_read_imm16(cpu);
-			cpu->cycles = 4;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		op_jp_n_nn(cpu, cpu_flag_is_set(cpu, FLAG_Z));
 		break;
 	case 0xCB:
 		// Prefix
@@ -1737,13 +1737,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xD2:
 		// JP NC,nn
-		if (!cpu_flag_is_set(cpu, FLAG_C)) {
-			cpu->pc = cpu_read_imm16(cpu);
-			cpu->cycles = 4;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		op_jp_n_nn(cpu, !cpu_flag_is_set(cpu, FLAG_C));
 		break;
 	case 0xD3:
 		// No code
@@ -1784,13 +1778,7 @@ void sm83_isa_execute(struct sm83_core *cpu, u8 opcode)
 		break;
 	case 0xDA:
 		// JP C,nn
-		if (cpu_flag_is_set(cpu, FLAG_C)) {
-			cpu->pc = cpu_read_imm16(cpu);
-			cpu->cycles = 4;
-		} else {
-			++cpu->pc;
-			++cpu->pc;
-		}
+		op_jp_n_nn(cpu, cpu_flag_is_set(cpu, FLAG_C));
 		break;
 	case 0xDB:
 		// No code
