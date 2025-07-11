@@ -302,17 +302,18 @@ static void op_jp_n_nn(struct sm83_core *cpu, bool condition)
 static void op_jr_n_e8(struct sm83_core *cpu, bool condition)
 {
 	if (cpu->state == SM83_CORE_FETCH) {
-		if (condition) {
-			cpu->state = SM83_CORE_READ_0;
-			cpu->ptr = cpu->pc;
-		} else {
-			cpu->state = SM83_CORE_PC;
-		}
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = cpu->pc;
+		cpu->pc++;
 	} else if (cpu->state == SM83_CORE_READ_0) {
+		if (condition) {
+			cpu->state = SM83_CORE_IDLE_0;
+		} else {
+			cpu->state = SM83_CORE_FETCH;
+		}
+	} else if (cpu->state == SM83_CORE_IDLE_0) {
 		cpu->state = SM83_CORE_FETCH;
-		cpu->pc = cpu->pc + 1 + (s8)cpu->bus;
-	} else if (cpu->state == SM83_CORE_PC) {
-		cpu->state = SM83_CORE_FETCH;
+		cpu->pc += (s8)cpu->bus;
 	}
 }
 
@@ -1255,6 +1256,7 @@ void sm83_isa_execute(struct sm83_core *cpu)
 		op_inc(cpu, &cpu->b);
 		break;
 	case 0x05:
+		// DEC B
 		// Z 1 H -
 		op_dec(cpu, &cpu->b);
 		break;

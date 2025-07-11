@@ -62,7 +62,7 @@ static u8 sm83_irq_ack(struct sm83_core *cpu)
 static void sm83_update_timer_registers(struct sm83_core *cpu)
 {
 	u8 next, tima;
-	u8 divider = (u16)cpu->cycles << 8;
+	u8 divider = (u16)cpu->cycles >> 8;
 	u8 tac = cpu->memory->load8(cpu, 0xFF07);
 	u8 clock_offset = CLOCK_RATE[(tac & 0b11)];
 

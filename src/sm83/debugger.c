@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static void printd(const char *msg)
+void sm83_printd(const char *msg)
 {
 	printf("[sm83] msg=%s\n", msg);
 }
@@ -71,7 +71,7 @@ char *sm83_disassemble(struct sm83_core *cpu)
 	buffer = (char *)calloc(256, sizeof(char));
 	if (!buffer)
 		return NULL;
-	sprintf(buffer + strlen(buffer), "00:%04X", cpu->pc);
+	sprintf(buffer + strlen(buffer), "00:%04X", cpu->index);
 	for (int i = 0; i < cpu->instruction.length; i++) {
 		sprintf(buffer + strlen(buffer), " %02X",
 			cpu->memory->load8(cpu, cpu->index + i));
@@ -98,12 +98,6 @@ char *sm83_disassemble(struct sm83_core *cpu)
 	}
 	return buffer;
 }
-
-struct sm83_debugger {
-	struct sm83_core *cpu;
-	u8 *bus;
-	u8 *rom;
-};
 
 static u8 load8(struct sm83_core *cpu, u16 addr)
 {
@@ -156,6 +150,7 @@ static struct sm83_debugger *sm83_debugger_alloc()
 		goto free_cpu;
 	}
 	debugger->rom = NULL;
+	debugger->breakpoint = 0;
 	return debugger;
 
 free_cpu:
@@ -166,7 +161,7 @@ error:
 	return NULL;
 }
 
-static struct sm83_debugger *sm83_debugger_init(u8 *rom)
+struct sm83_debugger *sm83_debugger_init(u8 *rom)
 {
 	struct sm83_debugger *debugger;
 
@@ -183,15 +178,9 @@ static struct sm83_debugger *sm83_debugger_init(u8 *rom)
 	return debugger;
 }
 
-void sm83_debugger_start(u8 *rom)
+void sm83_debugger_destroy(struct sm83_debugger *debugger)
 {
-	struct sm83_debugger *debugger = NULL;
-
-	debugger = sm83_debugger_init(rom);
-	if (!debugger)
-		printd("Failed to init debugger");
-	for (int cycle = 0; cycle < 50; cycle++) {
-		sm83_cpu_step(debugger->cpu);
-		sm83_cpu_debug(debugger->cpu);
-	}
+	sm83_destroy(debugger->cpu);
+	zfree(debugger->bus);
+	zfree(debugger);
 }

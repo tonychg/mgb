@@ -105,10 +105,20 @@ void sm83_isa_cb_execute(struct sm83_core *cpu);
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
 
+struct sm83_debugger {
+	struct sm83_core *cpu;
+	u8 *bus;
+	u8 *rom;
+	u16 breakpoint;
+};
+
 /* debugger.c */
 char *sm83_disassemble(struct sm83_core *cpu);
 void sm83_cpu_debug(struct sm83_core *cpu);
 void sm83_debugger_start(u8 *rom);
+void sm83_printd(const char *msg);
+struct sm83_debugger *sm83_debugger_init(u8 *rom);
+void sm83_debugger_destroy(struct sm83_debugger *debugger);
 
 static inline u8 msb(u16 value)
 {
