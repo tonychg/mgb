@@ -24,3 +24,19 @@ u8 *fs_read(FILE *file, size_t size_in_bytes)
 	fclose(file);
 	return buffer;
 }
+
+u8 *readfile(char *path)
+{
+	FILE *file;
+	size_t size_in_bytes;
+	u8 *buffer = NULL;
+
+	file = fopen(path, "r");
+	if (!file) {
+		return NULL;
+	}
+	size_in_bytes = fs_size(file);
+	if (size_in_bytes > 0)
+		buffer = fs_read(file, size_in_bytes);
+	return buffer;
+}

@@ -1,5 +1,5 @@
-#include "gb/cpu.h"
-#include <stdio.h>
+#include "gb/sm83.h"
+#include <stdlib.h>
 
 static const char *OP_TABLES_MNEMONIC[256] = {
 	"NOP",	      "LD",	    "LD",	  "INC",	"INC",
@@ -242,112 +242,43 @@ static int OPCODE_CB_MACHINE_CYCLES[256] = {
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2
 };
 
-static int cpu_instruction_length(u8 opcode)
-{
-	return OPCODE_LENGTH[opcode];
-}
-
-static int cpu_instruction_cb_length(u8 opcode)
-{
-	return 2;
-}
-
-static const char *cpu_opcode_mnemonic(u8 opcode)
-{
-	return OP_TABLES_MNEMONIC[opcode];
-}
-
-static const char *cpu_opcode_cb_mnemonic(u8 opcode)
-{
-	return OP_TABLES_CB_MNEMONIC[opcode];
-}
-
-static const char *cpu_opcode_op_1(u8 opcode)
-{
-	return OP_TABLES_OP_1[opcode];
-}
-
-static const char *cpu_opcode_cb_op_1(u8 opcode)
-{
-	return OP_TABLES_CB_OP_1[opcode];
-}
-
-static const char *cpu_opcode_op_2(u8 opcode)
-{
-	return OP_TABLES_OP_2[opcode];
-}
-
-static const char *cpu_opcode_cb_op_2(u8 opcode)
-{
-	return OP_TABLES_CB_OP_2[opcode];
-}
-
-static int cpu_opcode_machine_cycle(u8 opcode)
-{
-	return OPCODE_MACHINE_CYCLES[opcode];
-}
-
-static int cpu_opcode_cb_machine_cycle(u8 opcode)
-{
-	return OPCODE_CB_MACHINE_CYCLES[opcode];
-}
-
-char *cpu_opcode_to_string(u8 opcode)
-{
-	static char buffer[50];
-	const char *mnemonic = cpu_opcode_mnemonic(opcode);
-	const char *op_1 = cpu_opcode_op_1(opcode);
-	const char *op_2 = cpu_opcode_op_2(opcode);
-
-	if (op_1 && op_2)
-		sprintf(buffer, "%s %s %s", mnemonic, op_1, op_2);
-	else if (op_1)
-		sprintf(buffer, "%s %s", mnemonic, op_1);
-	else
-		sprintf(buffer, "%s", mnemonic);
-	return buffer;
-}
-
-char *cpu_opcode_cb_to_string(u8 opcode)
-{
-	static char buffer[50];
-	const char *mnemonic = cpu_opcode_cb_mnemonic(opcode);
-	const char *op_1 = cpu_opcode_cb_op_1(opcode);
-	const char *op_2 = cpu_opcode_cb_op_2(opcode);
-
-	if (op_1 && op_2)
-		sprintf(buffer, "%s %s %s", mnemonic, op_1, op_2);
-	else if (op_1)
-		sprintf(buffer, "%s %s", mnemonic, op_1);
-	else
-		sprintf(buffer, "%s", mnemonic);
-	return buffer;
-}
-
-struct sm83_instruction cpu_op_decode(u8 opcode)
+static struct sm83_instruction cpu_decode_non_prefixed(u8 opcode)
 {
 	struct sm83_instruction instruction;
 
 	instruction.opcode = opcode;
-	instruction.length = cpu_instruction_length(opcode);
-	instruction.mnemonic = cpu_opcode_mnemonic(opcode);
-	instruction.op_1 = cpu_opcode_op_1(opcode);
-	instruction.op_2 = cpu_opcode_op_2(opcode);
-	instruction.cycles = cpu_opcode_machine_cycle(opcode);
+	instruction.length = OPCODE_LENGTH[opcode];
+	instruction.mnemonic = OP_TABLES_MNEMONIC[opcode];
+	instruction.op1 = OP_TABLES_OP_1[opcode];
+	instruction.op2 = OP_TABLES_OP_2[opcode];
+	instruction.cycles = OPCODE_MACHINE_CYCLES[opcode];
 	instruction.prefixed = false;
 	return instruction;
 }
 
-struct sm83_instruction cpu_op_decode_cb(u8 opcode)
+static struct sm83_instruction cpu_decode_prefixed(u8 opcode)
 {
 	struct sm83_instruction instruction;
 
 	instruction.opcode = opcode;
-	instruction.length = cpu_instruction_cb_length(opcode);
-	instruction.mnemonic = cpu_opcode_cb_mnemonic(opcode);
-	instruction.op_1 = cpu_opcode_cb_op_1(opcode);
-	instruction.op_2 = cpu_opcode_cb_op_2(opcode);
-	instruction.cycles = cpu_opcode_cb_machine_cycle(opcode);
+	instruction.length = 2;
+	instruction.mnemonic = OP_TABLES_CB_MNEMONIC[opcode];
+	instruction.op1 = OP_TABLES_CB_OP_1[opcode];
+	instruction.op2 = OP_TABLES_CB_OP_2[opcode];
+	instruction.cycles = OPCODE_CB_MACHINE_CYCLES[opcode];
 	instruction.prefixed = true;
+	return instruction;
+}
+
+struct sm83_instruction sm83_decode(struct sm83_core *cpu)
+{
+	struct sm83_instruction instruction;
+
+	if (cpu->bus == 0xCB) {
+		instruction = cpu_decode_prefixed(
+			cpu->memory->load8(cpu, cpu->pc + 1));
+	} else {
+		instruction = cpu_decode_non_prefixed(cpu->bus);
+	}
 	return instruction;
 }
