@@ -37,6 +37,7 @@ MAKE        = make
 .PHONY:all
 all:    $(NAME)
 	$(MAKE) -C src/sm83
+	$(MAKE) -C tests
 test: CFLAGS = -Wall -g -DTEST
 
 build:
@@ -59,5 +60,6 @@ test:	clean build $(OBJ)
 clean:
 	$(RM) $(OBJ)
 	$(MAKE) -C src/sm83 clean
+	$(MAKE) -C tests clean
 
 re: clean all

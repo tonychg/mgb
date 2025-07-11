@@ -100,7 +100,6 @@ void sm83_destroy(struct sm83_core *cpu);
 
 /* sm83_isa.c */
 void sm83_isa_execute(struct sm83_core *cpu);
-void sm83_isa_cb_execute(struct sm83_core *cpu);
 
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
@@ -127,7 +126,7 @@ static inline u8 msb(u16 value)
 
 static inline u8 lsb(u16 value)
 {
-	return 0xFF & value;
+	return value ^ 0xFF00;
 }
 
 static inline u16 unsigned_16(u8 lsb, u8 msb)

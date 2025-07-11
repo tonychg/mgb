@@ -1,5 +1,6 @@
 #include "gb/sm83.h"
 #include "gb/alloc.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 static struct sm83_core *sm83_cpu_alloc(void)
@@ -149,11 +150,17 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_READ_0:
+		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
+		sm83_isa_execute(cpu);
+		break;
 	case SM83_CORE_READ_1:
 		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_WRITE_0:
+		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
+		sm83_isa_execute(cpu);
+		break;
 	case SM83_CORE_WRITE_1:
 		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
 		sm83_isa_execute(cpu);
@@ -167,11 +174,12 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		}
 		break;
 	case SM83_CORE_IDLE_0:
+		sm83_isa_execute(cpu);
+		break;
 	case SM83_CORE_IDLE_1:
 		sm83_isa_execute(cpu);
 		break;
 	}
-	sm83_update_timer_registers(cpu);
 }
 
 void sm83_destroy(struct sm83_core *cpu)

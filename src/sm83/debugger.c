@@ -104,10 +104,14 @@ static u8 load8(struct sm83_core *cpu, u16 addr)
 	u8 value;
 	struct sm83_debugger *debugger = (struct sm83_debugger *)cpu->parent;
 
-	if (addr < 0x8000)
-		value = debugger->rom[addr];
-	else
+	if (debugger->rom) {
+		if (addr < 0x8000)
+			value = debugger->rom[addr];
+		else
+			value = debugger->bus[addr];
+	} else {
 		value = debugger->bus[addr];
+	}
 	return value;
 }
 
@@ -115,8 +119,12 @@ static void write8(struct sm83_core *cpu, u16 addr, u8 value)
 {
 	struct sm83_debugger *debugger = (struct sm83_debugger *)cpu->parent;
 
-	if (addr >= 0x8000)
+	if (debugger->rom) {
+		if (addr >= 0x8000)
+			debugger->bus[addr] = value;
+	} else {
 		debugger->bus[addr] = value;
+	}
 }
 
 static u16 load16(struct sm83_core *cpu, u16 addr)
