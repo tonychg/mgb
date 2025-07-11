@@ -436,134 +436,167 @@ static void op_dec_hl(struct sm83_core *cpu)
  */
 static void op_rlc(struct sm83_core *cpu, u8 *reg, bool is_a)
 {
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 result = *reg;
 
-	if ((result & 0x80) != 0) {
-		cpu_flag_set(cpu, FLAG_C);
-		result <<= 1;
-		result |= 0x1;
-	} else {
-		cpu_flag_clear(cpu);
-		result <<= 1;
-	}
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+		if ((result & 0x80) != 0) {
+			cpu_flag_set(cpu, FLAG_C);
+			result <<= 1;
+			result |= 0x1;
+		} else {
+			cpu_flag_clear(cpu);
+			result <<= 1;
+		}
+		*reg = result;
+		if (!is_a && result == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
 	}
 }
 
 static void op_rlc_hl(struct sm83_core *cpu)
 {
-	u8 result;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		u8 result;
 
-	result = cpu->memory->load8(cpu, HL(cpu));
-	if ((result & 0x80) != 0) {
-		cpu_flag_set(cpu, FLAG_C);
-		result <<= 1;
-		result |= 0x1;
-	} else {
-		cpu_flag_clear(cpu);
-		result <<= 1;
-	}
-	op_ld_hl_r8(cpu, result);
-	if (result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+		result = cpu->bus;
+		if ((result & 0x80) != 0) {
+			cpu_flag_set(cpu, FLAG_C);
+			result <<= 1;
+			result |= 0x1;
+		} else {
+			cpu_flag_clear(cpu);
+			result <<= 1;
+		}
+		if (result == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
+		cpu->bus = result;
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
 	}
 }
 
 static void op_rrc(struct sm83_core *cpu, u8 *reg, bool is_a)
 {
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 result = *reg;
 
-	if ((result & 0x01) != 0) {
-		cpu_flag_set(cpu, FLAG_C);
-		result >>= 1;
-		result |= 0x80;
-	} else {
-		cpu_flag_clear(cpu);
-		result >>= 1;
-	}
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+		if ((result & 0x01) != 0) {
+			cpu_flag_set(cpu, FLAG_C);
+			result >>= 1;
+			result |= 0x80;
+		} else {
+			cpu_flag_clear(cpu);
+			result >>= 1;
+		}
+		*reg = result;
+		if (!is_a && result == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
 	}
 }
 
 static void op_rrc_hl(struct sm83_core *cpu)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	if ((result & 0x01) != 0) {
-		cpu_flag_set(cpu, FLAG_C);
-		result >>= 1;
-		result |= 0x80;
-	} else {
-		cpu_flag_clear(cpu);
-		result >>= 1;
-	}
-	op_ld_hl_r8(cpu, result);
-	if (result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		if ((cpu->bus & 0x01) != 0) {
+			cpu_flag_set(cpu, FLAG_C);
+			cpu->bus >>= 1;
+			cpu->bus |= 0x80;
+		} else {
+			cpu_flag_clear(cpu);
+			cpu->bus >>= 1;
+		}
+		if (cpu->bus == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
 	}
 }
 
 static void op_rl(struct sm83_core *cpu, u8 *reg, bool is_a)
 {
-	u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
+		u8 result = *reg;
 
-	((result & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_C) :
-				 cpu_flag_clear(cpu);
-	result <<= 1;
-	result |= carry;
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+		((result & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_C) :
+					 cpu_flag_clear(cpu);
+		result <<= 1;
+		result |= carry;
+		*reg = result;
+		if (!is_a && result == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
 	}
 }
 
 static void op_rl_hl(struct sm83_core *cpu)
 {
-	u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	((result & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_C) :
-				 cpu_flag_clear(cpu);
-	result <<= 1;
-	result |= carry;
-	op_ld_hl_r8(cpu, result);
-	if (result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 1 : 0;
+		cpu->state = SM83_CORE_WRITE_0;
+		((cpu->bus & 0x80) != 0) ? cpu_flag_set(cpu, FLAG_C) :
+					   cpu_flag_clear(cpu);
+		cpu->bus <<= 1;
+		cpu->bus |= carry;
+		if (cpu->bus == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
 	}
 }
 
 static void op_rr(struct sm83_core *cpu, u8 *reg, bool is_a)
 {
-	u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 0x80 : 0x00;
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 0x80 : 0x00;
+		u8 result = *reg;
 
-	((result & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_C) :
-				 cpu_flag_clear(cpu);
-	result >>= 1;
-	result |= carry;
-	*reg = result;
-	if (!is_a && result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+		((result & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_C) :
+					 cpu_flag_clear(cpu);
+		result >>= 1;
+		result |= carry;
+		*reg = result;
+		if (!is_a && result == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
 	}
 }
 
 static void op_rr_hl(struct sm83_core *cpu)
 {
-	u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 0x80 : 0x00;
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	((result & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_C) :
-				 cpu_flag_clear(cpu);
-	result >>= 1;
-	result |= carry;
-	op_ld_hl_r8(cpu, result);
-	if (result == 0) {
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		u8 carry = cpu_flag_is_set(cpu, FLAG_C) ? 0x80 : 0x00;
+		((cpu->bus & 0x01) != 0) ? cpu_flag_set(cpu, FLAG_C) :
+					   cpu_flag_clear(cpu);
+		cpu->bus >>= 1;
+		cpu->bus |= carry;
+		if (cpu->bus == 0) {
+			cpu_flag_toggle(cpu, FLAG_Z);
+		}
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
 	}
 }
 
@@ -589,120 +622,154 @@ static void op_rst(struct sm83_core *cpu, u8 vec)
 
 static void op_swap(struct sm83_core *cpu, u8 *reg)
 {
-	u8 low_half = *reg & 0x0F;
-	u8 high_half = (*reg >> 4) & 0x0F;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 low_half = *reg & 0x0F;
+		u8 high_half = (*reg >> 4) & 0x0F;
 
-	*reg = (low_half << 4) + high_half;
-	cpu_flag_clear(cpu);
-	if (*reg == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
+		*reg = (low_half << 4) + high_half;
+		cpu_flag_clear(cpu);
+		if (*reg == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	}
 }
 
 static void op_swap_hl(struct sm83_core *cpu)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-	u8 low_half = result & 0x0F;
-	u8 high_half = (result >> 4) & 0x0F;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		u8 low_half = cpu->bus & 0x0F;
+		u8 high_half = (cpu->bus >> 4) & 0x0F;
 
-	result = (low_half << 4) + high_half;
-	cpu_flag_clear(cpu);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	op_ld_hl_r8(cpu, result);
+		cpu->bus = (low_half << 4) + high_half;
+		cpu_flag_clear(cpu);
+		if (cpu->bus == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 static void op_srl(struct sm83_core *cpu, u8 *reg)
 {
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 result = *reg;
 
-	if ((result & 0x01) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	result >>= 1;
-	*reg = result;
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
+		if ((result & 0x01) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		result >>= 1;
+		*reg = result;
+		if (result == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	}
 }
 
 static void op_srl_hl(struct sm83_core *cpu)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	if ((result & 0x01) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	result >>= 1;
-	op_ld_hl_r8(cpu, result);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		if ((cpu->bus & 0x01) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		cpu->bus >>= 1;
+		if (cpu->bus == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 static void op_sla(struct sm83_core *cpu, u8 *reg)
 {
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 result = *reg;
 
-	if ((result & 0x80) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	result <<= 1;
-	*reg = result;
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
+		if ((result & 0x80) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		result <<= 1;
+		*reg = result;
+		if (result == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	}
 }
 
 static void op_sla_hl(struct sm83_core *cpu)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	if ((result & 0x80) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	result <<= 1;
-	op_ld_hl_r8(cpu, result);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		if ((cpu->bus & 0x80) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		cpu->bus <<= 1;
+		if (cpu->bus == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 static void op_sra(struct sm83_core *cpu, u8 *reg)
 {
-	u8 result = *reg;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		u8 result = *reg;
 
-	if ((result & 0x01) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	if ((result & 0x80) != 0) {
-		result >>= 1;
-		result |= 0x80;
-	} else {
-		result >>= 1;
+		if ((result & 0x01) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		if ((result & 0x80) != 0) {
+			result >>= 1;
+			result |= 0x80;
+		} else {
+			result >>= 1;
+		}
+		*reg = result;
+		if (result == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
 	}
-	*reg = result;
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
 }
 
 static void op_sra_hl(struct sm83_core *cpu)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-
-	if ((result & 0x01) != 0)
-		cpu_flag_set(cpu, FLAG_C);
-	else
-		cpu_flag_clear(cpu);
-	if ((result & 0x80) != 0) {
-		result >>= 1;
-		result |= 0x80;
-	} else {
-		result >>= 1;
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		if ((cpu->bus & 0x01) != 0)
+			cpu_flag_set(cpu, FLAG_C);
+		else
+			cpu_flag_clear(cpu);
+		if ((cpu->bus & 0x80) != 0) {
+			cpu->bus >>= 1;
+			cpu->bus |= 0x80;
+		} else {
+			cpu->bus >>= 1;
+		}
+		op_ld_hl_r8(cpu, cpu->bus);
+		if (cpu->bus == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
 	}
-	op_ld_hl_r8(cpu, result);
-	if (result == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
 }
 
 static void op_and(struct sm83_core *cpu, u8 byte)
@@ -778,46 +845,74 @@ static void op_or_hl(struct sm83_core *cpu)
 
 static void op_bit(struct sm83_core *cpu, u8 *reg, int bit)
 {
-	if (((*reg >> bit) & 0x01) == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	else
-		cpu_flag_untoggle(cpu, FLAG_Z);
-	cpu_flag_toggle(cpu, FLAG_H);
-	cpu_flag_untoggle(cpu, FLAG_N);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		if (((*reg >> bit) & 0x01) == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+		else
+			cpu_flag_untoggle(cpu, FLAG_Z);
+		cpu_flag_toggle(cpu, FLAG_H);
+		cpu_flag_untoggle(cpu, FLAG_N);
+	}
 }
 
 static void op_bit_hl(struct sm83_core *cpu, int bit)
 {
-	if (((cpu->memory->load8(cpu, HL(cpu)) >> bit) & 0x01) == 0)
-		cpu_flag_toggle(cpu, FLAG_Z);
-	else
-		cpu_flag_untoggle(cpu, FLAG_Z);
-	cpu_flag_toggle(cpu, FLAG_H);
-	cpu_flag_untoggle(cpu, FLAG_N);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_FETCH;
+		cpu->pc++;
+		if (((cpu->bus >> bit) & 0x01) == 0)
+			cpu_flag_toggle(cpu, FLAG_Z);
+		else
+			cpu_flag_untoggle(cpu, FLAG_Z);
+		cpu_flag_toggle(cpu, FLAG_H);
+		cpu_flag_untoggle(cpu, FLAG_N);
+	}
 }
 
 static void op_set(struct sm83_core *cpu, u8 *reg, int bit)
 {
-	*reg = (*reg | (0x01 << bit));
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		*reg = (*reg | (0x01 << bit));
+	}
 }
 
 static void op_set_hl(struct sm83_core *cpu, int bit)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-	result |= (0x1 << bit);
-	op_ld_hl_r8(cpu, result);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		cpu->bus |= (0x1 << bit);
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 static void op_res(struct sm83_core *cpu, u8 *reg, int bit)
 {
-	*reg = (*reg & (~(0x1 << bit)));
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_FETCH;
+		*reg = (*reg & (~(0x1 << bit)));
+	}
 }
 
 static void op_res_hl(struct sm83_core *cpu, int bit)
 {
-	u8 result = cpu->memory->load8(cpu, HL(cpu));
-	result &= (~(0x1 << bit));
-	op_ld_hl_r8(cpu, result);
+	if (cpu->state == SM83_CORE_PC) {
+		cpu->state = SM83_CORE_READ_0;
+		cpu->ptr = HL(cpu);
+	} else if (cpu->state == SM83_CORE_READ_0) {
+		cpu->state = SM83_CORE_WRITE_0;
+		cpu->bus &= (~(0x1 << bit));
+	} else if (cpu->state == SM83_CORE_WRITE_0) {
+		cpu->state = SM83_CORE_FETCH;
+	}
 }
 
 /*
