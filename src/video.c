@@ -8,7 +8,8 @@ struct video *video_init(bool render)
 {
 	struct video *video;
 
-	if ((video = (struct video *)malloc(sizeof(struct video))) == NULL)
+	video = (struct video *)malloc(sizeof(struct video));
+	if (!video)
 		return NULL;
 	video->memory = NULL;
 	video->render = render;
@@ -88,7 +89,6 @@ void video_render_tile(u8 *vram, int n, int x, int y, int scale)
 		int i = 0;
 		u8 right = vram[indice + b];
 		u8 left = vram[indice + b + 1];
-
 		for (int bit = 7; bit >= 0; bit--) {
 			int color = video_pixel_color(right, left, bit);
 			render_pixel(x * 8 + i, y * 8 + j, scale, color);

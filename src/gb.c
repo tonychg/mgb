@@ -1,184 +1,111 @@
-#include "unistd.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
+#include "gb/alloc.h"
+#include "gb/memory.h"
+#include "gb/sm83.h"
 #include "gb/gb.h"
 #include "gb/cartridge.h"
 #include "gb/fs.h"
 #include "gb/render.h"
-#include "gb/tests.h"
 #include "gb/video.h"
-#include "gb/timer.h"
 
-struct gb *gb_create(struct args_boot *args)
+static u8 gb_load8(struct sm83_core *cpu, u16 addr)
+{
+	struct gb *gb = (struct gb *)cpu->parent;
+
+	if (gb->card && addr < 0x8000) {
+		return gb->card->buffer[addr];
+	}
+	return memory_read(gb->bus, addr);
+}
+
+static void gb_write8(struct sm83_core *cpu, u16 addr, u8 value)
+{
+	struct gb *gb = (struct gb *)cpu->parent;
+
+	memory_write(gb->bus, addr, value);
+}
+
+static u16 gb_load16(struct sm83_core *cpu, u16 addr)
+{
+	return unsigned_16(cpu->memory->load8(cpu, addr),
+			   cpu->memory->load8(cpu, addr + 1));
+}
+
+static u8 gb_read_segment(struct sm83_core *cpu)
+{
+	return cpu->memory->load8(cpu, cpu->pc);
+}
+
+struct gb *gb_alloc()
 {
 	struct gb *gb;
 
-	if ((gb = (struct gb *)malloc(sizeof(struct gb))) == NULL)
+	gb = (struct gb *)malloc(sizeof(struct gb));
+	if (!gb)
 		return NULL;
+	gb->args = NULL;
+	gb->card = NULL;
 	gb->cpu = NULL;
-	gb->memory = NULL;
-	gb->cartridge = NULL;
-	gb->video = NULL;
-	gb->args = args;
+	gb->ppu = NULL;
+	gb->bus = NULL;
 	return gb;
 }
 
-static void gb_reset(struct gb *gb)
+void gb_configure(struct gb *gb, struct args_boot *args)
 {
-	memory_reset(gb->cpu->memory);
-	memory_bind_cartridge(gb->cpu->memory, gb->cartridge);
-	video_reset(gb->video);
-	cpu_reset(gb->cpu);
+	gb->args = args;
 }
 
-static void gb_init(struct gb *gb)
+void gb_init(struct gb *gb)
 {
-	gb->cpu = cpu_init();
-	gb->memory = memory_init();
-	gb->cartridge = cartridge_load_from_file(gb->args->rom_path);
-	gb->video = video_init(gb->args->render);
-	gb->cpu->multiplier = gb->args->multiplier;
-	gb->cpu->debug = gb->args->debug;
-	video_bind_memory(gb->video, gb->memory);
-	cpu_bind_memory(gb->cpu, gb->memory);
-	gb_reset(gb);
-}
-
-static u16 parse_hex_address(char *buf)
-{
-	char addr[4];
-
-	for (int i = 0; i < 4; i++) {
-		addr[i] = buf[i + 2];
-	}
-	return strtol(addr, NULL, 16);
-}
-
-static void print_byte_at(struct cpu *cpu, char *buf)
-{
-	u16 addr = parse_hex_address(buf);
-	u8 byte = MEM_READ(cpu, addr);
-
-	printf("Reading [$%04X] = $%02X\n", addr, byte);
+	gb->cpu = sm83_init();
+	gb->ppu = video_init(false);
+	gb->bus = memory_init();
+	gb->cpu->parent = gb;
+	gb->cpu->memory->load8 = &gb_load8;
+	gb->cpu->memory->load16 = &gb_load16;
+	gb->cpu->memory->write8 = &gb_write8;
+	gb->cpu->memory->read_segment = &gb_read_segment;
+	gb->ppu->memory = gb->bus;
+	sm83_cpu_reset(gb->cpu);
 }
 
 static void gb_tick(struct gb *gb)
 {
-	cpu_tick(gb->cpu);
-	video_tick(gb->video);
+	sm83_cpu_step(gb->cpu);
+	video_tick(gb->ppu);
 }
 
-static void gb_goto(struct gb *gb, u16 address)
+static void gb_destroy(struct gb *gb)
 {
-	while (gb->cpu->pc != address) {
-		gb_tick(gb);
-	}
-}
-
-static void gb_start_at(struct gb *gb)
-{
-	printf("Starting at $%04X\n", gb->args->start);
-	gb_goto(gb, gb->args->start);
-	gb->args->start = 0;
-}
-
-static void gb_release(struct gb *gb)
-{
-	memory_release(gb->memory);
-	cpu_release(gb->cpu);
-	video_release(gb->video);
-	cartridge_release(gb->cartridge);
-}
-
-static char *gb_interactive(struct gb *gb)
-{
-	char buf[256];
-
-	printf("> ");
-	if (fgets(buf, 256, stdin) == 0)
-		return NULL;
-	switch (buf[0]) {
-	case 'w':
-		memory_debug(gb->memory, 0xC000, 0xDFFF);
-		gb_interactive(gb);
-		break;
-	case 'v':
-		memory_debug(gb->memory, 0x8000, 0x9FFF);
-		gb_interactive(gb);
-		break;
-	case 'q':
-		gb_release(gb);
-		exit(0);
-		break;
-	case 'o':
-		memory_dump(gb->memory);
-		gb_interactive(gb);
-		break;
-	case 'r':
-		gb_reset(gb);
-		break;
-	case 'R':
-		print_byte_at(gb->cpu, buf);
-		gb_interactive(gb);
-		break;
-	case 'd':
-		cpu_debug(gb->cpu);
-		gb_interactive(gb);
-		break;
-	case 'g':
-		gb_goto(gb, parse_hex_address(buf));
-		break;
-	case 'V':
-		video_debug(gb->video);
-		gb_interactive(gb);
-		break;
-	default:
-		do {
-			gb_tick(gb);
-		} while (gb->cpu->cycles > 0);
-		break;
-	}
-	return NULL;
-}
-
-static void gb_debug(struct gb *gb)
-{
-	if (gb->args->cpu_debug)
-		cpu_debug(gb->cpu);
-	if (gb->args->delay_in_sec)
-		usleep(gb->args->delay_in_sec * 1000000);
-	if (gb->args->wram_debug) {
-		// Work RAM
-		memory_debug(gb->memory, 0xC000, 0xCFFF);
-		// Work RAM Bank
-		memory_debug(gb->memory, 0xD000, 0xDFFF);
-	}
-	if (gb->args->vram_debug) {
-		// struct video RAM
-		memory_debug(gb->memory, 0x8000, 0x9FFF);
-	}
-	if (gb->args->memory_dump) {
-		memory_dump(gb->memory);
-	}
+	memory_release(gb->bus);
+	sm83_destroy(gb->cpu);
+	video_release(gb->ppu);
+	if (gb->card)
+		cartridge_release(gb->card);
 }
 
 static void *gb_thread_cpu(void *arg)
 {
 	struct gb *gb = (struct gb *)arg;
+	char *decoded;
 
 	if (gb->args->debug)
 		printf("Create CPU thread\n");
-	while (1) {
-		if (gb->args->interactive) {
-			gb_interactive(gb);
-			cpu_debug(gb->cpu);
-			timer_debug(gb->cpu);
+	if (gb->args->interactive) {
+		debugger_event_loop(gb->cpu);
+	} else {
+		while (1) {
+			gb_tick(gb);
+			if (gb->args->debug) {
+				decoded = sm83_disassemble(gb->cpu);
+				printf("%s\n", decoded);
+				zfree(decoded);
+			}
 		}
-		gb_tick(gb);
-		gb_debug(gb);
 	}
 	if (gb->args->debug)
 		printf("Exit CPU thread\n");
@@ -191,10 +118,10 @@ static void *gb_thread_gui(void *arg)
 
 	if (gb->args->debug)
 		printf("Create GUI thread\n");
-	render_init(256 + 128, 512, gb->video->scale);
+	render_init(256 + 128, 512, gb->ppu->scale);
 	while (render_is_running()) {
 		render_begin();
-		video_render(gb->video);
+		video_render(gb->ppu);
 		render_end();
 	}
 	if (gb->args->debug)
@@ -209,19 +136,19 @@ int gb_boot(void *args)
 	pthread_t gui;
 	struct gb *gb;
 
-	gb = gb_create(args);
+	gb = gb_alloc();
 	gb_init(gb);
+	gb_configure(gb, args);
+	gb->card = cartridge_load_from_file(gb->args->rom_path);
 	if (gb->args->debug)
-		cartridge_metadata(gb->cartridge);
-	if (gb->args->start != 0)
-		gb_start_at(gb);
+		cartridge_metadata(gb->card);
 	pthread_create(&cpu, NULL, gb_thread_cpu, gb);
-	if (gb->video->render) {
+	if (gb->args->render) {
 		pthread_create(&gui, NULL, gb_thread_gui, gb);
 		pthread_join(gui, NULL);
 	}
 	pthread_join(cpu, NULL);
-	gb_release(gb);
+	gb_destroy(gb);
 	return 0;
 }
 
@@ -239,7 +166,6 @@ int gb_test(void *args)
 {
 	struct args_test *cargs = (struct args_test *)args;
 
-	test_opcode(cargs->opcode, cargs->verbose, cargs->is_prefixed);
 	return 0;
 }
 

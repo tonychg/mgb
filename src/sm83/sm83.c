@@ -104,6 +104,7 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	cpu->halted = false;
 	cpu->ime = false;
 	cpu->ime_cycles = 0;
+	cpu->ptr = 0;
 	// Memory value of program counter
 	cpu->bus = 0;
 	// Accumulator to fetch 16 bits value
@@ -111,7 +112,7 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	// Beginning address of the current segment
 	cpu->index = 0;
 	cpu->state = SM83_CORE_FETCH;
-	cpu->multiplier = 1;
+	cpu->multiplier = 2;
 }
 
 struct sm83_core *sm83_init(void)
@@ -132,7 +133,7 @@ void sm83_cpu_step(struct sm83_core *cpu)
 
 	if (cpu->timer_enabled)
 		sm83_update_timer_registers(cpu);
-	cpu->cycles++;
+	cpu->cycles += cpu->multiplier;
 	switch (cpu->state) {
 	case SM83_CORE_FETCH:
 		irq_ack = sm83_irq_ack(cpu);

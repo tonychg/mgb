@@ -2,15 +2,14 @@
 #define _GB_H
 
 #include "cartridge.h"
-#include "cpu.h"
 #include "video.h"
 #include "cli.h"
 
 struct gb {
-	struct cpu *cpu;
-	struct video *video;
-	struct memory *memory;
-	struct cartridge *cartridge;
+	struct sm83_core *cpu;
+	struct video *ppu;
+	struct memory *bus;
+	struct cartridge *card;
 	struct args_boot *args;
 };
 

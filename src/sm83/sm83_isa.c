@@ -1,5 +1,4 @@
 #include "gb/sm83.h"
-#include <stdio.h>
 
 #define INC_AF(cpu) op_r16_inc(&cpu->a, &cpu->f)
 #define INC_BC(cpu) op_r16_inc(&cpu->b, &cpu->c)
