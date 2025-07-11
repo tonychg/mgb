@@ -83,6 +83,7 @@ struct sm83_core {
 
 	bool ime;
 	bool halted;
+	bool timer_enabled;
 	enum sm83_state state;
 
 	void *parent;

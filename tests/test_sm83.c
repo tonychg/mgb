@@ -260,11 +260,13 @@ static int assert_context(struct sm83_debugger *debugger, struct context *final,
 static int test_suite_run(struct test_suite *suite, bool verbose)
 {
 	int failed = 0;
+	struct sm83_debugger *debugger;
 
 	for (int i = 0; i < suite->size; i++) {
 		if (verbose)
 			printf("[%04d] Running %s\n", i, suite->path);
-		struct sm83_debugger *debugger = sm83_debugger_init(NULL);
+		debugger = sm83_debugger_init(NULL);
+		debugger->cpu->timer_enabled = false;
 		sm83_reset_from_context(debugger->cpu,
 					suite->tests[i]->initial);
 		for (int c = 0; c < suite->tests[i]->size; c++) {

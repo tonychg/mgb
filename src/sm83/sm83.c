@@ -122,6 +122,7 @@ struct sm83_core *sm83_init(void)
 	if (!cpu)
 		return NULL;
 	sm83_cpu_reset(cpu);
+	cpu->timer_enabled = false;
 	return cpu;
 }
 
@@ -129,6 +130,8 @@ void sm83_cpu_step(struct sm83_core *cpu)
 {
 	u16 irq_ack;
 
+	if (cpu->timer_enabled)
+		sm83_update_timer_registers(cpu);
 	cpu->cycles++;
 	switch (cpu->state) {
 	case SM83_CORE_FETCH:
