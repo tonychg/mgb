@@ -78,21 +78,6 @@ void memory_release(struct memory *memory)
 	zfree(memory);
 }
 
-void memory_debug(struct memory *memory, u16 start, u16 end)
-{
-	for (int i = 0; start + i <= end; i++) {
-		if (memory->bus[start + i] != 0)
-			printf("%02X", memory->bus[start + i]);
-		else
-			printf("..");
-		if ((i + 1) % 32 == 0 && i > 0)
-			printf("\n");
-		else if ((i + 1) % 8 == 0 && i > 0)
-			printf(" ");
-	}
-	printf("\n");
-}
-
 void memory_dump(struct memory *memory)
 {
 	FILE *file;

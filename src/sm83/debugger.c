@@ -41,6 +41,21 @@ void sm83_cpu_debug(struct sm83_core *cpu)
 	zfree(decoded);
 }
 
+void sm83_memory_debug(struct sm83_core *cpu, u16 start, u16 end)
+{
+	for (int i = start; i <= end; i++) {
+		if (cpu->memory->load8(cpu, start + i) != 0)
+			printf("%02X", cpu->memory->load8(cpu, start + i));
+		else
+			printf("..");
+		if ((i + 1) % 32 == 0 && i > 0)
+			printf("\n");
+		else if ((i + 1) % 8 == 0 && i > 0)
+			printf(" ");
+	}
+	printf("\n");
+}
+
 static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
 				  u16 indice)
 {
@@ -192,12 +207,15 @@ enum debugger_command_type {
 	DEBUG_BREAKPOINT,
 	DEBUG_PRINT,
 	DEBUG_RESET,
+	DEBUG_RANGE,
 	DEBUG_QUIT,
 };
 
 struct debugger_command {
 	enum debugger_command_type type;
 	u16 addr;
+	u16 start;
+	u16 end;
 	u32 counter;
 };
 
@@ -217,18 +235,14 @@ static bool match_command(const char *name, const char *alias,
 static struct debugger_command *parse_command(char *buffer)
 {
 	int i;
-	char command[COMMAND_MAX_LENGTH] = { 0 };
+	char *command;
 	struct debugger_command *cmd;
 
 	cmd = (struct debugger_command *)malloc(
 		sizeof(struct debugger_command));
 	if (!cmd)
 		return NULL;
-	for (i = 0;
-	     i < COMMAND_MAX_LENGTH && buffer[i] != ' ' && buffer[i] != '\n';
-	     i++) {
-		command[i] = buffer[i];
-	}
+	command = strtok(buffer, " \n");
 	if (match_command("next", "n", command)) {
 		cmd->type = DEBUG_NEXT;
 	} else if (match_command("step", "s", command)) {
@@ -237,13 +251,17 @@ static struct debugger_command *parse_command(char *buffer)
 		cmd->type = DEBUG_CONTINUE;
 	} else if (match_command("breakpoint", "b", command)) {
 		cmd->type = DEBUG_BREAKPOINT;
-		cmd->addr = strtol(buffer + i + 1, NULL, 16);
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
 	} else if (match_command("print", "p", command)) {
 		cmd->type = DEBUG_PRINT;
-		cmd->addr = strtol(buffer + i + 1, NULL, 16);
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
+	} else if (match_command("range", NULL, command)) {
+		cmd->type = DEBUG_RANGE;
+		cmd->start = strtol(strtok(NULL, " "), NULL, 16);
+		cmd->end = strtol(strtok(NULL, " "), NULL, 16);
 	} else if (match_command("loop", "l", command)) {
 		cmd->type = DEBUG_LOOP;
-		cmd->counter = atoi(buffer + i + 1);
+		cmd->counter = atoi(strtok(NULL, " "));
 	} else if (match_command("reset", "r", command)) {
 		cmd->type = DEBUG_RESET;
 	} else if (match_command("quit", "q", command)) {
@@ -321,6 +339,9 @@ void debugger_event_loop(struct sm83_core *cpu)
 		case DEBUG_RESET:
 			sm83_cpu_reset(cpu);
 			sm83_cpu_debug(cpu);
+			break;
+		case DEBUG_RANGE:
+			sm83_memory_debug(cpu, cmd->start, cmd->end);
 			break;
 		case DEBUG_QUIT:
 			debugger_running = false;

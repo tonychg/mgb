@@ -142,18 +142,17 @@ static struct command *parse_command(int argc, char **argv)
 	if (!strcmp(name, "boot")) {
 		cmd->args = parse_args_boot(argc, argv);
 		cmd->callback = gb_boot;
-	}
-	if (!strcmp(name, "test")) {
+	} else if (!strcmp(name, "test")) {
 		cmd->args = parse_args_test(argc, argv);
 		cmd->callback = gb_test;
-	}
-	if (!strcmp(name, "rom")) {
+	} else if (!strcmp(name, "rom")) {
 		cmd->args = parse_args_rom(argc, argv);
 		cmd->callback = gb_rom;
-	}
-	if (!strcmp(name, "render")) {
+	} else if (!strcmp(name, "render")) {
 		cmd->args = parse_args_render(argc, argv);
 		cmd->callback = gb_render;
+	} else {
+		return NULL;
 	}
 	return cmd;
 }

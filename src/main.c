@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #ifdef TEST
 #include "gb/tests.h"
@@ -22,6 +23,7 @@ int main(int argc, char **argv)
 
 	if (cmd == NULL) {
 		exit_code = -1;
+		printf("%s", CLI_HELP);
 	} else {
 		exit_code = cmd->callback(cmd->args);
 		zfree(cmd);

@@ -82,7 +82,6 @@ void memory_bind_cartridge(struct memory *memory, struct cartridge *cartridge);
 void memory_release(struct memory *memory);
 u8 memory_hardware_register(struct memory *memory, enum hardware_register reg);
 void memory_dump(struct memory *memory);
-void memory_debug(struct memory *memory, u16 start, u16 end);
 
 #define MEM_READ(ptr, addr) memory_read(ptr->memory, addr)
 #define MEM_WRITE(ptr, addr, byte) memory_write(ptr->memory, addr, byte)

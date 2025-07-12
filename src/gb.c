@@ -71,6 +71,7 @@ void gb_init(struct gb *gb)
 	gb->cpu->memory->read_segment = &gb_read_segment;
 	gb->ppu->memory = gb->bus;
 	sm83_cpu_reset(gb->cpu);
+	memory_reset(gb->bus);
 }
 
 static void gb_tick(struct gb *gb)
