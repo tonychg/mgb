@@ -33,6 +33,7 @@ void video_reset(struct video *video)
 	video->x = 0;
 	video->stat = 1;
 	video->dots = 0;
+	video->mode = MODE_1;
 }
 
 void video_memory_fetch(struct video *video)
@@ -59,6 +60,7 @@ void video_tick(struct video *video)
 	video_memory_fetch(video);
 	if (video->enabled) {
 		if (video->dots != 0 && (video->dots % 456) == 0) {
+			video_debug(video);
 			video->ly++;
 			MEM_WRITE(video, LY_LCD, video->ly);
 		}
@@ -72,11 +74,11 @@ void video_tick(struct video *video)
 
 void video_debug(struct video *video)
 {
-	printf("  Mode = %8d | Enabled = %d\n", video->mode, video->enabled);
-	printf("    ly = %8d | x = %d\n", video->ly, video->x);
-	printf("LY_LCD = %8X | LYC_LY = %X\n", MEM_READ(video, LY_LCD),
+	printf("  Mode = %d | Enabled = %d\n", video->mode, video->enabled);
+	printf("    ly = %d | x = %d\n", video->ly, video->x);
+	printf("LY_LCD = %X | LYC_LY = %X\n", MEM_READ(video, LY_LCD),
 	       MEM_READ(video, LYC_LY));
-	printf("Frames = %8d | Dots = %d\n", video->frames, video->dots);
+	printf("Frames = %d | Dots = %d\n", video->frames, video->dots);
 	printf("        Stat = %08b\n", video->stat);
 }
 

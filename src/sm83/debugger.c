@@ -234,7 +234,6 @@ static bool match_command(const char *name, const char *alias,
 
 static struct debugger_command *parse_command(char *buffer)
 {
-	int i;
 	char *command;
 	struct debugger_command *cmd;
 
@@ -242,6 +241,8 @@ static struct debugger_command *parse_command(char *buffer)
 		sizeof(struct debugger_command));
 	if (!cmd)
 		return NULL;
+	if (strlen(buffer) == 1)
+		goto command_default;
 	command = strtok(buffer, " \n");
 	if (match_command("next", "n", command)) {
 		cmd->type = DEBUG_NEXT;
@@ -267,8 +268,12 @@ static struct debugger_command *parse_command(char *buffer)
 	} else if (match_command("quit", "q", command)) {
 		cmd->type = DEBUG_QUIT;
 	} else {
-		cmd->type = DEBUG_NEXT;
+		goto command_default;
 	}
+	return cmd;
+
+command_default:
+	cmd->type = DEBUG_NEXT;
 	return cmd;
 }
 

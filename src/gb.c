@@ -163,13 +163,6 @@ int gb_rom(void *args)
 	return 0;
 }
 
-int gb_test(void *args)
-{
-	struct args_test *cargs = (struct args_test *)args;
-
-	return 0;
-}
-
 int gb_render(void *args)
 {
 	u8 *buffer;

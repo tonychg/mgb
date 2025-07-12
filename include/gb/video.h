@@ -20,7 +20,7 @@ enum video_mode {
 };
 
 struct video {
-	u32 ly;
+	u8 ly;
 	u32 x;
 	enum video_mode mode;
 	u8 stat;

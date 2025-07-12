@@ -83,29 +83,6 @@ static struct args_rom *parse_args_rom(int argc, char **argv)
 	return args;
 }
 
-static struct args_test *parse_args_test(int argc, char **argv)
-{
-	struct args_test *args =
-		(struct args_test *)malloc(sizeof(struct args_test));
-
-	args->opcode = 0x00;
-	args->verbose = true;
-	args->is_prefixed = false;
-	if (argc <= 2) {
-		return args;
-	}
-	for (int i = 2; i < argc; i++) {
-		if ((!strcmp(argv[i], "--opcode") || !strcmp(argv[i], "-c")) &&
-		    i + 1 < argc) {
-			args->opcode = strtol(argv[i + 1], NULL, 16);
-		}
-		if ((!strcmp(argv[i], "--is-prefixed") ||
-		     !strcmp(argv[i], "-p")))
-			args->is_prefixed = true;
-	}
-	return args;
-}
-
 static struct args_render *parse_args_render(int argc, char **argv)
 {
 	struct args_render *args =
@@ -142,9 +119,6 @@ static struct command *parse_command(int argc, char **argv)
 	if (!strcmp(name, "boot")) {
 		cmd->args = parse_args_boot(argc, argv);
 		cmd->callback = gb_boot;
-	} else if (!strcmp(name, "test")) {
-		cmd->args = parse_args_test(argc, argv);
-		cmd->callback = gb_test;
 	} else if (!strcmp(name, "rom")) {
 		cmd->args = parse_args_rom(argc, argv);
 		cmd->callback = gb_rom;

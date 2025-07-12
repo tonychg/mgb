@@ -41,9 +41,9 @@ void memory_write(struct memory *memory, u16 addr, u8 byte)
 {
 	// Reset Divider register on write
 	// https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
-	if (addr == DIV) {
-		memory->bus[addr] = 0;
-	}
+	// if (addr == DIV) {
+	// 	memory->bus[addr] = 0;
+	// }
 	memory->bus[addr] = byte;
 }
 
