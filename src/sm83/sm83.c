@@ -32,29 +32,40 @@ static const int CLOCK_RATE[4] = {
 static u8 sm83_irq_ack(struct sm83_core *cpu)
 {
 	u8 irq_regs;
+	u8 irq_reqs;
 
 	if (!cpu->ime)
 		return 0;
-	irq_regs = cpu->memory->load8(cpu, 0xFFFF) &
-		   cpu->memory->load8(cpu, 0xFF0F);
+	irq_reqs = cpu->memory->load8(cpu, 0xFF0F);
+	irq_regs = cpu->memory->load8(cpu, 0xFFFF) & irq_reqs;
 	if (irq_regs & (1 << IRQ_VBLANK)) {
-		irq_regs &= ~(1 << IRQ_VBLANK);
+		irq_reqs &= ~(1 << IRQ_VBLANK);
+		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
+		printf("[%lu] Acknowledge VLANK interrupt\n", cpu->cycles);
 		return VEC_VBLANK;
 	}
 	if (irq_regs & (1 << IRQ_LCD)) {
-		irq_regs &= ~(1 << IRQ_LCD);
+		irq_reqs &= ~(1 << IRQ_LCD);
+		printf("[%lu] Acknowledge LCD interrupt\n", cpu->cycles);
+		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
 		return VEC_LCD;
 	}
 	if (irq_regs & (1 << IRQ_TIMER)) {
-		irq_regs &= ~(1 << IRQ_TIMER);
+		irq_reqs &= ~(1 << IRQ_TIMER);
+		printf("[%lu] Acknowledge TIMER interrupt\n", cpu->cycles);
+		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
 		return VEC_TIMER;
 	}
 	if (irq_regs & (1 << IRQ_SERIAL)) {
-		irq_regs &= ~(1 << IRQ_SERIAL);
+		irq_reqs &= ~(1 << IRQ_SERIAL);
+		printf("[%lu] Acknowledge SERIAL interrupt\n", cpu->cycles);
+		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
 		return VEC_SERIAL;
 	}
 	if (irq_regs & (1 << IRQ_JOYPAD)) {
-		irq_regs &= ~(1 << IRQ_JOYPAD);
+		irq_reqs &= ~(1 << IRQ_JOYPAD);
+		printf("[%lu] Acknowledge JOYPAD interrupt\n", cpu->cycles);
+		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
 		return VEC_JOYPAD;
 	}
 	return 0;
@@ -164,12 +175,12 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_HALT:
-		irq_ack = sm83_irq_ack(cpu);
-		if (irq_ack) {
-			cpu->ime = false;
-			sm83_stack_push_pc(cpu, &cpu->pc);
-			cpu->pc = irq_ack;
-		}
+		// irq_ack = sm83_irq_ack(cpu);
+		// if (irq_ack) {
+		// 	cpu->ime = false;
+		// 	sm83_stack_push_pc(cpu, &cpu->pc);
+		// 	cpu->pc = irq_ack;
+		// }
 		break;
 	case SM83_CORE_IDLE_0:
 	case SM83_CORE_IDLE_1:
