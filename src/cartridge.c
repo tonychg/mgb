@@ -9,8 +9,8 @@ static struct cartridge *cartridge_init(void)
 {
 	struct cartridge *cartridge;
 
-	if ((cartridge = (struct cartridge *)malloc(
-		     sizeof(struct cartridge))) == NULL)
+	cartridge = (struct cartridge *)malloc(sizeof(struct cartridge));
+	if (!cartridge)
 		return NULL;
 	cartridge->buffer = NULL;
 	cartridge->rom_size = 0;

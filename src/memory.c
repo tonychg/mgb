@@ -8,14 +8,19 @@ struct memory *memory_init()
 {
 	struct memory *memory;
 
-	if ((memory = (struct memory *)malloc(sizeof(struct memory))) == NULL)
+	memory = (struct memory *)malloc(sizeof(struct memory));
+	if (!memory)
 		return NULL;
 	memory->bus = (u8 *)calloc(0xFFFF + 1, sizeof(u8));
 	if (memory->bus == NULL)
-		return NULL;
+		goto out;
 	memory->vram_bank = 0;
 	memory->wram_bank = 0;
 	return memory;
+
+out:
+	zfree(memory);
+	return NULL;
 }
 
 void memory_reset(struct memory *memory)

@@ -73,23 +73,28 @@ static u8 sm83_irq_ack(struct sm83_core *cpu)
 
 static void sm83_update_timer_registers(struct sm83_core *cpu)
 {
-	u8 next, tima;
-	u8 divider = (u16)cpu->cycles >> 8;
+	u16 t_cycles = cpu->cycles * 4;
+	u8 tima_next, tima, tma, irq_reqs;
+	u8 divider = t_cycles >> 8;
 	u8 tac = cpu->memory->load8(cpu, 0xFF07);
 	u8 clock_offset = CLOCK_RATE[(tac & 0b11)];
 
 	// Be careful to bypass the reset rule
 	// https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf
 	cpu->memory->write8(cpu, 0xFF04, divider);
-	if ((tac & (1 << 2)) != 0) {
-		next = (u16)cpu->cycles >> clock_offset;
+	if ((tac >> 2) == 1) {
+		tima_next = divider >> clock_offset;
 		tima = cpu->memory->load8(cpu, 0xFF05);
-		if (!next && tima == 0xFF) {
+		if (!tima_next && tima == 0xFF) {
 			// Load TMA into TIMA after overflow
-			next = cpu->memory->load8(cpu, 0xFF06);
-			// TODO: IRQ_TIMER
+			tma = cpu->memory->load8(cpu, 0xFF06);
+			irq_reqs = cpu->memory->load8(cpu, 0xFF0F);
+			irq_reqs |= 1 << IRQ_TIMER;
+			cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
+			cpu->memory->write8(cpu, 0xFF05, tma);
+		} else {
+			cpu->memory->write8(cpu, 0xFF05, tima_next);
 		}
-		cpu->memory->write8(cpu, 0xFF05, next);
 	}
 }
 
@@ -142,8 +147,6 @@ void sm83_cpu_step(struct sm83_core *cpu)
 {
 	u16 irq_ack;
 
-	if (cpu->timer_enabled)
-		sm83_update_timer_registers(cpu);
 	cpu->cycles += cpu->multiplier;
 	switch (cpu->state) {
 	case SM83_CORE_FETCH:
@@ -187,6 +190,8 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		sm83_isa_execute(cpu);
 		break;
 	}
+	if (cpu->timer_enabled)
+		sm83_update_timer_registers(cpu);
 }
 
 void sm83_destroy(struct sm83_core *cpu)

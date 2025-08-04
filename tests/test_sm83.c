@@ -311,7 +311,7 @@ free_buffer:
 	return -1;
 }
 
-static void run_all()
+static void test_all_opcodes()
 {
 	char path[1024];
 	int failed = 0;
@@ -348,7 +348,7 @@ static void run_all()
 int main(int argc, char **argv)
 {
 	if (argc < 2) {
-		run_all();
+		test_all_opcodes();
 	} else if (argc == 2) {
 		test_with_file(argv[1], true);
 	}

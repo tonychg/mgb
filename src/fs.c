@@ -32,9 +32,8 @@ u8 *readfile(char *path)
 	u8 *buffer = NULL;
 
 	file = fopen(path, "r");
-	if (!file) {
+	if (!file)
 		return NULL;
-	}
 	size_in_bytes = fs_size(file);
 	if (size_in_bytes > 0)
 		buffer = fs_read(file, size_in_bytes);
