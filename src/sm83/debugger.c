@@ -41,6 +41,14 @@ void sm83_cpu_debug(struct sm83_core *cpu)
 	zfree(decoded);
 }
 
+void sm83_memory_io_debug(struct sm83_core *cpu)
+{
+	for (int i = 0xFF00; i <= 0xFFFF; i++) {
+		u8 byte = cpu->memory->load8(cpu, i);
+		printf("%04X : %02X [%08b] %d\n", i, byte, byte, byte);
+	}
+}
+
 void sm83_memory_debug(struct sm83_core *cpu, u16 start, u16 end)
 {
 	for (int i = start; i <= end; i++) {
@@ -205,15 +213,21 @@ enum debugger_command_type {
 	DEBUG_CONTINUE,
 	DEBUG_LOOP,
 	DEBUG_BREAKPOINT,
+	DEBUG_GOTO,
+	DEBUG_DUMP,
+	DEBUG_IO,
+	DEBUG_SET,
 	DEBUG_PRINT,
 	DEBUG_RESET,
 	DEBUG_RANGE,
 	DEBUG_QUIT,
+	DEBUG_HELP,
 };
 
 struct debugger_command {
 	enum debugger_command_type type;
 	u16 addr;
+	u8 value;
 	u16 start;
 	u16 end;
 	u32 counter;
@@ -250,7 +264,18 @@ static struct debugger_command *parse_command(char *buffer)
 		cmd->type = DEBUG_STEP;
 	} else if (match_command("continue", "c", command)) {
 		cmd->type = DEBUG_CONTINUE;
-	} else if (match_command("breakpoint", "b", command)) {
+	} else if (match_command("goto", "g", command)) {
+		cmd->type = DEBUG_GOTO;
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
+	} else if (match_command("dump", "d", command)) {
+		cmd->type = DEBUG_DUMP;
+	} else if (match_command("io", "i", command)) {
+		cmd->type = DEBUG_IO;
+	} else if (match_command("set", "s", command)) {
+		cmd->type = DEBUG_SET;
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
+		cmd->value = strtol(strtok(NULL, " "), NULL, 16);
+	} else if (match_command("break", "b", command)) {
 		cmd->type = DEBUG_BREAKPOINT;
 		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
 	} else if (match_command("print", "p", command)) {
@@ -267,6 +292,8 @@ static struct debugger_command *parse_command(char *buffer)
 		cmd->type = DEBUG_RESET;
 	} else if (match_command("quit", "q", command)) {
 		cmd->type = DEBUG_QUIT;
+	} else if (match_command("help", "h", command)) {
+		cmd->type = DEBUG_HELP;
 	} else {
 		goto command_default;
 	}
@@ -308,6 +335,23 @@ void debugger_event_loop(struct sm83_core *cpu)
 		}
 		index = cpu->index;
 		switch (cmd->type) {
+		case DEBUG_HELP:
+			printf("next (n)                Next instruction\n"
+			       "break (b) <addr>        Set a breakpoint\n"
+			       "continue (c)            Continue until next breakpoint\n"
+			       "print (p) <addr>        Print address value\n"
+			       "range (r) <addr> <addr> Dump memory range\n"
+			       "loop (l) <counter>      Loop a number of iteration\n"
+			       "goto (g) <addr>         Go to addr\n"
+			       "dump (d)                Dump memory\n"
+			       "io (i)                  Dump I/O ranges\n"
+			       "set (s) <addr> <value>  Set value\n"
+			       "reset (r)               Reset\n"
+			       "quit (q)                Quit\n"
+			       "help (h)                Display this message\n"
+			       "\n"
+			       "Format of address are in hexadecimal\n");
+			break;
 		case DEBUG_STEP:
 			sm83_cpu_step(cpu);
 			sm83_cpu_debug(cpu);
@@ -326,6 +370,21 @@ void debugger_event_loop(struct sm83_core *cpu)
 				} while (cpu->index == idx);
 			}
 			sm83_cpu_debug(cpu);
+			break;
+		case DEBUG_GOTO:
+			do {
+				sm83_cpu_step(cpu);
+				sm83_cpu_debug(cpu);
+			} while (cpu->index != cmd->addr);
+			break;
+		case DEBUG_DUMP:
+			sm83_memory_debug(cpu, 0x0000, 0xFFFF);
+			break;
+		case DEBUG_IO:
+			sm83_memory_io_debug(cpu);
+			break;
+		case DEBUG_SET:
+			cpu->memory->write8(cpu, cmd->addr, cmd->value);
 			break;
 		case DEBUG_CONTINUE:
 			do {
