@@ -2,6 +2,7 @@ Debug SM83 using tetris ROM (World)
 
 ```bash
 ./build/sm83-debugger <rom>
+watch FF44
 goto 0233
 set FF44 94
 goto 02c2

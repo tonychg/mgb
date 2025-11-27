@@ -5,6 +5,10 @@
 
 struct sm83_core;
 
+enum {
+	SM83_FREQ = 4194304
+};
+
 struct sm83_memory {
 	u8 (*load8)(struct sm83_core *, u16 addr);
 	u16 (*load16)(struct sm83_core *, u16 addr);

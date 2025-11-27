@@ -128,7 +128,7 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	// Beginning address of the current segment
 	cpu->index = 0;
 	cpu->state = SM83_CORE_FETCH;
-	cpu->multiplier = 2;
+	cpu->multiplier = 1;
 }
 
 struct sm83_core *sm83_init(void)

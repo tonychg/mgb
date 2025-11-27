@@ -233,25 +233,41 @@ enum debugger_command_type {
 	DEBUG_IO,
 	DEBUG_SET,
 	DEBUG_RESET,
+	DEBUG_REGISTERS,
+	DEBUG_FRAME,
 	DEBUG_QUIT,
 	DEBUG_HELP,
+	DEBUG_WATCH,
 };
 
 struct cmd_struct {
+	const char *description;
 	const char *cmd;
 	const char *alias;
 	enum debugger_command_type type;
 };
 
+// clang-format off
 static struct cmd_struct commands[] = {
-	{ "next", "n", DEBUG_NEXT },	    { "step", "s", DEBUG_STEP },
-	{ "break", "b", DEBUG_BREAKPOINT }, { "continue", "c", DEBUG_CONTINUE },
-	{ "print", "p", DEBUG_PRINT },	    { "range", "r", DEBUG_RANGE },
-	{ "loop", "l", DEBUG_LOOP },	    { "goto", "g", DEBUG_GOTO },
-	{ "dump", "d", DEBUG_DUMP },	    { "io", "i", DEBUG_IO },
-	{ "set", "s", DEBUG_SET },	    { "reset", "r", DEBUG_RESET },
-	{ "quit", "q", DEBUG_QUIT },	    { "help", "h", DEBUG_HELP },
+	{ "next (n)                Next instruction\n", "next", "n", DEBUG_NEXT },
+	{ "step (s)                Step one M-cycle\n", "step", "s", DEBUG_STEP },
+	{ "break (b) <addr>        Set a breakpoint\n", "break", "b", DEBUG_BREAKPOINT },
+	{ "continue (c)            Continue until next breakpoint\n", "continue", "c", DEBUG_CONTINUE },
+	{ "print (p) <addr>        Print address value\n", "print", "p", DEBUG_PRINT },
+	{ "range (r) <addr> <addr> Dump memory range\n", "range", "r", DEBUG_RANGE },
+	{ "loop (l) <counter>      Loop a number of iteration\n", "loop", "l", DEBUG_LOOP },
+	{ "goto (g) <addr>         Go to addr\n", "goto", "g", DEBUG_GOTO },
+	{ "dump (d)                Dump memory\n", "dump", "d", DEBUG_DUMP },
+	{ "regs (R)                Print registers\n", "regs", "R", DEBUG_REGISTERS },
+	{ "io (i)                  Dump I/O ranges\n", "io", "i", DEBUG_IO },
+	{ "frame (f)               Next frame\n", "frame", "f", DEBUG_FRAME },
+	{ "set (s) <addr> <value>  Set value\n", "set", "s", DEBUG_SET },
+	{ "reset (r)               Reset\n", "reset", "r", DEBUG_RESET },
+	{ "quit (q)                Quit\n", "quit", "q", DEBUG_QUIT },
+	{ "help (h)                Display this message\n", "help", "h", DEBUG_HELP },
+	{ "watch (w) <addr>        Watch address\n", "watch", "w", DEBUG_WATCH },
 };
+// clang-format on
 
 struct debugger_command {
 	enum debugger_command_type type;
@@ -270,8 +286,10 @@ void parse_command_args(char *buffer, struct debugger_command *cmd)
 	case DEBUG_DUMP:
 	case DEBUG_IO:
 	case DEBUG_RESET:
+	case DEBUG_REGISTERS:
 	case DEBUG_QUIT:
 	case DEBUG_HELP:
+	case DEBUG_FRAME:
 	case DEBUG_CONTINUE:
 		break;
 	case DEBUG_LOOP:
@@ -279,6 +297,7 @@ void parse_command_args(char *buffer, struct debugger_command *cmd)
 		break;
 	case DEBUG_BREAKPOINT:
 	case DEBUG_PRINT:
+	case DEBUG_WATCH:
 	case DEBUG_GOTO:
 		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
 		break;
@@ -342,12 +361,39 @@ static struct debugger_command *debugger_readline(void)
 	return cmd;
 }
 
+void debugger_help()
+{
+	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
+		struct cmd_struct cmd = commands[i];
+		printf("%s", cmd.description);
+	}
+	printf("Address are in hexadecimal format\n");
+}
+
+void watch_value(struct sm83_core *cpu, u16 addr, u8 *previous)
+{
+	u8 value = cpu->memory->load8(cpu, addr);
+	if (value != *previous)
+		printf("CHANGED! [%04X] %02X -> %02X\n", addr, *previous,
+		       value);
+	*previous = value;
+}
+
+void debugger_step(struct sm83_core *cpu, u16 *watcher, u8 *watcher_value)
+{
+	sm83_cpu_step(cpu);
+	if (*watcher)
+		watch_value(cpu, *watcher, watcher_value);
+}
+
 void debugger_event_loop(struct sm83_core *cpu)
 {
 	bool debugger_running = true;
 	struct debugger_command *cmd;
 	u16 index;
 	u16 breakpoint = 0;
+	u16 watcher = 0;
+	u8 watcher_value = 0;
 
 	while (debugger_running) {
 		cmd = debugger_readline();
@@ -358,30 +404,23 @@ void debugger_event_loop(struct sm83_core *cpu)
 		index = cpu->index;
 		switch (cmd->type) {
 		case DEBUG_HELP:
-			printf("next (n)                Next instruction\n"
-			       "step (s)                Step one M-cycle\n"
-			       "break (b) <addr>        Set a breakpoint\n"
-			       "continue (c)            Continue until next breakpoint\n"
-			       "print (p) <addr>        Print address value\n"
-			       "range (r) <addr> <addr> Dump memory range\n"
-			       "loop (l) <counter>      Loop a number of iteration\n"
-			       "goto (g) <addr>         Go to addr\n"
-			       "dump (d)                Dump memory\n"
-			       "io (i)                  Dump I/O ranges\n"
-			       "set (s) <addr> <value>  Set value\n"
-			       "reset (r)               Reset\n"
-			       "quit (q)                Quit\n"
-			       "help (h)                Display this message\n"
-			       "\n"
-			       "Format of address are in hexadecimal\n");
+			debugger_help();
+			break;
+		case DEBUG_FRAME:
+			for (u64 i = 0; i < (u64)(SM83_FREQ / 59.73); i++) {
+				debugger_step(cpu, &watcher, &watcher_value);
+			}
+			sm83_cpu_debug(cpu);
+			break;
+		case DEBUG_REGISTERS:
+			sm83_cpu_debug(cpu);
 			break;
 		case DEBUG_STEP:
-			sm83_cpu_step(cpu);
-			sm83_cpu_debug(cpu);
+			debugger_step(cpu, &watcher, &watcher_value);
 			break;
 		case DEBUG_NEXT:
 			do {
-				sm83_cpu_step(cpu);
+				debugger_step(cpu, &watcher, &watcher_value);
 			} while (index == cpu->index);
 			sm83_cpu_debug(cpu);
 			break;
@@ -389,16 +428,16 @@ void debugger_event_loop(struct sm83_core *cpu)
 			for (int i = 0; i < cmd->counter; i++) {
 				u16 idx = cpu->index;
 				do {
-					sm83_cpu_step(cpu);
+					debugger_step(cpu, &watcher,
+						      &watcher_value);
 				} while (cpu->index == idx);
 			}
-			sm83_cpu_debug(cpu);
 			break;
 		case DEBUG_GOTO:
 			do {
-				sm83_cpu_step(cpu);
-				sm83_cpu_debug(cpu);
+				debugger_step(cpu, &watcher, &watcher_value);
 			} while (cpu->index != cmd->addr);
+			sm83_cpu_debug(cpu);
 			break;
 		case DEBUG_DUMP:
 			sm83_memory_debug(cpu, 0x0000, 0xFFFF);
@@ -411,7 +450,7 @@ void debugger_event_loop(struct sm83_core *cpu)
 			break;
 		case DEBUG_CONTINUE:
 			do {
-				sm83_cpu_step(cpu);
+				debugger_step(cpu, &watcher, &watcher_value);
 			} while (cpu->index != breakpoint);
 			sm83_cpu_debug(cpu);
 			break;
@@ -432,6 +471,9 @@ void debugger_event_loop(struct sm83_core *cpu)
 			break;
 		case DEBUG_QUIT:
 			debugger_running = false;
+			break;
+		case DEBUG_WATCH:
+			watcher = cmd->addr;
 			break;
 		}
 		zfree(cmd);
