@@ -205,34 +205,6 @@ void sm83_debugger_destroy(struct sm83_debugger *debugger)
 	zfree(debugger);
 }
 
-#define COMMAND_MAX_LENGTH 256
-
-enum debugger_command_type {
-	DEBUG_NEXT,
-	DEBUG_STEP,
-	DEBUG_CONTINUE,
-	DEBUG_LOOP,
-	DEBUG_BREAKPOINT,
-	DEBUG_GOTO,
-	DEBUG_DUMP,
-	DEBUG_IO,
-	DEBUG_SET,
-	DEBUG_PRINT,
-	DEBUG_RESET,
-	DEBUG_RANGE,
-	DEBUG_QUIT,
-	DEBUG_HELP,
-};
-
-struct debugger_command {
-	enum debugger_command_type type;
-	u16 addr;
-	u8 value;
-	u16 start;
-	u16 end;
-	u32 counter;
-};
-
 static bool match_command(const char *name, const char *alias,
 			  const char *input)
 {
@@ -244,6 +216,94 @@ static bool match_command(const char *name, const char *alias,
 		match = !strcmp(name, input);
 	}
 	return match;
+}
+
+#define COMMAND_MAX_LENGTH 256
+
+enum debugger_command_type {
+	DEBUG_NEXT,
+	DEBUG_STEP,
+	DEBUG_BREAKPOINT,
+	DEBUG_CONTINUE,
+	DEBUG_PRINT,
+	DEBUG_LOOP,
+	DEBUG_RANGE,
+	DEBUG_GOTO,
+	DEBUG_DUMP,
+	DEBUG_IO,
+	DEBUG_SET,
+	DEBUG_RESET,
+	DEBUG_QUIT,
+	DEBUG_HELP,
+};
+
+struct cmd_struct {
+	const char *cmd;
+	const char *alias;
+	enum debugger_command_type type;
+};
+
+static struct cmd_struct commands[] = {
+	{ "next", "n", DEBUG_NEXT },	    { "step", "s", DEBUG_STEP },
+	{ "break", "b", DEBUG_BREAKPOINT }, { "continue", "c", DEBUG_CONTINUE },
+	{ "print", "p", DEBUG_PRINT },	    { "range", "r", DEBUG_RANGE },
+	{ "loop", "l", DEBUG_LOOP },	    { "goto", "g", DEBUG_GOTO },
+	{ "dump", "d", DEBUG_DUMP },	    { "io", "i", DEBUG_IO },
+	{ "set", "s", DEBUG_SET },	    { "reset", "r", DEBUG_RESET },
+	{ "quit", "q", DEBUG_QUIT },	    { "help", "h", DEBUG_HELP },
+};
+
+struct debugger_command {
+	enum debugger_command_type type;
+	u16 addr;
+	u8 value;
+	u16 start;
+	u16 end;
+	u32 counter;
+};
+
+void parse_command_args(char *buffer, struct debugger_command *cmd)
+{
+	switch (cmd->type) {
+	case DEBUG_NEXT:
+	case DEBUG_STEP:
+	case DEBUG_DUMP:
+	case DEBUG_IO:
+	case DEBUG_RESET:
+	case DEBUG_QUIT:
+	case DEBUG_HELP:
+	case DEBUG_CONTINUE:
+		break;
+	case DEBUG_LOOP:
+		cmd->counter = atoi(strtok(NULL, " "));
+		break;
+	case DEBUG_BREAKPOINT:
+	case DEBUG_PRINT:
+	case DEBUG_GOTO:
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
+		break;
+	case DEBUG_SET:
+		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
+		cmd->value = strtol(strtok(NULL, " "), NULL, 16);
+		break;
+	case DEBUG_RANGE:
+		cmd->start = strtol(strtok(NULL, " "), NULL, 16);
+		cmd->end = strtol(strtok(NULL, " "), NULL, 16);
+		break;
+	default:
+		cmd->type = DEBUG_NEXT;
+		break;
+	}
+}
+
+void command_match(char *buffer, struct debugger_command *cmd)
+{
+	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
+		struct cmd_struct s = commands[i];
+		if (match_command(s.cmd, s.alias, buffer)) {
+			cmd->type = s.type;
+		}
+	}
 }
 
 static struct debugger_command *parse_command(char *buffer)
@@ -258,47 +318,9 @@ static struct debugger_command *parse_command(char *buffer)
 	if (strlen(buffer) == 1)
 		goto command_default;
 	command = strtok(buffer, " \n");
-	if (match_command("next", "n", command)) {
-		cmd->type = DEBUG_NEXT;
-	} else if (match_command("step", "s", command)) {
-		cmd->type = DEBUG_STEP;
-	} else if (match_command("continue", "c", command)) {
-		cmd->type = DEBUG_CONTINUE;
-	} else if (match_command("goto", "g", command)) {
-		cmd->type = DEBUG_GOTO;
-		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
-	} else if (match_command("dump", "d", command)) {
-		cmd->type = DEBUG_DUMP;
-	} else if (match_command("io", "i", command)) {
-		cmd->type = DEBUG_IO;
-	} else if (match_command("set", "s", command)) {
-		cmd->type = DEBUG_SET;
-		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
-		cmd->value = strtol(strtok(NULL, " "), NULL, 16);
-	} else if (match_command("break", "b", command)) {
-		cmd->type = DEBUG_BREAKPOINT;
-		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
-	} else if (match_command("print", "p", command)) {
-		cmd->type = DEBUG_PRINT;
-		cmd->addr = strtol(strtok(NULL, " "), NULL, 16);
-	} else if (match_command("range", NULL, command)) {
-		cmd->type = DEBUG_RANGE;
-		cmd->start = strtol(strtok(NULL, " "), NULL, 16);
-		cmd->end = strtol(strtok(NULL, " "), NULL, 16);
-	} else if (match_command("loop", "l", command)) {
-		cmd->type = DEBUG_LOOP;
-		cmd->counter = atoi(strtok(NULL, " "));
-	} else if (match_command("reset", "r", command)) {
-		cmd->type = DEBUG_RESET;
-	} else if (match_command("quit", "q", command)) {
-		cmd->type = DEBUG_QUIT;
-	} else if (match_command("help", "h", command)) {
-		cmd->type = DEBUG_HELP;
-	} else {
-		goto command_default;
-	}
+	command_match(command, cmd);
+	parse_command_args(command, cmd);
 	return cmd;
-
 command_default:
 	cmd->type = DEBUG_NEXT;
 	return cmd;
@@ -337,6 +359,7 @@ void debugger_event_loop(struct sm83_core *cpu)
 		switch (cmd->type) {
 		case DEBUG_HELP:
 			printf("next (n)                Next instruction\n"
+			       "step (s)                Step one M-cycle\n"
 			       "break (b) <addr>        Set a breakpoint\n"
 			       "continue (c)            Continue until next breakpoint\n"
 			       "print (p) <addr>        Print address value\n"
