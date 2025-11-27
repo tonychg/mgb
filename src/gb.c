@@ -97,7 +97,7 @@ static void *gb_thread_cpu(void *arg)
 	if (gb->args->debug)
 		printf("Create CPU thread\n");
 	if (gb->args->interactive) {
-		debugger_event_loop(gb->cpu);
+		// debugger_event_loop(gb->cpu);
 	} else {
 		while (1) {
 			gb_tick(gb);

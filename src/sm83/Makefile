@@ -1,9 +1,10 @@
 BUILDDIR = ../../build
 SRC = \
-	  debugger.c \
+	  debugger_commands.c \
 	  debugger_cli.c \
 	  decoder.c \
 	  sm83.c \
+	  sm83_debug.c \
 	  sm83_isa.c \
 	  ../alloc.c \
 	  ../fs.c \

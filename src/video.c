@@ -60,7 +60,7 @@ void video_tick(struct video *video)
 	video_memory_fetch(video);
 	if (video->enabled) {
 		if (video->dots != 0 && (video->dots % 456) == 0) {
-			video_debug(video);
+			// video_debug(video);
 			video->ly++;
 			MEM_WRITE(video, LY_LCD, video->ly);
 		}

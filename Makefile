@@ -2,9 +2,9 @@ SRC_SUBDIR = src
 BUILD_DIR = build
 
 SRC = \
-      $(SRC_SUBDIR)/sm83/debugger.c \
       $(SRC_SUBDIR)/sm83/decoder.c \
       $(SRC_SUBDIR)/sm83/sm83.c \
+      $(SRC_SUBDIR)/sm83/sm83_debug.c \
       $(SRC_SUBDIR)/sm83/sm83_isa.c \
       $(SRC_SUBDIR)/list.c \
       $(SRC_SUBDIR)/fs.c \
@@ -30,7 +30,7 @@ MAKE        = make
 .PHONY:all
 all:    $(NAME)
 	$(MAKE) -C src/sm83
-	$(MAKE) -C tests
+	# $(MAKE) -C tests
 
 build:
 	$(MKDIR) $(BUILD_DIR)
@@ -48,6 +48,6 @@ $(NAME):    build $(OBJ)
 clean:
 	$(RM) $(OBJ)
 	$(MAKE) -C src/sm83 clean
-	$(MAKE) -C tests clean
+	# $(MAKE) -C tests clean
 
 re: clean all

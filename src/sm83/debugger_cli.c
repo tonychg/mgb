@@ -1,9 +1,12 @@
 #include "gb/sm83.h"
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
-	if (argc > 1)
-		debugger_start(argv[1]);
-	else
-		sm83_printd("Invalid ROM path");
+	if (argc != 2) {
+		printf("Invalid ROM path\n");
+	}
+	if (debugger_run(argv[1])) {
+		printf("Debugger terminate with errors\n");
+	}
 }
