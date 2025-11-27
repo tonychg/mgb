@@ -1,4 +1,5 @@
 #include "gb/alloc.h"
+#include "gb/list.h"
 #include "gb/sm83.h"
 #include "gb/types.h"
 #include "gb/fs.h"
@@ -386,6 +387,194 @@ void debugger_step(struct sm83_core *cpu, u16 *watcher, u8 *watcher_value)
 		watch_value(cpu, *watcher, watcher_value);
 }
 
+enum debugger_state {
+	DEBUGGER_STATE_STOP,
+	DEBUGGER_STATE_COMMAND,
+	DEBUGGER_STATE_EXECUTE,
+};
+
+struct debugger_watcher {
+	u16 addr;
+	u16 previous;
+};
+
+struct debugger_breakpoint {
+	u16 addr;
+};
+
+void register_breakpoint(struct list *breakpoints, u16 addr)
+{
+	struct debugger_breakpoint *breakpoint;
+
+	breakpoint = (struct debugger_breakpoint*)malloc(sizeof(struct debugger_breakpoint));
+	if (!breakpoint) {
+		printf("Failed to register breakpoint %04X\n", addr);
+	} else {
+		breakpoint->addr = addr;
+		list_add_node_head(breakpoints, breakpoint);
+	}
+}
+
+void register_watcher(struct list *watchers, u16 addr, u8 value)
+{
+	struct debugger_watcher *watcher;
+
+	watcher = (struct debugger_watcher*)malloc(sizeof(struct debugger_watcher));
+	if (!watcher) {
+		printf("Failed to register watcher %04X\n", addr);
+	} else {
+		watcher->addr = addr;
+		watcher->previous = value;
+		list_add_node_head(watchers, watcher);
+	}
+}
+
+struct debugger_context {
+	u16 index;
+	u64 until;
+	u16 next;
+	struct list *breakpoints;
+	struct list *watchers;
+	struct debugger_command *cmd;
+	enum debugger_state state;
+};
+
+struct debugger_context *debugger_context_init()
+{
+	struct debugger_context *ctx;
+
+	ctx = (struct debugger_context *)malloc(
+		sizeof(struct debugger_context));
+	if (!ctx)
+		return NULL;
+	ctx->breakpoints = list_create();
+	ctx->breakpoints->free = zfree;
+	if (!ctx->breakpoints)
+		goto err;
+	ctx->watchers = list_create();
+	ctx->watchers->free = zfree;
+	if (!ctx->watchers)
+		goto err;
+	ctx->index = 0;
+	ctx->until = 0;
+	ctx->next = 0;
+	ctx->state = DEBUGGER_STATE_COMMAND;
+	return ctx;
+err:
+	zfree(ctx->watchers);
+	zfree(ctx->breakpoints);
+	zfree(ctx);
+	return NULL;
+}
+
+void debugger_context_destroy(struct debugger_context *ctx)
+{
+	list_release(ctx->breakpoints);
+	list_release(ctx->watchers);
+	zfree(ctx);
+}
+
+void debugger_command_hook(struct debugger_context *ctx, struct sm83_core *cpu)
+{
+	ctx->cmd = debugger_readline();
+	if (!ctx->cmd) {
+		sm83_printd("Failed to parse command");
+	}
+	switch (ctx->cmd->type) {
+	case DEBUG_HELP:
+		debugger_help();
+		break;
+	case DEBUG_FRAME:
+		ctx->until = (u64)(SM83_FREQ / 59.73);
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_REGISTERS:
+		sm83_cpu_debug(cpu);
+		break;
+	case DEBUG_STEP:
+		ctx->until = 1;
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_NEXT:
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_LOOP:
+		ctx->until = ctx->cmd->counter;
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_GOTO:
+		ctx->next = ctx->cmd->addr;
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_DUMP:
+		sm83_memory_debug(cpu, 0x0000, 0xFFFF);
+		break;
+	case DEBUG_IO:
+		sm83_memory_io_debug(cpu);
+		break;
+	case DEBUG_SET:
+		cpu->memory->write8(cpu, ctx->cmd->addr, ctx->cmd->value);
+		break;
+	case DEBUG_CONTINUE:
+		ctx->state = DEBUGGER_STATE_EXECUTE;
+		break;
+	case DEBUG_BREAKPOINT:
+		register_breakpoint(ctx->breakpoints, ctx->cmd->addr);
+		printf("Breakpoint $%04X\n", ctx->cmd->addr);
+		break;
+	case DEBUG_PRINT:
+		printf("$%04X -> %02X\n", ctx->cmd->addr,
+		       cpu->memory->load8(cpu, ctx->cmd->addr));
+		break;
+	case DEBUG_RESET:
+		sm83_cpu_reset(cpu);
+		sm83_cpu_debug(cpu);
+		break;
+	case DEBUG_RANGE:
+		sm83_memory_debug(cpu, ctx->cmd->start, ctx->cmd->end);
+		break;
+	case DEBUG_QUIT:
+		ctx->state = DEBUGGER_STATE_STOP;
+		break;
+	case DEBUG_WATCH:
+		list_add_node_head(ctx->watchers, &(ctx->cmd->addr));
+		break;
+	}
+	zfree(ctx->cmd);
+}
+
+void debugger_cpu_step(struct debugger_context *ctx, struct sm83_core *cpu)
+{
+	while (ctx->state == DEBUGGER_STATE_COMMAND)
+		debugger_command_hook(ctx, cpu);
+	ctx->index = cpu->index;
+	sm83_cpu_step(cpu);
+	for (struct list_node *node = ctx->breakpoints->head; node != NULL;
+	     node = node->next) {
+		u16 addr = *(u16*)node->data;
+		printf("Check %04X\n", addr);
+		if (ctx->index == addr)
+			ctx->state = DEBUGGER_STATE_COMMAND;
+	}
+	if (ctx->next == cpu->index)
+		ctx->state = DEBUGGER_STATE_COMMAND;
+	if (ctx->until > 0)
+		ctx->until--;
+	// Handle watch points
+	// if (*watcher)
+	// 	watch_value(cpu, *watcher, watcher_value);
+}
+
+void debugger_mainloop(struct debugger_context *ctx, struct sm83_core *cpu)
+{
+	sm83_cpu_step(cpu);
+	sm83_cpu_debug(cpu);
+	while (ctx->state != DEBUGGER_STATE_STOP) {
+		printf("Current state: %d, Index: %04X\n", ctx->state, ctx->index);
+		debugger_cpu_step(ctx, cpu);
+	}
+}
+
 void debugger_event_loop(struct sm83_core *cpu)
 {
 	bool debugger_running = true;
@@ -484,6 +673,7 @@ void debugger_start(char *rom_path)
 {
 	u8 *rom;
 	struct sm83_debugger *debugger;
+	struct debugger_context *debugger_context;
 
 	rom = readfile(rom_path);
 	if (!rom) {
@@ -491,15 +681,18 @@ void debugger_start(char *rom_path)
 		goto exit;
 	}
 	debugger = sm83_debugger_init(rom);
+	debugger_context = debugger_context_init();
+	if (!debugger_context) {
+		sm83_printd("Failed to init debugger context");
+		goto free_rom;
+	}
 	if (!debugger) {
 		sm83_printd("Failed init debugger");
 		goto free_rom;
 	}
-	sm83_cpu_step(debugger->cpu);
-	sm83_cpu_debug(debugger->cpu);
-	debugger_event_loop(debugger->cpu);
+	debugger_mainloop(debugger_context, debugger->cpu);
 	sm83_debugger_destroy(debugger);
-
+	debugger_context_destroy(debugger_context);
 free_rom:
 	zfree(rom);
 exit:

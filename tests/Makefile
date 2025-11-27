@@ -6,6 +6,7 @@ SRC = \
 	  ../src/sm83/sm83.c \
 	  ../src/sm83/sm83_isa.c \
 	  ../src/alloc.c \
+	  ../src/list.c \
 	  ../src/fs.c \
 
 OBJ = $(SRC:.c=.o)
