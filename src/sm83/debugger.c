@@ -392,7 +392,6 @@ int debugger_init(struct debugger_context *ctx, struct sm83_core *cpu,
 {
 	ctx->cpu = cpu;
 	ctx->memory = memory;
-	move_to_wait(ctx);
 	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
 		ctx->breakpoints[i] = 0;
 	}
@@ -433,6 +432,7 @@ int debugger_run(char *path)
 	cpu->parent = &ctx;
 	if (debugger_load_rom(&ctx, path))
 		return -1;
+	move_to_wait(&ctx);;
 	while (ctx.state != STATE_QUIT) {
 		if (sigint_catcher) {
 			ctx.state = STATE_WAIT;
