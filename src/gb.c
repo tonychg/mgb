@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +6,7 @@
 #include "gb/alloc.h"
 #include "gb/memory.h"
 #include "gb/sm83.h"
+#include "gb/debugger.h"
 #include "gb/gb.h"
 #include "gb/cartridge.h"
 #include "gb/fs.h"
@@ -74,12 +76,6 @@ void gb_init(struct gb *gb)
 	memory_reset(gb->bus);
 }
 
-static void gb_tick(struct gb *gb)
-{
-	sm83_cpu_step(gb->cpu);
-	video_tick(gb->ppu);
-}
-
 static void gb_destroy(struct gb *gb)
 {
 	memory_release(gb->bus);
@@ -87,6 +83,13 @@ static void gb_destroy(struct gb *gb)
 	video_release(gb->ppu);
 	if (gb->card)
 		cartridge_release(gb->card);
+}
+
+static volatile int sigint_catcher = 0;
+
+static void sigint_handler(int dummy)
+{
+	sigint_catcher = 1;
 }
 
 static void *gb_thread_cpu(void *arg)
@@ -97,10 +100,22 @@ static void *gb_thread_cpu(void *arg)
 	if (gb->args->debug)
 		printf("Create CPU thread\n");
 	if (gb->args->interactive) {
-		// debugger_event_loop(gb->cpu);
+		struct debugger_context ctx;
+		signal(SIGINT, sigint_handler);
+		debugger_init(&ctx, gb->cpu, gb->bus->bus);
+		while (ctx.state != STATE_QUIT) {
+			if (sigint_catcher) {
+				ctx.state = STATE_WAIT;
+				sigint_catcher = 0;
+			}
+			if (debugger_step(&ctx))
+				break;
+			video_tick(gb->ppu);
+		}
 	} else {
 		while (1) {
-			gb_tick(gb);
+			sm83_cpu_step(gb->cpu);
+			video_tick(gb->ppu);
 			if (gb->args->debug) {
 				decoded = sm83_disassemble(gb->cpu);
 				printf("%s\n", decoded);
@@ -113,6 +128,17 @@ static void *gb_thread_cpu(void *arg)
 	pthread_exit(NULL);
 }
 
+static void render_debug(struct gb *gb)
+{
+	char dots[256];
+	char frames[256];
+	int height = 512 * gb->ppu->scale;
+	sprintf(dots, "Dots: %d", gb->ppu->dots);
+	sprintf(frames, "Frames: %d", gb->ppu->dots / GB_VIDEO_TOTAL_LENGTH);
+	DrawText(dots, 10,  40, 20, RED);
+	DrawText(frames, 10, 60, 20, RED);
+}
+
 static void *gb_thread_gui(void *arg)
 {
 	struct gb *gb = (struct gb *)arg;
@@ -123,6 +149,7 @@ static void *gb_thread_gui(void *arg)
 	while (render_is_running()) {
 		render_begin();
 		video_render(gb->ppu);
+		render_debug(gb);
 		render_end();
 	}
 	if (gb->args->debug)

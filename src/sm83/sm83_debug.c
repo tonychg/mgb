@@ -1,3 +1,4 @@
+#include "gb/debugger.h"
 #include "gb/alloc.h"
 #include "gb/sm83.h"
 #include "gb/types.h"

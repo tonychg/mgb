@@ -108,19 +108,6 @@ void sm83_isa_execute(struct sm83_core *cpu);
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
 
-/* sm83_debug.c */
-char *sm83_disassemble(struct sm83_core *cpu);
-void sm83_cpu_debug(struct sm83_core *cpu);
-void sm83_debugger_start(u8 *rom);
-void sm83_printd(const char *msg);
-struct sm83_debugger *sm83_debugger_init(u8 *rom);
-void sm83_debugger_destroy(struct sm83_debugger *debugger);
-void debugger_start(char *rom_path);
-int debugger_run(char *path);
-void debugger_event_loop(struct sm83_core *cpu);
-struct sm83_debugger *sm83_debugger_alloc(void);
-void sm83_debugger_destroy(struct sm83_debugger *debugger);
-
 static inline u8 msb(u16 value)
 {
 	return value >> 8;

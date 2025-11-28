@@ -1,4 +1,4 @@
-#include "gb/sm83.h"
+#include "gb/debugger.h"
 #include <stdio.h>
 
 int main(int argc, char **argv)

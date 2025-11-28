@@ -6,6 +6,7 @@ SRC = \
       $(SRC_SUBDIR)/sm83/sm83.c \
       $(SRC_SUBDIR)/sm83/sm83_debug.c \
       $(SRC_SUBDIR)/sm83/sm83_isa.c \
+      $(SRC_SUBDIR)/sm83/debugger.c \
       $(SRC_SUBDIR)/list.c \
       $(SRC_SUBDIR)/fs.c \
       $(SRC_SUBDIR)/alloc.c \
