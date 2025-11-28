@@ -13,7 +13,6 @@ SRC = \
       $(SRC_SUBDIR)/alloc.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
-      $(SRC_SUBDIR)/cli.c \
       $(SRC_SUBDIR)/gb.c \
       $(SRC_SUBDIR)/video.c \
       $(SRC_SUBDIR)/render.c \

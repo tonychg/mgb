@@ -4,7 +4,6 @@
 #include "gb/debugger.h"
 #include "gb/gb.h"
 #include "gb/cartridge.h"
-#include "gb/fs.h"
 #include "gb/render.h"
 #include "gb/video.h"
 #include <signal.h>
@@ -48,17 +47,11 @@ struct gb *gb_alloc()
 	gb = (struct gb *)malloc(sizeof(struct gb));
 	if (!gb)
 		return NULL;
-	gb->args = NULL;
 	gb->card = NULL;
 	gb->cpu = NULL;
 	gb->ppu = NULL;
 	gb->bus = NULL;
 	return gb;
-}
-
-void gb_configure(struct gb *gb, struct args_boot *args)
-{
-	gb->args = args;
 }
 
 void gb_init(struct gb *gb)
@@ -92,127 +85,110 @@ static void sigint_handler(int dummy)
 	sigint_catcher = 1;
 }
 
-static void *gb_thread_cpu(void *arg)
-{
-	struct gb *gb = (struct gb *)arg;
-	char *decoded;
+// clang-format off
+struct gb_option gb_options[] = {
+	{ "-d/--debug     Enable debugger", "--debug", "-d", 0, GB_OPTION_DEBUG },
+	{ "-r/--rom       Path of the ROM", "--rom", "-r", 1, GB_OPTION_ROM },
+	{ "-n/--no-video  Disable video rendering", "--no-video", "-n", 0, GB_OPTION_NO_VIDEO },
+};
+// clang-format on
 
-	if (gb->args->debug)
-		printf("Create CPU thread\n");
-	if (gb->args->interactive) {
-		struct debugger_context ctx;
-		signal(SIGINT, sigint_handler);
-		debugger_init(&ctx, gb->cpu, gb->bus->bus);
-		while (ctx.state != STATE_QUIT) {
+static int gb_setup_context(struct gb_context *ctx, int argc, char **argv)
+{
+	if (argc < 2)
+		return -1;
+	ctx->video = true;
+	ctx->debug = false;
+	ctx->rom_path = NULL;
+	ctx->running = true;
+	for (int i = 1; i < argc; i++) {
+		for (int j = 0; j < ARRAY_SIZE(gb_options); j++) {
+			struct gb_option opt = gb_options[j];
+			if (!strcmp(argv[i], opt.l)) {
+				switch (opt.type) {
+				case GB_OPTION_DEBUG:
+					ctx->debug = true;
+					break;
+				case GB_OPTION_NO_VIDEO:
+					ctx->video = false;
+					break;
+				case GB_OPTION_ROM:
+					if (i + 1 < argc)
+						ctx->rom_path = argv[i + 1];
+					break;
+				}
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
+static void *gb_thread_cpu(void *context)
+{
+	struct gb_context *ctx = context;
+	signal(SIGINT, sigint_handler);
+	if (ctx->debug) {
+		struct debugger_context debugger_ctx;
+		debugger_init(&debugger_ctx, ctx->gb->cpu, ctx->gb->bus->bus);
+		while (debugger_ctx.state != STATE_QUIT) {
 			if (sigint_catcher) {
-				ctx.state = STATE_WAIT;
+				debugger_ctx.state = STATE_WAIT;
 				sigint_catcher = 0;
 			}
-			if (debugger_step(&ctx))
+			if (debugger_step(&debugger_ctx))
 				break;
-			video_tick(gb->ppu);
+			video_tick(ctx->gb->ppu);
 		}
+		ctx->running = false;
 	} else {
-		while (1) {
-			sm83_cpu_step(gb->cpu);
-			video_tick(gb->ppu);
-			if (gb->args->debug) {
-				decoded = sm83_disassemble(gb->cpu);
-				printf("%s\n", decoded);
-				zfree(decoded);
-			}
+		while (ctx->running) {
+			if (sigint_catcher)
+				ctx->running = false;
+			sm83_cpu_step(ctx->gb->cpu);
+			video_tick(ctx->gb->ppu);
 		}
 	}
-	if (gb->args->debug)
-		printf("Exit CPU thread\n");
 	pthread_exit(NULL);
 }
 
-static void render_debug(struct gb *gb)
+static void *gb_thread_gpu(void *context)
 {
-	char dots[256];
-	char frames[256];
-	sprintf(dots, "Dots: %d", gb->ppu->dots);
-	sprintf(frames, "Frames: %d", gb->ppu->dots / GB_VIDEO_TOTAL_LENGTH);
-	DrawText(dots, 10, 40, 20, RED);
-	DrawText(frames, 10, 60, 20, RED);
-}
-
-static void *gb_thread_gui(void *arg)
-{
-	struct gb *gb = (struct gb *)arg;
-
-	if (gb->args->debug)
-		printf("Create GUI thread\n");
-	render_init(256 + 128, 512, gb->ppu->scale);
-	while (render_is_running()) {
+	struct gb_context *ctx = context;
+	render_init(256 + 128, 512, ctx->gb->ppu->scale);
+	while (render_is_running() && ctx->running) {
 		render_begin();
-		video_render(gb->ppu);
-		render_debug(gb);
+		video_render(ctx->gb->ppu);
+		render_debug(ctx->gb->ppu->dots, ctx->gb->ppu->frames);
 		render_end();
 	}
-	if (gb->args->debug)
-		printf("Exit GUI thread\n");
-	render_release();
 	pthread_exit(NULL);
 }
 
-int gb_boot(void *args)
+int gb_boot(struct gb_context *ctx, int argc, char **argv)
 {
-	pthread_t cpu;
-	pthread_t gui;
-	struct gb *gb;
+	pthread_t thread_cpu;
+	pthread_t thread_gpu;
 
-	gb = gb_alloc();
-	gb_init(gb);
-	gb_configure(gb, args);
-	gb->card = cartridge_load_from_file(gb->args->rom_path);
-	if (gb->args->debug)
-		cartridge_metadata(gb->card);
-	pthread_create(&cpu, NULL, gb_thread_cpu, gb);
-	if (gb->args->render) {
-		pthread_create(&gui, NULL, gb_thread_gui, gb);
-		pthread_join(gui, NULL);
-	}
-	pthread_join(cpu, NULL);
-	gb_destroy(gb);
-	return 0;
-}
-
-int gb_rom(void *args)
-{
-	struct args_rom *cargs = (struct args_rom *)args;
-	struct cartridge *cartridge = cartridge_load_from_file(cargs->rom_path);
-
-	cartridge_metadata(cartridge);
-	cartridge_release(cartridge);
-	return 0;
-}
-
-int gb_render(void *args)
-{
-	u8 *buffer;
-	size_t size_in_bytes;
-	struct args_render *cargs = (struct args_render *)args;
-	FILE *dump = fopen(cargs->dump, "r");
-
-	if (dump == NULL)
+	if (gb_setup_context(ctx, argc, argv)) {
+		printf("Invalid arguments\n");
 		return -1;
-	size_in_bytes = fs_size(dump);
-	buffer = fs_read(dump, size_in_bytes);
-	if (buffer != NULL) {
-		struct video *video = video_init(true);
-		struct memory *memory = memory_init();
-		int i = 0;
-		memcpy(memory->bus, buffer, size_in_bytes);
-		video_bind_memory(video, memory);
-		while (render_is_running()) {
-			printf("Rendering %d ...\n", i);
-			video_render(video);
-			i++;
-		}
-		video_release(video);
-		memory_release(memory);
 	}
+	printf("Rom: %s\n", ctx->rom_path);
+	printf("Debug: %d, Video: %d\n", ctx->debug, ctx->video);
+	ctx->gb = gb_alloc();
+	gb_init(ctx->gb);
+	ctx->gb->card = cartridge_load_from_file(ctx->rom_path);
+	if (!ctx->gb->card) {
+		printf("Failed to load cartridge: %s\n", ctx->rom_path);
+		return -1;
+	}
+	pthread_create(&thread_cpu, NULL, gb_thread_cpu, ctx);
+	if (ctx->video) {
+		pthread_create(&thread_gpu, NULL, gb_thread_gpu, ctx);
+		pthread_join(thread_gpu, NULL);
+	}
+	pthread_join(thread_cpu, NULL);
+	gb_destroy(ctx->gb);
 	return 0;
 }

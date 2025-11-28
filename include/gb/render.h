@@ -21,6 +21,7 @@ static const int DMG_PALETTE[4] = {
 void render_pixel(int x, int y, int scale, u8 color);
 void render_init(int width, int height, int scale);
 bool render_is_running(void);
+void render_debug(int dots, int frames);
 void render_begin(void);
 void render_end(void);
 void render_release(void);

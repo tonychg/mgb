@@ -13,21 +13,13 @@ int main()
 #endif
 }
 #else
-#include "gb/cli.h"
-#include "gb/alloc.h"
+#include "gb/gb.h"
 
 int main(int argc, char **argv)
 {
-	int exit_code = 0;
-	struct command *cmd = parse_args(argc, argv);
+	struct gb_context ctx;
 
-	if (cmd == NULL) {
-		exit_code = -1;
-		printf("%s", CLI_HELP);
-	} else {
-		exit_code = cmd->callback(cmd->args);
-		zfree(cmd);
-	}
-	exit(exit_code);
+	if (gb_boot(&ctx, argc, argv))
+		printf("Emulator terminate with errors\n");
 }
 #endif

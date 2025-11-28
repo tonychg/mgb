@@ -3,20 +3,36 @@
 
 #include "cartridge.h"
 #include "video.h"
-#include "cli.h"
 
 struct gb {
 	struct sm83_core *cpu;
 	struct video *ppu;
 	struct memory *bus;
 	struct cartridge *card;
-	struct args_boot *args;
 };
 
-struct gb *gb_create(struct args_boot *args);
-int gb_boot(void *args);
-int gb_test(void *args);
-int gb_rom(void *args);
-int gb_render(void *args);
+enum gb_option_types {
+	GB_OPTION_DEBUG,
+	GB_OPTION_ROM,
+	GB_OPTION_NO_VIDEO,
+};
+
+struct gb_option {
+	const char *description;
+	const char *l;
+	const char *s;
+	const int length;
+	enum gb_option_types type;
+};
+
+struct gb_context {
+	struct gb *gb;
+	char *rom_path;
+	bool debug;
+	bool video;
+	bool running;
+};
+
+int gb_boot(struct gb_context *ctx, int argc, char **argv);
 
 #endif
