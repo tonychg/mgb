@@ -1,6 +1,7 @@
 #include "gb/video.h"
 #include "gb/alloc.h"
 #include "gb/render.h"
+#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,7 +14,7 @@ struct video *video_init(bool render)
 		return NULL;
 	video->memory = NULL;
 	video->render = render;
-	video->scale = 2;
+	video->scale = 1;
 	return video;
 }
 
@@ -55,9 +56,59 @@ void video_render(struct video *video)
 	video_render_tilemap(video->memory->bus, 1, 128, 256, video->scale);
 }
 
+static void gui_inputs(struct video *video)
+{
+	u8 joyp = video->memory->bus[0xFF00];
+
+	if (!(joyp >> 4) && !(joyp >> 5)) {
+		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_Z) || IsKeyDown(KEY_E) ||
+		    IsKeyDown(KEY_R) || IsKeyDown(KEY_RIGHT) ||
+		    IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_UP) ||
+		    IsKeyDown(KEY_DOWN)) {
+			joyp |= 0xF;
+		}
+	} else if (!(joyp >> 4)) {
+		if (IsKeyDown(KEY_A)) {
+			printf("A is pressed\n");
+			joyp |= 1 << 0;
+		}
+		if (IsKeyDown(KEY_Z)) {
+			printf("B is pressed\n");
+			joyp |= 1 << 1;
+		}
+		if (IsKeyDown(KEY_E)) {
+			printf("Select is pressed\n");
+			joyp |= 1 << 2;
+		}
+		if (IsKeyDown(KEY_R)) {
+			printf("Start is pressed\n");
+			joyp |= 1 << 3;
+		}
+	} else if (!(joyp >> 5)) {
+		if (IsKeyDown(KEY_RIGHT)) {
+			printf("Right is pressed\n");
+			joyp |= 1 << 0;
+		}
+		if (IsKeyDown(KEY_LEFT)) {
+			printf("Left is pressed\n");
+			joyp |= 1 << 1;
+		}
+		if (IsKeyDown(KEY_UP)) {
+			printf("Up is pressed\n");
+			joyp |= 1 << 2;
+		}
+		if (IsKeyDown(KEY_DOWN)) {
+			printf("Down is pressed\n");
+			joyp |= 1 << 3;
+		}
+	}
+	video->memory->bus[0xFF] = joyp;
+}
+
 void video_tick(struct video *video)
 {
 	video_memory_fetch(video);
+	gui_inputs(video);
 	if (video->enabled) {
 		if (video->dots != 0 && (video->dots % 456) == 0) {
 			// video_debug(video);

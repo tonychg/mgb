@@ -73,14 +73,6 @@ static struct cmd_struct commands[] = {
 };
 // clang-format on
 
-static void print_command_context(struct debugger_command_context *cmd)
-{
-	struct cmd_struct cmd_info;
-	cmd_info = commands[cmd->type];
-	printf("command=%s addr=$%04X value=$%02X end=%04X counter=%d\n",
-	       cmd_info.name, cmd->addr, cmd->value, cmd->end, cmd->counter);
-}
-
 static void print_help()
 {
 	for (int i = 0; i < ARRAY_SIZE(commands); i++) {

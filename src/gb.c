@@ -1,8 +1,3 @@
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
 #include "gb/alloc.h"
 #include "gb/memory.h"
 #include "gb/sm83.h"
@@ -12,6 +7,11 @@
 #include "gb/fs.h"
 #include "gb/render.h"
 #include "gb/video.h"
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 
 static u8 gb_load8(struct sm83_core *cpu, u16 addr)
 {
@@ -132,10 +132,9 @@ static void render_debug(struct gb *gb)
 {
 	char dots[256];
 	char frames[256];
-	int height = 512 * gb->ppu->scale;
 	sprintf(dots, "Dots: %d", gb->ppu->dots);
 	sprintf(frames, "Frames: %d", gb->ppu->dots / GB_VIDEO_TOTAL_LENGTH);
-	DrawText(dots, 10,  40, 20, RED);
+	DrawText(dots, 10, 40, 20, RED);
 	DrawText(frames, 10, 60, 20, RED);
 }
 
