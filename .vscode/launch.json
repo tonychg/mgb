@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "type": "lldb",
+          "request": "launch",
+          "name": "Start GB debug",
+          "cwd": "${workspaceFolder}",
+          "program": "build/gb",
+          "args": [
+              "--rom",
+              "data/tetris.gb",
+              "--debug"
+          ]
+      }
+  ]
+}
+
