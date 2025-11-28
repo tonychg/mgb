@@ -93,33 +93,44 @@ struct gb_option gb_options[] = {
 };
 // clang-format on
 
-static int gb_setup_context(struct gb_context *ctx, int argc, char **argv)
+static void gb_context_init(struct gb_context *ctx)
 {
-	if (argc < 2)
-		return -1;
 	ctx->video = true;
 	ctx->debug = false;
 	ctx->rom_path = NULL;
 	ctx->running = true;
-	for (int i = 1; i < argc; i++) {
-		for (int j = 0; j < ARRAY_SIZE(gb_options); j++) {
-			struct gb_option opt = gb_options[j];
-			if (!strcmp(argv[i], opt.l)) {
-				switch (opt.type) {
-				case GB_OPTION_DEBUG:
-					ctx->debug = true;
-					break;
-				case GB_OPTION_NO_VIDEO:
-					ctx->video = false;
-					break;
-				case GB_OPTION_ROM:
-					if (i + 1 < argc)
-						ctx->rom_path = argv[i + 1];
-					break;
-				}
+}
+
+static void gb_parse_option(struct gb_context *ctx, int i, int argc,
+			    char **argv)
+{
+	for (int j = 0; j < ARRAY_SIZE(gb_options); j++) {
+		struct gb_option opt = gb_options[j];
+		if (!strcmp(argv[i], opt.l)) {
+			switch (opt.type) {
+			case GB_OPTION_DEBUG:
+				ctx->debug = true;
+				break;
+			case GB_OPTION_NO_VIDEO:
+				ctx->video = false;
+				break;
+			case GB_OPTION_ROM:
+				if (i + 1 < argc)
+					ctx->rom_path = argv[i + 1];
 				break;
 			}
+			break;
 		}
+	}
+}
+
+static int gb_context_setup(struct gb_context *ctx, int argc, char **argv)
+{
+	if (argc < 2)
+		return -1;
+	gb_context_init(ctx);
+	for (int i = 1; i < argc; i++) {
+		gb_parse_option(ctx, i, argc, argv);
 	}
 	return 0;
 }
@@ -170,7 +181,7 @@ int gb_boot(struct gb_context *ctx, int argc, char **argv)
 	pthread_t thread_cpu;
 	pthread_t thread_gpu;
 
-	if (gb_setup_context(ctx, argc, argv)) {
+	if (gb_context_setup(ctx, argc, argv)) {
 		printf("Invalid arguments\n");
 		return -1;
 	}
