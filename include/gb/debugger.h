@@ -55,14 +55,17 @@ struct debugger_command_context {
 };
 
 struct debugger_context {
-	struct debugger_command_context command;
-	enum debugger_state state;
 	u16 index;
+
+	u8 *memory;
+	struct sm83_core *cpu;
+
 	u16 breakpoints[MAX_BREAKPOINTS];
 	u16 watched_addresses[MAX_WATCHERS];
 	u16 watched_values[MAX_WATCHERS];
-	u8 *memory;
-	struct sm83_core *cpu;
+
+	enum debugger_state state;
+	struct debugger_command_context command;
 };
 
 /* sm83_debug.c */

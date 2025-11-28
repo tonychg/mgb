@@ -8,7 +8,7 @@ SRC = \
 	  sm83_isa.c \
 	  ../alloc.c \
 	  ../fs.c \
-	  ../list.c \
+	  ../option.c \
 
 OBJ = $(SRC:.c=.o)
 INCLUDE = -I../../include

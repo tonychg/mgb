@@ -1,4 +1,5 @@
 #include "gb/render.h"
+#include <raylib.h>
 
 Color convert_color(enum dmg_colors color)
 {
@@ -16,6 +17,7 @@ void render_init(int width, int height, int scale)
 {
 	InitWindow(width * scale, height * scale, "GB");
 	SetTargetFPS(60);
+	SetTraceLogLevel(LOG_WARNING);
 }
 
 bool render_is_running(void)

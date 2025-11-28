@@ -9,6 +9,7 @@ SRC = \
       $(SRC_SUBDIR)/sm83/debugger.c \
       $(SRC_SUBDIR)/list.c \
       $(SRC_SUBDIR)/fs.c \
+      $(SRC_SUBDIR)/option.c \
       $(SRC_SUBDIR)/alloc.c \
       $(SRC_SUBDIR)/cartridge.c \
       $(SRC_SUBDIR)/memory.c \
