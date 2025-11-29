@@ -1,3 +1,4 @@
+#include "emu/gb.h"
 #include "platform/render.h"
 #include <raylib.h>
 #include <stdio.h>
@@ -36,31 +37,42 @@ void render_debug(int dots, int frames)
 	DrawText(str_frames, 10, 60, 20, RED);
 }
 
+struct keybind {
+	int keyboard;
+	enum joypad_button button;
+};
+
+// clang-format off
+static const struct keybind keybindings[] = {
+	{ KEY_Q, BUTTON_A },
+	{ KEY_W, BUTTON_B },
+	{ KEY_E, BUTTON_START },
+	{ KEY_R, BUTTON_SELECT },
+	{ KEY_RIGHT, BUTTON_RIGHT },
+	{ KEY_LEFT, BUTTON_LEFT },
+	{ KEY_UP, BUTTON_UP },
+	{ KEY_DOWN, BUTTON_DOWN },
+};
+// clang-format on
+
 void render_handle_inputs(u8 *joypad)
 {
 	// https://gbdev.io/pandocs/Joypad_Input.html#ff00--p1joyp-joypad
-	*joypad |= 0x0;
-	if (*joypad == 0x30)
+	int start = 0;
+	u8 prev = *joypad;
+	if ((*joypad & 0x30) == 0) {
+		*joypad |= 0xF;
 		return;
-	if ((*joypad & 0x20) == 0) {
-		if (IsKeyDown(KEY_Q))
-			*joypad |= 1 << 0;
-		if (IsKeyDown(KEY_W))
-			*joypad |= 1 << 1;
-		if (IsKeyDown(KEY_E))
-			*joypad |= 1 << 2;
-		if (IsKeyDown(KEY_R))
-			*joypad |= 1 << 3;
 	}
-	if ((*joypad & 0x10) == 0) {
-		if (IsKeyDown(KEY_RIGHT))
-			*joypad |= 1 << 0;
-		if (IsKeyDown(KEY_LEFT))
-			*joypad |= 1 << 1;
-		if (IsKeyDown(KEY_UP))
-			*joypad |= 1 << 2;
-		if (IsKeyDown(KEY_DOWN))
-			*joypad |= 1 << 3;
+	if ((*joypad & 0x10) == 0)
+		start = 4;
+	for (int i = 0; i < 4; i++) {
+		struct keybind key = keybindings[start + i];
+		if (IsKeyDown(key.keyboard)) {
+			*joypad &= ~(1 << key.button);
+			printf("Keypressed %d JOYPAD: %06b -> %06b\n",
+			       key.keyboard, prev, *joypad);
+		}
 	}
 }
 

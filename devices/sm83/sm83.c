@@ -1,6 +1,6 @@
 #include "emu/sm83.h"
+#include "emu/memory.h"
 #include "platform/mm.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 static struct sm83_core *sm83_cpu_alloc(void)
@@ -29,6 +29,22 @@ static const int CLOCK_RATE[4] = {
 	3,
 };
 
+struct interrupt_struct {
+	const char *description;
+	const enum sm83_irq number;
+	const u16 vector;
+};
+
+// clang-format off
+const static struct interrupt_struct interrupts[] = {
+	{ "VBLANK", IRQ_VBLANK, VEC_VBLANK },
+	{ "LCD", IRQ_LCD, VEC_LCD },
+	{ "TIMER", IRQ_TIMER, VEC_TIMER },
+	{ "SERIAL", IRQ_SERIAL, VEC_SERIAL },
+	{ "JOYPAD", IRQ_JOYPAD, VEC_JOYPAD },
+};
+// clang-format on
+
 static u8 sm83_irq_ack(struct sm83_core *cpu)
 {
 	u8 irq_regs;
@@ -36,37 +52,19 @@ static u8 sm83_irq_ack(struct sm83_core *cpu)
 
 	if (!cpu->ime)
 		return 0;
-	irq_reqs = cpu->memory->load8(cpu, 0xFF0F);
-	irq_regs = cpu->memory->load8(cpu, 0xFFFF) & irq_reqs;
-	if (irq_regs & (1 << IRQ_VBLANK)) {
-		irq_reqs &= ~(1 << IRQ_VBLANK);
-		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
-		printf("[%lu] Acknowledge VLANK interrupt\n", cpu->cycles);
-		return VEC_VBLANK;
-	}
-	if (irq_regs & (1 << IRQ_LCD)) {
-		irq_reqs &= ~(1 << IRQ_LCD);
-		printf("[%lu] Acknowledge LCD interrupt\n", cpu->cycles);
-		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
-		return VEC_LCD;
-	}
-	if (irq_regs & (1 << IRQ_TIMER)) {
-		irq_reqs &= ~(1 << IRQ_TIMER);
-		printf("[%lu] Acknowledge TIMER interrupt\n", cpu->cycles);
-		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
-		return VEC_TIMER;
-	}
-	if (irq_regs & (1 << IRQ_SERIAL)) {
-		irq_reqs &= ~(1 << IRQ_SERIAL);
-		printf("[%lu] Acknowledge SERIAL interrupt\n", cpu->cycles);
-		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
-		return VEC_SERIAL;
-	}
-	if (irq_regs & (1 << IRQ_JOYPAD)) {
-		irq_reqs &= ~(1 << IRQ_JOYPAD);
-		printf("[%lu] Acknowledge JOYPAD interrupt\n", cpu->cycles);
-		cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
-		return VEC_JOYPAD;
+	irq_reqs = cpu->memory->load8(cpu, IF);
+	irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
+	for (int i = 0; i < ARRAY_SIZE(interrupts); i++) {
+		struct interrupt_struct interrupt = interrupts[i];
+		u8 bitmask = 1 << interrupt.number;
+		if ((irq_regs & bitmask) != 0) {
+			irq_reqs ^= bitmask;
+			if (interrupt.number != IRQ_VBLANK)
+				printf("[%lu] Acknowledge %s interrupt\n", cpu->cycles,
+				       interrupt.description);
+			cpu->memory->write8(cpu, IF, irq_reqs);
+			return interrupt.vector;
+		}
 	}
 	return 0;
 }
@@ -74,7 +72,7 @@ static u8 sm83_irq_ack(struct sm83_core *cpu)
 static void sm83_update_timer_registers(struct sm83_core *cpu)
 {
 	u16 t_cycles = cpu->cycles * 4;
-	u8 tima_next, tima, tma, irq_reqs;
+	u8 tima_next, tima, tma;
 	u8 divider = t_cycles >> 8;
 	u8 tac = cpu->memory->load8(cpu, 0xFF07);
 	u8 clock_offset = CLOCK_RATE[(tac & 0b11)];
@@ -88,9 +86,8 @@ static void sm83_update_timer_registers(struct sm83_core *cpu)
 		if (!tima_next && tima == 0xFF) {
 			// Load TMA into TIMA after overflow
 			tma = cpu->memory->load8(cpu, 0xFF06);
-			irq_reqs = cpu->memory->load8(cpu, 0xFF0F);
-			irq_reqs |= 1 << IRQ_TIMER;
-			cpu->memory->write8(cpu, 0xFF0F, irq_reqs);
+			u8 irq_reqs = cpu->memory->load8(cpu, IF);
+			cpu->memory->write8(cpu, IF, irq_reqs | 1 << IRQ_TIMER);
 			cpu->memory->write8(cpu, 0xFF05, tma);
 		} else {
 			cpu->memory->write8(cpu, 0xFF05, tima_next);
@@ -178,12 +175,12 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_HALT:
-		// irq_ack = sm83_irq_ack(cpu);
-		// if (irq_ack) {
-		// 	cpu->ime = false;
-		// 	sm83_stack_push_pc(cpu, &cpu->pc);
-		// 	cpu->pc = irq_ack;
-		// }
+		irq_ack = sm83_irq_ack(cpu);
+		if (irq_ack) {
+			cpu->ime = false;
+			sm83_stack_push_pc(cpu, &cpu->pc);
+			cpu->pc = irq_ack;
+		}
 		break;
 	case SM83_CORE_IDLE_0:
 	case SM83_CORE_IDLE_1:

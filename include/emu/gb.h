@@ -19,6 +19,17 @@ enum gb_flags {
 	GB_VIDEO = 1 << 2,
 };
 
+enum joypad_button {
+	BUTTON_A,
+	BUTTON_B,
+	BUTTON_SELECT,
+	BUTTON_START,
+	BUTTON_RIGHT,
+	BUTTON_LEFT,
+	BUTTON_UP,
+	BUTTON_DOWN,
+};
+
 #define GB_FLAG(flag) (ctx->flags & flag) != 0
 #define GB_FLAG_DISABLE(flag) ctx->flags ^= flag
 #define GB_FLAG_ENABLE(flag) ctx->flags |= flag

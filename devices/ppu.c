@@ -114,6 +114,8 @@ void ppu_tick(struct ppu *gpu)
 			gpu->ly++;
 			write_u8(gpu->memory, LY_LCD, gpu->ly);
 		}
+		if (gpu->ly == 144)
+			request_interrupt(gpu->memory, IRQ_VBLANK);
 		gpu->dots++;
 	}
 	if (gpu->dots == GB_VIDEO_TOTAL_LENGTH) {

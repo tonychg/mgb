@@ -5,9 +5,7 @@
 
 struct sm83_core;
 
-enum {
-	SM83_FREQ = 4194304
-};
+enum { SM83_FREQ = 4194304 };
 
 struct sm83_memory {
 	u8 (*load8)(struct sm83_core *, u16 addr);
@@ -42,14 +40,6 @@ enum sm83_flag_register {
 	FLAG_N = 1 << 6,
 	FLAG_H = 1 << 5,
 	FLAG_C = 1 << 4,
-};
-
-enum sm83_irq {
-	IRQ_VBLANK,
-	IRQ_LCD,
-	IRQ_TIMER,
-	IRQ_SERIAL,
-	IRQ_JOYPAD,
 };
 
 enum sm83_irq_vector {

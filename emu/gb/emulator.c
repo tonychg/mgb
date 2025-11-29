@@ -25,6 +25,10 @@ static u8 gb_load(struct sm83_core *cpu, u16 addr)
 static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
+	if (addr == P1_JOYP) {
+		u8 joyp = load_u8(gb->memory, P1_JOYP);
+		value = (joyp & 0xF) | (value & 0x30);
+	}
 	write_u8(gb->memory, addr, value);
 }
 
@@ -148,9 +152,10 @@ static void handle_joypad(struct gb_context *ctx)
 	u8 joypad = load_u8(gpu->memory, P1_JOYP);
 	u8 joypad_prev = joypad;
 	render_handle_inputs(&joypad);
-	// if (joypad != joypad_prev)
-
-	write_u8(gpu->memory, P1_JOYP, joypad);
+	if (joypad != joypad_prev) {
+		request_interrupt(ctx->gb->memory, IRQ_JOYPAD);
+		write_u8(gpu->memory, P1_JOYP, joypad);
+	}
 }
 
 static void *run_emulator_gpu_thread(void *arg)
@@ -160,6 +165,7 @@ static void *run_emulator_gpu_thread(void *arg)
 	render_init(gpu->width, gpu->height, gpu->scale);
 	gpu->renderer->draw = draw;
 	while (render_is_running() && GB_FLAG(GB_ON)) {
+		handle_joypad(ctx);
 		render_begin();
 		ppu_draw(ctx->gb->gpu);
 		render_end();

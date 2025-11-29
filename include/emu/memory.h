@@ -68,6 +68,14 @@ enum hardware_register {
 	IE = 0xFFFF,
 };
 
+enum sm83_irq {
+	IRQ_VBLANK,
+	IRQ_LCD,
+	IRQ_TIMER,
+	IRQ_SERIAL,
+	IRQ_JOYPAD,
+};
+
 struct shared {
 	struct byte_array *array;
 };
@@ -79,6 +87,7 @@ void write_u8(struct shared *memory, u16 addr, u8 value);
 int load_rom(struct shared *memory, char *path);
 void dump_memory(struct shared *memory);
 void print_addr(struct shared *memory, u16 addr);
+void request_interrupt(struct shared *memory, enum sm83_irq number);
 
 enum cartridge_type {
 	ROM_ONLY = 0x00,

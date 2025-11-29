@@ -96,3 +96,11 @@ void print_addr(struct shared *memory, u16 addr)
 	u8 byte = load_u8(memory, addr);
 	printf("$%02X [%08b] %d\n", byte, byte, byte);
 }
+
+void request_interrupt(struct shared *memory, enum sm83_irq number)
+{
+	u8 irq_reqs = load_u8(memory, IF);
+	irq_reqs |= 1 << number;
+	write_u8(memory, IF, irq_reqs);
+}
+
