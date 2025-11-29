@@ -1,17 +1,23 @@
 #include "platform/io.h"
 #include "emu/memory.h"
+#include "platform/mm.h"
 #include <stdlib.h>
 
 void memory_reset(struct shared *memory)
 {
 	for (int i = 0; i <= 0xFFFF; i++) {
-		write_u8(memory, i, 0x00);
 		if ((i >= 0xC000) && (i < 0xE000)) {
 			if ((i & 0x8) ^ ((i & 0x800) >> 8)) {
 				write_u8(memory, i, 0x0f);
 			} else {
 				write_u8(memory, i, 0xff);
 			}
+		} else if (i == P1_JOYP) {
+			write_u8(memory, i, 0xcf);
+		} else if (i == IF) {
+			write_u8(memory, i, 0xe1);
+		} else {
+			write_u8(memory, i, 0x00);
 		}
 	}
 }
@@ -49,6 +55,11 @@ void write_u8(struct shared *memory, u16 addr, u8 value)
 {
 	if (!memory)
 		panic("try to access unalocated memory");
+	if (addr == P1_JOYP) {
+		u8 current = load_u8(memory, P1_JOYP);
+		u8 result = value | (current & 0xf);
+		value = result;
+	}
 	set(memory->array, addr, value);
 }
 
@@ -101,6 +112,47 @@ void request_interrupt(struct shared *memory, enum sm83_irq number)
 {
 	u8 irq_reqs = load_u8(memory, IF);
 	irq_reqs |= 1 << number;
-	write_u8(memory, IF, irq_reqs);
+	memory->array->bytes[IF] = irq_reqs;
 }
 
+struct hreg_print_helper {
+	const char *label;
+	const enum hardware_register addr;
+};
+
+// clang-format off
+static const struct hreg_print_helper helpers[] = {
+	{ "JOYP", P1_JOYP },
+	{ "IF", IF },
+	{ "IE", IE },
+	{ "DIV", DIV },
+	{ "TIMA", TIMA },
+	{ "TMA", TMA },
+	{ "TAC", TAC },
+	{ "LCDC", LCDC_LCD },
+	{ "STAT", STAT_LCD },
+	{ "SCY", SCY },
+	{ "SCX", SCX },
+	{ "LYC", LY_LCD },
+	{ "LY", LY_LCD },
+	{ "DMA", DMA_OAM_DMA },
+	{ "BGP", BGP_BG },
+	{ "OBJP0", OBP0_OBJ },
+	{ "OBJP1", OBP1_OBJ },
+	{ "WY", WY },
+	{ "WX", WX },
+};
+// clang-format on
+
+void print_hardware_registers(struct shared *memory)
+{
+	const char *format = "%1$6s $%2$04X : $%3$02X (%3$08b)";
+	u8 *mem = memory->array->bytes;
+	for (int i = 0; i < ARRAY_SIZE(helpers); i++) {
+		if (i == 1 || (i > 2 && (i - 1) % 2 == 0))
+			printf("\n");
+		const struct hreg_print_helper helper = helpers[i];
+		printf(format, helper.label, helper.addr, mem[helper.addr]);
+	}
+	printf("\n");
+}

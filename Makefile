@@ -12,10 +12,13 @@ OUTPUT      = $(BUILD_DIR)/$(NAME)
 SRC         = \
               $(ROOT)/debugger/debugger.c \
               $(ROOT)/devices/sm83/sm83.c \
-              $(ROOT)/devices/sm83/sm83_decoder.c \
-              $(ROOT)/devices/sm83/sm83_isa.c \
+              $(ROOT)/devices/sm83/interrupt.c \
+              $(ROOT)/devices/sm83/decoder.c \
+              $(ROOT)/devices/sm83/isa.c \
+              $(ROOT)/devices/timer.c \
               $(ROOT)/devices/memory.c \
               $(ROOT)/devices/ppu.c \
+              $(ROOT)/devices/joypad.c \
               $(ROOT)/emu/platform/mm.c \
               $(ROOT)/emu/platform/io.c \
               $(ROOT)/emu/platform/render/raylib.c \
@@ -26,7 +29,7 @@ OBJ         = $(SRC:.c=.o)
 
 .PHONY:all
 all:    $(NAME)
-	$(MAKE) -C $(ROOT)/debugger
+		$(MAKE) -C $(ROOT)/debugger
 
 build:
 	$(MKDIR) $(BUILD_DIR)

@@ -23,6 +23,7 @@ static void gb_context_init(struct gb_context *ctx)
 	ctx->flags = GB_DEFAULT_FLAGS;
 	ctx->rom_path = NULL;
 	ctx->scale = 1;
+	ctx->joypad = 0xFF;
 }
 
 static void parse_option(struct gb_context *ctx, int i, int argc, char **argv)
@@ -32,7 +33,6 @@ static void parse_option(struct gb_context *ctx, int i, int argc, char **argv)
 		    strcmp(argv[i], options[j].s)) {
 			continue;
 		}
-		printf("%s %s\n", argv[i], options[j].description);
 		switch (options[j].type) {
 		case GB_OPTION_DEBUG:
 			GB_FLAG_ENABLE(GB_DEBUG);
@@ -66,9 +66,8 @@ static void print_header(struct gb_context *ctx)
 static int context_create(struct gb_context *ctx, int argc, char **argv)
 {
 	gb_context_init(ctx);
-	for (int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++)
 		parse_option(ctx, i, argc, argv);
-	}
 	if (!ctx->rom_path)
 		return -1;
 	if (ctx->scale < 1)

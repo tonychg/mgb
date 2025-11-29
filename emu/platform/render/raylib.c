@@ -1,6 +1,4 @@
-#include "emu/gb.h"
 #include "platform/render.h"
-#include <raylib.h>
 #include <stdio.h>
 
 static Color convert_color(int color)
@@ -37,41 +35,12 @@ void render_debug(int dots, int frames)
 	DrawText(str_frames, 10, 60, 20, RED);
 }
 
-struct keybind {
-	int keyboard;
-	enum joypad_button button;
-};
-
-// clang-format off
-static const struct keybind keybindings[] = {
-	{ KEY_Q, BUTTON_A },
-	{ KEY_W, BUTTON_B },
-	{ KEY_R, BUTTON_SELECT },
-	{ KEY_E, BUTTON_START },
-	{ KEY_RIGHT, BUTTON_RIGHT },
-	{ KEY_LEFT, BUTTON_LEFT },
-	{ KEY_UP, BUTTON_UP },
-	{ KEY_DOWN, BUTTON_DOWN },
-};
-// clang-format on
-
-void render_handle_inputs(u8 *joypad)
+void render_handle_inputs(void *ctx, void (callback)(void*, enum joypad_button))
 {
-	// https://gbdev.io/pandocs/Joypad_Input.html#ff00--p1joyp-joypad
-	int start = 0;
-	u8 prev = *joypad;
-	if ((*joypad & 0x30) == 0) {
-		*joypad |= 0xF;
-		return;
-	}
-	if ((*joypad & 0x10) == 0)
-		start = 4;
-	for (int i = 0; i < 4; i++) {
-		struct keybind key = keybindings[start + i];
+	for (int i = 0; i < 8; i++) {
+		struct keybind key = keybindings[0 + i];
 		if (IsKeyDown(key.keyboard)) {
-			*joypad &= ~(1 << key.button);
-			printf("Keypressed %d JOYPAD: %06b -> %06b\n",
-			       key.keyboard, prev, *joypad);
+			callback(ctx, key.button);
 		}
 	}
 }

@@ -10,9 +10,11 @@ MAKE        = make
 OUTPUT      = $(BUILD_DIR)/$(NAME)
 SRC         = \
               $(ROOT)/devices/sm83/sm83.c \
-              $(ROOT)/devices/sm83/sm83_decoder.c \
-              $(ROOT)/devices/sm83/sm83_isa.c \
+              $(ROOT)/devices/sm83/decoder.c \
+              $(ROOT)/devices/sm83/interrupt.c \
+              $(ROOT)/devices/sm83/isa.c \
               $(ROOT)/devices/memory.c \
+              $(ROOT)/devices/timer.c \
               $(ROOT)/emu/platform/mm.c \
               $(ROOT)/emu/platform/io.c \
               $(ROOT)/debugger/debugger.c \

@@ -88,6 +88,7 @@ int load_rom(struct shared *memory, char *path);
 void dump_memory(struct shared *memory);
 void print_addr(struct shared *memory, u16 addr);
 void request_interrupt(struct shared *memory, enum sm83_irq number);
+void print_hardware_registers(struct shared *memory);
 
 enum cartridge_type {
 	ROM_ONLY = 0x00,

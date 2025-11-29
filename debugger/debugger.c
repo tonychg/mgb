@@ -1,3 +1,4 @@
+#include "emu/memory.h"
 #include "platform/mm.h"
 #include "platform/types.h"
 #include "debugger.h"
@@ -12,8 +13,7 @@ static struct cmd_struct commands[] = {
 	{ "next (n)                    Next instruction\n", "next", "n", COMMAND_NEXT },
 	{ "step (s)                    Step one M-cycle\n", "step", "s", COMMAND_STEP },
 	{ "break (b) <addr>            Set a breakpoint\n", "break", "b", COMMAND_BREAKPOINT },
-	{ "breakpoints (bs)            List breakpoints\n", "breakpoints", "bs", COMMAND_BREAKPOINTS },
-	{ "del (d)                     Delete breakpoint\n", "del", "d", COMMAND_BREAKPOINT_DELETE },
+	{ "del (d)                     Delete breakpoint or wacher\n", "del", "d", COMMAND_DELETE },
 	{ "continue (c)                Continue until next breakpoint\n", "continue", "c", COMMAND_CONTINUE },
 	{ "print (p) <addr>            Print address value\n", "print", "p", COMMAND_PRINT },
 	{ "range (r) <addr> <addr>     Dump memory range\n", "range", "r", COMMAND_RANGE },
@@ -28,8 +28,7 @@ static struct cmd_struct commands[] = {
 	{ "quit (q)                    Quit\n", "quit", "q", COMMAND_QUIT },
 	{ "help (h)                    Display this message\n", "help", "h", COMMAND_HELP },
 	{ "watch (w) <addr>            Watch address\n", "watch", "w", COMMAND_WATCH },
-	{ "wdelete (wd) <addr>         Delete watched\n", "wdelete", "wd", COMMAND_WATCH_DELETE },
-	{ "wlist (wl)                  List watchers\n", "wlist", "wl", COMMAND_WATCH_LIST },
+	{ "list (ll)                   List breakpoints and watchers\n", "list", "ll", COMMAND_LIST },
 };
 // clang-format on
 
@@ -105,49 +104,46 @@ static int parse_int(struct debugger_context *ctx, char **buffer)
 static int command_parse(struct debugger_context *ctx, char *buffer)
 {
 	char option[COMMAND_MAX_LENGTH] = "";
-
 	get_option(&buffer, option, COMMAND_DELIMITERS);
 	ctx->command.type = COMMAND_NEXT;
 	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
 		struct cmd_struct s = commands[i];
 		if (command_match(s, option)) {
 			ctx->command.type = s.type;
+			switch (ctx->command.type) {
+			case COMMAND_NEXT:
+			case COMMAND_STEP:
+			case COMMAND_MEM:
+			case COMMAND_IO:
+			case COMMAND_RESET:
+			case COMMAND_REGISTERS:
+			case COMMAND_QUIT:
+			case COMMAND_HELP:
+			case COMMAND_FRAME:
+			case COMMAND_CONTINUE:
+			case COMMAND_LIST:
+				break;
+			case COMMAND_BREAKPOINT:
+			case COMMAND_DELETE:
+			case COMMAND_PRINT:
+			case COMMAND_WATCH:
+			case COMMAND_GOTO:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				break;
+			case COMMAND_LOOP:
+				ctx->command.counter = parse_int(ctx, &buffer);
+				break;
+			case COMMAND_SET:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				ctx->command.value = parse_hex(ctx, &buffer);
+				break;
+			case COMMAND_RANGE:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				ctx->command.end = parse_hex(ctx, &buffer);
+				break;
+			}
 			break;
 		}
-	}
-	switch (ctx->command.type) {
-	case COMMAND_NEXT:
-	case COMMAND_STEP:
-	case COMMAND_MEM:
-	case COMMAND_IO:
-	case COMMAND_RESET:
-	case COMMAND_REGISTERS:
-	case COMMAND_QUIT:
-	case COMMAND_HELP:
-	case COMMAND_FRAME:
-	case COMMAND_CONTINUE:
-	case COMMAND_BREAKPOINTS:
-	case COMMAND_WATCH_LIST:
-		break;
-	case COMMAND_BREAKPOINT:
-	case COMMAND_BREAKPOINT_DELETE:
-	case COMMAND_PRINT:
-	case COMMAND_WATCH:
-	case COMMAND_WATCH_DELETE:
-	case COMMAND_GOTO:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		break;
-	case COMMAND_LOOP:
-		ctx->command.counter = parse_int(ctx, &buffer);
-		break;
-	case COMMAND_SET:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		ctx->command.value = parse_hex(ctx, &buffer);
-		break;
-	case COMMAND_RANGE:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		ctx->command.end = parse_hex(ctx, &buffer);
-		break;
 	}
 	return 0;
 }
@@ -231,18 +227,20 @@ static int unregister_watcher(struct debugger_context *ctx, u16 addr)
 
 static void check_watchers(struct debugger_context *ctx)
 {
+	const char *format =
+		"$%1$04X $%2$02X (0b%2$08b) -> $%03$2X (0b%3$08b)\n";
 	for (int i = 0; i < MAX_WATCHERS; i++) {
 		if (ctx->watched_addresses[i]) {
 			u16 addr = ctx->watched_addresses[i];
 			u8 prev = ctx->watched_values[i];
 			u8 curr = load_u8(ctx->memory, addr);
-			if (curr != prev) {
-				printf("Hit watchpoint at %04X\n", addr);
-				printf("$%1$04X $%2$02X (0b%2$08b) -> $%03$2X (0b%3$08b)\n",
-				       ctx->cpu->index, prev, curr);
-				ctx->watched_values[i] = curr;
-				move_to_wait(ctx);
-			}
+			if (curr == prev)
+				continue;
+			printf("Hit watchpoint at %04X\n", addr);
+			printf(format, ctx->cpu->index, prev, curr);
+			ctx->watched_values[i] = curr;
+			move_to_wait(ctx);
+			break;
 		}
 	}
 }
@@ -252,10 +250,11 @@ static int debugger_command_handle(struct debugger_context *ctx)
 	switch (ctx->command.type) {
 	case COMMAND_NEXT:
 		if (ctx->state == STATE_EXECUTE &&
-		    ctx->cpu->index != ctx->index)
+		    ctx->cpu->index != ctx->index) {
 			move_to_wait(ctx);
-		else
+		} else {
 			ctx->state = STATE_EXECUTE;
+		}
 		break;
 	case COMMAND_STEP:
 		if (ctx->state == STATE_EXECUTE)
@@ -267,23 +266,19 @@ static int debugger_command_handle(struct debugger_context *ctx)
 		if (register_breakpoint(ctx, ctx->command.addr))
 			printf("Failed to register new breakpoints, remove some");
 		break;
-	case COMMAND_BREAKPOINTS:
-		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-			if (ctx->breakpoints[i])
-				printf("$%04X\n", ctx->breakpoints[i]);
-		}
-		break;
-	case COMMAND_BREAKPOINT_DELETE:
-		if (unregister_breakpoint(ctx, ctx->command.addr))
-			printf("Breakpoint not found");
-		else
-			printf("$%04X deleted\n", ctx->command.addr);
+	case COMMAND_DELETE:
+		if (!unregister_breakpoint(ctx, ctx->command.addr))
+			printf("Remove breakpoint $%04X", ctx->command.addr);
+		if (unregister_watcher(ctx, ctx->command.addr))
+			printf("Remove watcher %04X\n", ctx->command.addr);
 		break;
 	case COMMAND_CONTINUE:
-		if (ctx->state == STATE_EXECUTE)
+		if (ctx->state == STATE_EXECUTE) {
 			check_breakpoints(ctx);
-		else
+			check_watchers(ctx);
+		} else {
 			ctx->state = STATE_EXECUTE;
+		}
 		break;
 	case COMMAND_PRINT:
 		print_addr(ctx->memory, ctx->command.addr);
@@ -298,6 +293,7 @@ static int debugger_command_handle(struct debugger_context *ctx)
 		dump_memory(ctx->memory);
 		break;
 	case COMMAND_IO:
+		print_hardware_registers(ctx->memory);
 		break;
 	case COMMAND_SET:
 		write_u8(ctx->memory, ctx->command.addr, ctx->command.value);
@@ -320,13 +316,12 @@ static int debugger_command_handle(struct debugger_context *ctx)
 		if (register_watcher(ctx, ctx->command.addr))
 			printf("Too many watchers\n");
 		break;
-	case COMMAND_WATCH_DELETE:
-		if (unregister_watcher(ctx, ctx->command.addr))
-			printf("Watcher not found\n");
-		else
-			printf("Remove watcher %04X\n", ctx->command.addr);
-		break;
-	case COMMAND_WATCH_LIST:
+	case COMMAND_LIST:
+		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
+			if (ctx->breakpoints[i])
+				printf("Breakpoint $%04X\n",
+				       ctx->breakpoints[i]);
+		}
 		for (int i = 0; i < MAX_WATCHERS; i++) {
 			if (ctx->watched_addresses[i]) {
 				printf("Watch %04X\n",
@@ -369,9 +364,8 @@ static void sigint_handler(int dummy)
 int debugger_new(struct debugger_context *ctx)
 {
 	ctx->state = STATE_WAIT;
-	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
+	for (int i = 0; i < MAX_BREAKPOINTS; i++)
 		ctx->breakpoints[i] = 0;
-	}
 	for (int i = 0; i < MAX_WATCHERS; i++) {
 		ctx->watched_addresses[i] = 0;
 		ctx->watched_values[i] = 0;
@@ -385,18 +379,18 @@ int debugger_step(struct debugger_context *ctx)
 		if (debugger_prompt(ctx))
 			return -1;
 		debugger_command_handle(ctx);
+		printf("Command: %d State: %d\n", ctx->command.type, ctx->state);
 	}
-	ctx->index = ctx->cpu->index;
-	sm83_cpu_step(ctx->cpu);
 	debugger_command_handle(ctx);
-	check_watchers(ctx);
+	ctx->index = ctx->cpu->index;
+	if (ctx->state == STATE_EXECUTE)
+		sm83_cpu_step(ctx->cpu);
 	return 0;
 }
 
 int debugger_run(char *path)
 {
 	struct debugger_context ctx;
-
 	debugger_new(&ctx);
 	signal(SIGINT, sigint_handler);
 	if (!(ctx.cpu = debugger_setup_cpu())) {

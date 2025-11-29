@@ -1,3 +1,4 @@
+#include "emu/memory.h"
 #include "emu/sm83.h"
 
 #define INC_AF(cpu) op_r16_inc(&cpu->a, &cpu->f)
@@ -1395,7 +1396,7 @@ static void sm83_isa_execute_non_prefixed(struct sm83_core *cpu)
 		break;
 	case 0x10:
 		// STOP n8
-		// TODO
+		cpu->memory->write8(cpu, DIV, 0);
 		break;
 	case 0x11:
 		// LD DE,nn
@@ -1823,8 +1824,9 @@ static void sm83_isa_execute_non_prefixed(struct sm83_core *cpu)
 		break;
 	case 0x76:
 		// HALT
-		cpu->halted = true;
-		cpu->state = SM83_CORE_HALT;
+		cpu->previous = cpu->state;
+		cpu->cycles -= cpu->multiplier;
+		sm83_halt(cpu);
 		break;
 	case 0x77:
 		// LD [HL],A

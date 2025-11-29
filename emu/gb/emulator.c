@@ -111,13 +111,16 @@ static void run_cpu_debugger(struct gb_context *ctx)
 		}
 		if (debugger_step(&debugger_ctx))
 			break;
-		cycles++;
-		if (GB_FLAG(GB_VIDEO))
-			ppu_tick(ctx->gb->gpu);
-		// Throttling
-		if (cycles >= 17476) {
-			cycles = 0;
-			wait_ms_after(&start_time, 16670);
+		if (!ctx->gb->cpu->halted) {
+			cycles++;
+			if (GB_FLAG(GB_VIDEO)) {
+				ppu_tick(ctx->gb->gpu);
+			}
+			// Throttling
+			if (cycles >= 17476) {
+				cycles = 0;
+				wait_ms_after(&start_time, 16670);
+			}
 		}
 	}
 }
@@ -134,8 +137,9 @@ static void *run_emulator_cpu_thread(void *arg)
 			if (sigint_catcher)
 				GB_FLAG_DISABLE(GB_ON);
 			sm83_cpu_step(ctx->gb->cpu);
-			if (GB_FLAG(GB_VIDEO))
+			if (GB_FLAG(GB_VIDEO)) {
 				ppu_tick(ctx->gb->gpu);
+			}
 		}
 	}
 	pthread_exit(NULL);
@@ -146,18 +150,6 @@ static void draw(struct ppu *gpu, int x, int y, int color)
 	render_pixel(x, y, color, gpu->scale);
 }
 
-static void handle_joypad(struct gb_context *ctx)
-{
-	struct ppu *gpu = ctx->gb->gpu;
-	u8 joypad = load_u8(gpu->memory, P1_JOYP);
-	u8 joypad_prev = joypad;
-	render_handle_inputs(&joypad);
-	if (joypad != joypad_prev) {
-		request_interrupt(ctx->gb->memory, IRQ_JOYPAD);
-		write_u8(gpu->memory, P1_JOYP, joypad);
-	}
-}
-
 static void *run_emulator_gpu_thread(void *arg)
 {
 	struct gb_context *ctx = arg;
@@ -165,7 +157,7 @@ static void *run_emulator_gpu_thread(void *arg)
 	render_init(gpu->width, gpu->height, gpu->scale);
 	gpu->renderer->draw = draw;
 	while (render_is_running() && GB_FLAG(GB_ON)) {
-		handle_joypad(ctx);
+		render_handle_inputs(ctx, joypad_handler);
 		render_begin();
 		ppu_draw(ctx->gb->gpu);
 		render_end();

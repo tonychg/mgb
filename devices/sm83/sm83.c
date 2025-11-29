@@ -1,12 +1,12 @@
 #include "emu/sm83.h"
 #include "emu/memory.h"
+#include "emu/timer.h"
 #include "platform/mm.h"
 #include <stdlib.h>
 
 static struct sm83_core *sm83_cpu_alloc(void)
 {
 	struct sm83_core *cpu;
-
 	cpu = (struct sm83_core *)malloc(sizeof(struct sm83_core));
 	if (!cpu)
 		goto exit;
@@ -20,79 +20,6 @@ free_cpu:
 	zfree(cpu);
 exit:
 	return NULL;
-}
-
-static const int CLOCK_RATE[4] = {
-	9,
-	7,
-	5,
-	3,
-};
-
-struct interrupt_struct {
-	const char *description;
-	const enum sm83_irq number;
-	const u16 vector;
-};
-
-// clang-format off
-const static struct interrupt_struct interrupts[] = {
-	{ "VBLANK", IRQ_VBLANK, VEC_VBLANK },
-	{ "LCD", IRQ_LCD, VEC_LCD },
-	{ "TIMER", IRQ_TIMER, VEC_TIMER },
-	{ "SERIAL", IRQ_SERIAL, VEC_SERIAL },
-	{ "JOYPAD", IRQ_JOYPAD, VEC_JOYPAD },
-};
-// clang-format on
-
-static u8 sm83_irq_ack(struct sm83_core *cpu)
-{
-	u8 irq_regs;
-	u8 irq_reqs;
-
-	if (!cpu->ime)
-		return 0;
-	irq_reqs = cpu->memory->load8(cpu, IF);
-	irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
-	for (int i = 0; i < ARRAY_SIZE(interrupts); i++) {
-		struct interrupt_struct interrupt = interrupts[i];
-		u8 bitmask = 1 << interrupt.number;
-		if ((irq_regs & bitmask) != 0) {
-			irq_reqs ^= bitmask;
-			if (interrupt.number != IRQ_VBLANK)
-				printf("[%lu] Acknowledge %s interrupt\n", cpu->cycles,
-				       interrupt.description);
-			cpu->memory->write8(cpu, IF, irq_reqs);
-			return interrupt.vector;
-		}
-	}
-	return 0;
-}
-
-static void sm83_update_timer_registers(struct sm83_core *cpu)
-{
-	u16 t_cycles = cpu->cycles * 4;
-	u8 tima_next, tima, tma;
-	u8 divider = t_cycles >> 8;
-	u8 tac = cpu->memory->load8(cpu, 0xFF07);
-	u8 clock_offset = CLOCK_RATE[(tac & 0b11)];
-
-	// Be careful to bypass the reset rule
-	// https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf
-	cpu->memory->write8(cpu, 0xFF04, divider);
-	if ((tac >> 2) == 1) {
-		tima_next = divider >> clock_offset;
-		tima = cpu->memory->load8(cpu, 0xFF05);
-		if (!tima_next && tima == 0xFF) {
-			// Load TMA into TIMA after overflow
-			tma = cpu->memory->load8(cpu, 0xFF06);
-			u8 irq_reqs = cpu->memory->load8(cpu, IF);
-			cpu->memory->write8(cpu, IF, irq_reqs | 1 << IRQ_TIMER);
-			cpu->memory->write8(cpu, 0xFF05, tma);
-		} else {
-			cpu->memory->write8(cpu, 0xFF05, tima_next);
-		}
-	}
 }
 
 static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
@@ -125,7 +52,12 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	// Beginning address of the current segment
 	cpu->index = 0;
 	cpu->state = SM83_CORE_FETCH;
+	cpu->previous = SM83_CORE_FETCH;
 	cpu->multiplier = 1;
+
+	// Timers
+	cpu->internal_divider = 0;
+	cpu->internal_timer = 0;
 }
 
 struct sm83_core *sm83_init(void)
@@ -138,6 +70,17 @@ struct sm83_core *sm83_init(void)
 	sm83_cpu_reset(cpu);
 	cpu->timer_enabled = true;
 	return cpu;
+}
+
+void sm83_halt(struct sm83_core *cpu)
+{
+	u8 reg_ie = cpu->memory->load8(cpu, IE);
+	u8 reg_if = cpu->memory->load8(cpu, IF);
+	if (!(reg_ie & reg_if & 0x1F)) {
+		cpu->state = SM83_CORE_HALT;
+	} else if (!cpu->ime) {
+		cpu->state = SM83_CORE_HALT_BUG;
+	}
 }
 
 void sm83_cpu_step(struct sm83_core *cpu)
@@ -174,19 +117,48 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
 		sm83_isa_execute(cpu);
 		break;
-	case SM83_CORE_HALT:
-		irq_ack = sm83_irq_ack(cpu);
-		if (irq_ack) {
-			cpu->ime = false;
-			sm83_stack_push_pc(cpu, &cpu->pc + 1);
-			cpu->pc = irq_ack;
-			cpu->state = SM83_CORE_FETCH;
-		}
-		break;
 	case SM83_CORE_IDLE_0:
 	case SM83_CORE_IDLE_1:
 		sm83_isa_execute(cpu);
 		break;
+	case SM83_CORE_HALT: {
+		if (cpu->ime) {
+			irq_ack = sm83_irq_ack(cpu);
+			if (irq_ack) {
+				cpu->ime = false;
+				cpu->state = cpu->previous;
+				cpu->halted = false;
+				sm83_stack_push_pc(cpu, &cpu->pc);
+				cpu->pc = irq_ack;
+			}
+		} else {
+			u8 reg_ie = cpu->memory->load8(cpu, IE);
+			u8 reg_if = cpu->memory->load8(cpu, IF);
+			if ((reg_ie & reg_if & 0x1F)) {
+				cpu->memory->write8(cpu, IF, 0);
+				cpu->halted = false;
+				cpu->state = SM83_CORE_FETCH;
+				cpu->pc++;
+			}
+		}
+	} break;
+	case SM83_CORE_HALT_BUG: {
+		// FIX ME
+		u8 irq_regs;
+		u8 irq_reqs;
+		printf("Halt bug is triggered\n");
+		irq_reqs = cpu->memory->load8(cpu, IF);
+		irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
+		if (irq_regs != 0) {
+			cpu->index = cpu->sp;
+			cpu->ime = false;
+			cpu->state = SM83_CORE_FETCH;
+			cpu->memory->write8(cpu, IF, 0);
+		}
+		cpu->state = SM83_CORE_FETCH;
+		cpu->halted = false;
+		break;
+	}
 	}
 	if (cpu->timer_enabled)
 		sm83_update_timer_registers(cpu);

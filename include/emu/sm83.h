@@ -29,9 +29,10 @@ enum sm83_state {
 	SM83_CORE_READ_1,
 	SM83_CORE_WRITE_0,
 	SM83_CORE_WRITE_1,
-	SM83_CORE_HALT,
 	SM83_CORE_IDLE_0,
 	SM83_CORE_IDLE_1,
+	SM83_CORE_HALT,
+	SM83_CORE_HALT_BUG,
 };
 
 enum sm83_flag_register {
@@ -64,6 +65,8 @@ struct sm83_core {
 
 	u64 cycles;
 	u64 ime_cycles;
+	u64 internal_divider;
+	u64 internal_timer;
 
 	u8 bus;
 	u16 index;
@@ -76,6 +79,7 @@ struct sm83_core {
 	bool halted;
 	bool timer_enabled;
 	enum sm83_state state;
+	enum sm83_state previous;
 
 	void *parent;
 
@@ -89,14 +93,18 @@ void sm83_cpu_execute(struct sm83_core *cpu);
 void sm83_cpu_reset(struct sm83_core *cpu);
 void sm83_cpu_plug_memory(struct sm83_core *cpu, struct sm83_memory *bus);
 void sm83_destroy(struct sm83_core *cpu);
+void sm83_halt(struct sm83_core *cpu);
 
-/* sm83_isa.c */
+/* isa.c */
 void sm83_isa_execute(struct sm83_core *cpu);
 
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
 char *sm83_disassemble(struct sm83_core *cpu);
 void sm83_cpu_debug(struct sm83_core *cpu);
+
+/* interrupt.c */
+u8 sm83_irq_ack(struct sm83_core *cpu);
 
 static inline u8 msb(u16 value)
 {
