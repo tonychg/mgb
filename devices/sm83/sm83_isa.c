@@ -1823,8 +1823,8 @@ static void sm83_isa_execute_non_prefixed(struct sm83_core *cpu)
 		break;
 	case 0x76:
 		// HALT
-		// TODO
 		cpu->halted = true;
+		cpu->state = SM83_CORE_HALT;
 		break;
 	case 0x77:
 		// LD [HL],A

@@ -46,8 +46,8 @@ struct keybind {
 static const struct keybind keybindings[] = {
 	{ KEY_Q, BUTTON_A },
 	{ KEY_W, BUTTON_B },
-	{ KEY_E, BUTTON_START },
 	{ KEY_R, BUTTON_SELECT },
+	{ KEY_E, BUTTON_START },
 	{ KEY_RIGHT, BUTTON_RIGHT },
 	{ KEY_LEFT, BUTTON_LEFT },
 	{ KEY_UP, BUTTON_UP },

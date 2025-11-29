@@ -136,7 +136,7 @@ struct sm83_core *sm83_init(void)
 	if (!cpu)
 		return NULL;
 	sm83_cpu_reset(cpu);
-	cpu->timer_enabled = false;
+	cpu->timer_enabled = true;
 	return cpu;
 }
 
@@ -178,8 +178,9 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		irq_ack = sm83_irq_ack(cpu);
 		if (irq_ack) {
 			cpu->ime = false;
-			sm83_stack_push_pc(cpu, &cpu->pc);
+			sm83_stack_push_pc(cpu, &cpu->pc + 1);
 			cpu->pc = irq_ack;
+			cpu->state = SM83_CORE_FETCH;
 		}
 		break;
 	case SM83_CORE_IDLE_0:
