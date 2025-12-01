@@ -1,3 +1,5 @@
+#include "emu/gb.h"
+
 enum joypad_button {
 	BUTTON_A,
 	BUTTON_B,
@@ -9,5 +11,5 @@ enum joypad_button {
 	BUTTON_DOWN,
 };
 
-void joypad_handler(void *arg, enum joypad_button button);
+void joypad_handler(struct gb_context *ctx);
 

@@ -8,6 +8,7 @@ struct gb_option options[] = {
 	{ "-r/--rom <path>    Path of the ROM", "--rom", "-r", 1, GB_OPTION_ROM },
 	{ "-n/--no-video      Disable video rendering", "--no-video", "-n", 0, GB_OPTION_NO_VIDEO },
 	{ "-s/--scale <int>   Scale viewport", "--scale", "-s", 1, GB_OPTION_SCALE },
+	{ "-t/--throttling    Enable throttling", "--throttling", "-t", 0, GB_OPTION_THROTTLING },
 };
 // clang-format on
 
@@ -20,10 +21,11 @@ static void print_help()
 
 static void gb_context_init(struct gb_context *ctx)
 {
-	ctx->flags = GB_DEFAULT_FLAGS;
+	ctx->flags = 0;
 	ctx->rom_path = NULL;
 	ctx->scale = 1;
-	ctx->joypad = 0xFF;
+	GB_FLAG_ENABLE(GB_VIDEO);
+	GB_FLAG_ENABLE(GB_ON);
 }
 
 static void parse_option(struct gb_context *ctx, int i, int argc, char **argv)
@@ -38,7 +40,10 @@ static void parse_option(struct gb_context *ctx, int i, int argc, char **argv)
 			GB_FLAG_ENABLE(GB_DEBUG);
 			break;
 		case GB_OPTION_NO_VIDEO:
-			GB_FLAG_ENABLE(GB_VIDEO);
+			GB_FLAG_DISABLE(GB_VIDEO);
+			break;
+		case GB_OPTION_THROTTLING:
+			GB_FLAG_DISABLE(GB_THROTTLING);
 			break;
 		case GB_OPTION_ROM:
 			if (i + 1 < argc)
@@ -59,6 +64,7 @@ static void print_header(struct gb_context *ctx)
 	printf("Debug: %s ", GB_FLAG(GB_DEBUG) ? "On" : "Off");
 	printf("Video: %s ", GB_FLAG(GB_VIDEO) ? "On" : "Off");
 	printf("\n");
+	printf("Throttling: %s\n", GB_FLAG(GB_THROTTLING) ? "On" : "Off");
 	printf("Rom: %s\n", ctx->rom_path ? ctx->rom_path : "Not loaded");
 	printf("Scale: %d\n", ctx->scale);
 }

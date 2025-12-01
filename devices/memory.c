@@ -1,6 +1,7 @@
 #include "platform/io.h"
 #include "emu/memory.h"
 #include "platform/mm.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void memory_reset(struct shared *memory)
@@ -100,6 +101,20 @@ void dump_memory(struct shared *memory)
 		else if ((i + 1) % 8 == 0 && i > 0)
 			printf(" ");
 	}
+}
+
+void dump_memory_to_file(struct shared *memory, char *filename)
+{
+	FILE *fptr;
+	fptr = fopen(filename, "w");
+	if (!fptr) {
+		printf("Failed to open %s\n", filename);
+		return;
+	}
+	if (!fwrite(memory->array->bytes, MEMORY_SIZE, sizeof(u8), fptr)) {
+		printf("Failed to write save\n");
+	}
+	fclose(fptr);
 }
 
 void print_addr(struct shared *memory, u16 addr)

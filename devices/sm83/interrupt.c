@@ -19,21 +19,22 @@ const static struct interrupt_struct interrupts[] = {
 
 u8 sm83_irq_ack(struct sm83_core *cpu)
 {
-	u8 irq_regs;
-	u8 irq_reqs;
+	u8 irqs;
+	u8 if_reg;
 
 	if (!cpu->ime)
 		return 0;
-	irq_reqs = cpu->memory->load8(cpu, IF);
-	irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
+	if_reg = cpu->memory->load8(cpu, IF);
+	irqs = cpu->memory->load8(cpu, IE) & if_reg;
 	for (int i = 0; i < ARRAY_SIZE(interrupts); i++) {
 		struct interrupt_struct interrupt = interrupts[i];
 		u8 bitmask = 1 << interrupt.number;
-		if ((irq_regs & bitmask) != 0) {
-			irq_reqs ^= bitmask;
-			printf("[%lu] Acknowledge %s interrupt\n",
-				   cpu->cycles, interrupt.description);
-			cpu->memory->write8(cpu, IF, irq_reqs);
+		if ((irqs & bitmask) != 0) {
+			if_reg &= ~bitmask;
+			if (interrupt.number != IRQ_VBLANK)
+				printf("[%lu] Acknowledge %s interrupt irqs: %08b bitmask: %08b\n",
+				       cpu->cycles, interrupt.description, if_reg, bitmask);
+			cpu->memory->write8(cpu, IF, if_reg);
 			return interrupt.vector;
 		}
 	}

@@ -8,30 +8,6 @@
 
 static volatile int sigint_catcher = 0;
 
-// clang-format off
-static struct cmd_struct commands[] = {
-	{ "next (n)                    Next instruction\n", "next", "n", COMMAND_NEXT },
-	{ "step (s)                    Step one M-cycle\n", "step", "s", COMMAND_STEP },
-	{ "break (b) <addr>            Set a breakpoint\n", "break", "b", COMMAND_BREAKPOINT },
-	{ "del (d)                     Delete breakpoint or wacher\n", "del", "d", COMMAND_DELETE },
-	{ "continue (c)                Continue until next breakpoint\n", "continue", "c", COMMAND_CONTINUE },
-	{ "print (p) <addr>            Print address value\n", "print", "p", COMMAND_PRINT },
-	{ "range (r) <addr> <addr>     Dump memory range\n", "range", "r", COMMAND_RANGE },
-	{ "loop (l) <counter>          Loop a number of iteration\n", "loop", "l", COMMAND_LOOP },
-	{ "goto (g) <addr>             Go to addr\n", "goto", "g", COMMAND_GOTO },
-	{ "mem (m)                     Dump memory\n", "mem", "m", COMMAND_MEM },
-	{ "regs (R)                    Print registers\n", "regs", "R", COMMAND_REGISTERS },
-	{ "io (i)                      Dump I/O ranges\n", "io", "i", COMMAND_IO },
-	{ "frame (f)                   Next frame\n", "frame", "f", COMMAND_FRAME },
-	{ "set (s) <addr> <value>      Set value\n", "set", "s", COMMAND_SET },
-	{ "reset (r)                   Reset\n", "reset", "r", COMMAND_RESET },
-	{ "quit (q)                    Quit\n", "quit", "q", COMMAND_QUIT },
-	{ "help (h)                    Display this message\n", "help", "h", COMMAND_HELP },
-	{ "watch (w) <addr>            Watch address\n", "watch", "w", COMMAND_WATCH },
-	{ "list (ll)                   List breakpoints and watchers\n", "list", "ll", COMMAND_LIST },
-};
-// clang-format on
-
 static void print_help()
 {
 	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
@@ -122,6 +98,7 @@ static int command_parse(struct debugger_context *ctx, char *buffer)
 			case COMMAND_FRAME:
 			case COMMAND_CONTINUE:
 			case COMMAND_LIST:
+			case COMMAND_SAVE:
 				break;
 			case COMMAND_BREAKPOINT:
 			case COMMAND_DELETE:
@@ -329,6 +306,10 @@ static int debugger_command_handle(struct debugger_context *ctx)
 			}
 		}
 		break;
+	case COMMAND_SAVE:
+		printf("Dumping memory to dump.sav\n");
+		dump_memory_to_file(ctx->memory, "dump.sav");
+		break;
 	}
 	return 0;
 }
@@ -379,7 +360,8 @@ int debugger_step(struct debugger_context *ctx)
 		if (debugger_prompt(ctx))
 			return -1;
 		debugger_command_handle(ctx);
-		printf("Command: %d State: %d\n", ctx->command.type, ctx->state);
+		printf("Command: %d State: %d\n", ctx->command.type,
+		       ctx->state);
 	}
 	debugger_command_handle(ctx);
 	ctx->index = ctx->cpu->index;

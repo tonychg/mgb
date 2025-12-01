@@ -10,7 +10,8 @@
           "args": [
               "--rom",
               "data/tetris.gb",
-              "--debug"
+              "--debug",
+              "--no-video"
           ]
       },
       {

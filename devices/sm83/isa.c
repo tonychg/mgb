@@ -2222,9 +2222,9 @@ static void sm83_isa_execute_non_prefixed(struct sm83_core *cpu)
 		break;
 	case 0xD9:
 		// RETI
-		op_ret(cpu);
-		if (cpu->state == SM83_CORE_IDLE_0)
+		if (cpu->state == SM83_CORE_FETCH)
 			cpu->ime = true;
+		op_ret(cpu);
 		break;
 	case 0xDA:
 		// JP C,nn

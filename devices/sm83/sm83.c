@@ -53,7 +53,7 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	cpu->index = 0;
 	cpu->state = SM83_CORE_FETCH;
 	cpu->previous = SM83_CORE_FETCH;
-	cpu->multiplier = 1;
+	cpu->multiplier = 2;
 
 	// Timers
 	cpu->internal_divider = 0;

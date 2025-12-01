@@ -11,18 +11,19 @@ enum gb_option_type {
 	GB_OPTION_ROM,
 	GB_OPTION_NO_VIDEO,
 	GB_OPTION_SCALE,
+	GB_OPTION_THROTTLING,
 };
 
 enum gb_flags {
-	GB_ON = 1,
-	GB_DEBUG = 1 << 1,
-	GB_VIDEO = 1 << 2,
+	GB_ON,
+	GB_DEBUG,
+	GB_VIDEO,
+	GB_THROTTLING,
 };
 
-#define GB_FLAG(flag) (ctx->flags & flag) != 0
-#define GB_FLAG_DISABLE(flag) ctx->flags ^= flag
-#define GB_FLAG_ENABLE(flag) ctx->flags |= flag
-#define GB_DEFAULT_FLAGS GB_ON | GB_VIDEO
+#define GB_FLAG(flag) (ctx->flags & (1 << flag)) != 0
+#define GB_FLAG_DISABLE(flag) ctx->flags ^= 1 << flag
+#define GB_FLAG_ENABLE(flag) ctx->flags |= 1 << flag
 
 struct gb_option {
 	const char *description;

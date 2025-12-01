@@ -25,22 +25,20 @@ void render_init(int width, int height, int scale)
 	InitWindow(width * scale, height * scale, "GB");
 }
 
-void render_debug(int dots, int frames)
+void render_debug(char *label, int value, int x, int y, int height)
 {
-	char str_dots[256];
-	char str_frames[256];
-	sprintf(str_dots, "Dots: %d", dots);
-	sprintf(str_frames, "Frames: %d", frames);
-	DrawText(str_dots, 10, 40, 20, RED);
-	DrawText(str_frames, 10, 60, 20, RED);
+	char str[256];
+	sprintf(str, label, value);
+	DrawText(str, x, y, height, RED);
 }
 
-void render_handle_inputs(void *ctx, void (callback)(void*, enum joypad_button))
+void render_handle_inputs(u8 *keys)
 {
 	for (int i = 0; i < 8; i++) {
 		struct keybind key = keybindings[0 + i];
 		if (IsKeyDown(key.keyboard)) {
-			callback(ctx, key.button);
+			*keys |= (1 << i);
+			printf("Key pressed %s %08b\n", key.label, *keys);
 		}
 	}
 }

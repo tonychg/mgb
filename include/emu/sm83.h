@@ -47,7 +47,7 @@ enum sm83_irq_vector {
 	VEC_VBLANK = 0x40,
 	VEC_LCD = 0x48,
 	VEC_TIMER = 0x50,
-	VEC_SERIAL = 0x50,
+	VEC_SERIAL = 0x58,
 	VEC_JOYPAD = 0x60,
 };
 

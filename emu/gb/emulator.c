@@ -5,6 +5,7 @@
 #include "platform/render.h"
 #include "debugger.h"
 #include <pthread.h>
+#include <raylib.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -16,6 +17,15 @@ static void sigint_handler(int dummy)
 	sigint_catcher = 1;
 }
 
+static void gb_dma_transfer(struct gb_emulator *gb, u16 start_addr)
+{
+	for (int i = 0; i < 160; i++) {
+		// printf("DMA transfer triggered with start address %04X %04X\n", 0xFE00 + i, start_addr + i);
+		gb->memory->array->bytes[0xFE00 + i] =
+			gb->memory->array->bytes[start_addr + i];
+	}
+}
+
 static u8 gb_load(struct sm83_core *cpu, u16 addr)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
@@ -25,9 +35,24 @@ static u8 gb_load(struct sm83_core *cpu, u16 addr)
 static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
-	if (addr == P1_JOYP) {
+	switch (addr) {
+	case P1_JOYP: {
 		u8 joyp = load_u8(gb->memory, P1_JOYP);
 		value = (joyp & 0xF) | (value & 0x30);
+		break;
+	}
+	case LY_LCD:
+		return;
+	case STAT_LCD: {
+		u8 stat = load_u8(gb->memory, STAT_LCD);
+		value = (stat & 0x3) | (value & 0xfc);
+		break;
+	}
+	case DMA_OAM_DMA: {
+		// Starting DMA transfer
+		gb_dma_transfer(gb, value * 0x100);
+		break;
+	}
 	}
 	write_u8(gb->memory, addr, value);
 }
@@ -45,7 +70,7 @@ static int init_devices(struct gb_emulator *gb)
 	gb->cpu->memory->write8 = gb_write;
 	gb->gpu = ppu_init();
 	gb->gpu->memory = gb->memory;
-	gb->gpu->width = 256 + 128;
+	gb->gpu->width = 256 + GB_WIDTH;
 	gb->gpu->height = 512;
 	if (!gb->gpu)
 		goto free_cpu;
@@ -111,14 +136,12 @@ static void run_cpu_debugger(struct gb_context *ctx)
 		}
 		if (debugger_step(&debugger_ctx))
 			break;
-		if (!ctx->gb->cpu->halted) {
+		ppu_tick(ctx->gb->gpu, ctx->gb->cpu);
+		if (!ctx->gb->cpu->halted && GB_FLAG(GB_THROTTLING)) {
 			cycles++;
-			if (GB_FLAG(GB_VIDEO)) {
-				ppu_tick(ctx->gb->gpu);
-			}
 			// Throttling
 			if (cycles >= 17476) {
-				cycles = 0;
+				cycles -= 17476;
 				wait_ms_after(&start_time, 16670);
 			}
 		}
@@ -137,9 +160,7 @@ static void *run_emulator_cpu_thread(void *arg)
 			if (sigint_catcher)
 				GB_FLAG_DISABLE(GB_ON);
 			sm83_cpu_step(ctx->gb->cpu);
-			if (GB_FLAG(GB_VIDEO)) {
-				ppu_tick(ctx->gb->gpu);
-			}
+			ppu_tick(ctx->gb->gpu, ctx->gb->cpu);
 		}
 	}
 	pthread_exit(NULL);
@@ -157,9 +178,17 @@ static void *run_emulator_gpu_thread(void *arg)
 	render_init(gpu->width, gpu->height, gpu->scale);
 	gpu->renderer->draw = draw;
 	while (render_is_running() && GB_FLAG(GB_ON)) {
-		render_handle_inputs(ctx, joypad_handler);
+		render_handle_inputs(&ctx->keys);
+		joypad_handler(ctx);
 		render_begin();
+		ClearBackground(BLACK);
 		ppu_draw(ctx->gb->gpu);
+		render_debug("Dots: %d", gpu->dots, 20, ctx->scale * 384, 20);
+		render_debug("Frames: %d", gpu->frames, 20, ctx->scale * 404,
+			     20);
+		render_debug("LY: %d", gpu->ly, 20, ctx->scale * 424, 20);
+		render_debug("Cycles: %d", ctx->gb->cpu->cycles, 20,
+			     ctx->scale * 444, 20);
 		render_end();
 	}
 	pthread_exit(NULL);
