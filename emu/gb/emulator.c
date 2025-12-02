@@ -32,7 +32,6 @@ static u8 gb_load(struct sm83_core *cpu, u16 addr)
 	switch (addr) {
 	case P1_JOYP:
 		return update_joypad(gb);
-		break;
 	}
 	return load_u8(gb->memory, addr);
 }
@@ -43,7 +42,7 @@ static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 	switch (addr) {
 	case P1_JOYP: {
 		gb->memory->array->bytes[P1_JOYP] = value | 0x0f;
-		read_joypad(gb);
+		update_joypad(gb);
 		break;
 	}
 	case LY_LCD:

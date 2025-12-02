@@ -209,14 +209,14 @@ void ppu_draw(struct ppu *gpu)
 	draw_background(gpu, GB_WIDTH, 256);
 }
 
-static void increment_scanline(struct ppu *gpu)
+static void increment_scanline(struct ppu *gpu, struct sm83_core *cpu)
 {
 	if (gpu->ly == 153) {
 		gpu->frames++;
 		ppu_reset(gpu);
 	}
-	if (gpu->dots >= GB_VIDEO_SCANLINE_PERIOD) {
-		gpu->dots -= GB_VIDEO_SCANLINE_PERIOD;
+	if (gpu->dots >= (GB_VIDEO_SCANLINE_PERIOD / cpu->multiplier)) {
+		gpu->dots -= (GB_VIDEO_SCANLINE_PERIOD / cpu->multiplier);
 		u8 ly = load_u8(gpu->memory, LY_LCD);
 		gpu->ly++;
 		if (gpu->ly == 144 && ly != gpu->ly) {
@@ -232,6 +232,6 @@ void ppu_tick(struct ppu *gpu, struct sm83_core *cpu)
 {
 	if (LCD_CONTROL(LCD_ENABLE)) {
 		gpu->dots += cpu->multiplier;
-		increment_scanline(gpu);
+		increment_scanline(gpu, cpu);
 	}
 }

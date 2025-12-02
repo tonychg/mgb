@@ -31,9 +31,10 @@ u8 sm83_irq_ack(struct sm83_core *cpu)
 		u8 bitmask = 1 << interrupt.number;
 		if ((irqs & bitmask) != 0) {
 			if_reg &= ~bitmask;
-			if (interrupt.number != IRQ_VBLANK)
+			if (interrupt.number != IRQ_VBLANK) {
 				printf("[%lu] Acknowledge %s interrupt irqs: %08b bitmask: %08b\n",
 				       cpu->cycles, interrupt.description, if_reg, bitmask);
+			}
 			cpu->memory->write8(cpu, IF, if_reg);
 			return interrupt.vector;
 		}
