@@ -4,6 +4,7 @@ MAKEFLAGS += --no-print-directory
 ALL_PROGRAMS =
 ALL_PROGRAMS += debugger
 ALL_PROGRAMS += emu/gb
+ALL_PROGRAMS += tests
 
 define run_submakefile
 	@for program in $(ALL_PROGRAMS) ; do \
@@ -16,3 +17,6 @@ all:
 
 clean:
 	@$(call run_submakefile,clean)
+
+test:
+	$(MAKE) -C tests test
