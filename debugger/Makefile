@@ -1,5 +1,4 @@
 DESTINATION = ..
-INCLUDE = -I$(DESTINATION)/include
 PROGRAM = debugger
 CFLAGS = -Wall -g
 SRC = \

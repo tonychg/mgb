@@ -37,6 +37,7 @@ struct gb_emulator {
 	struct sm83_core *cpu;
 	struct ppu *gpu;
 	struct shared *memory;
+	u8 keys;
 };
 
 struct gb_context {
@@ -45,7 +46,6 @@ struct gb_context {
 	u8 flags;
 	int exit_code;
 	int scale;
-	u8 keys;
 };
 
 int gb_start_emulator(struct gb_context *ctx);

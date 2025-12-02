@@ -1,7 +1,6 @@
 #include "emu/sm83.h"
 #include "platform/mm.h"
 #include "platform/types.h"
-#include "emu/sm83.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

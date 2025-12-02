@@ -1,5 +1,4 @@
 DESTINATION = ../..
-INCLUDE = -I$(DESTINATION)/include
 PROGRAM = gb
 CFLAGS = -Wall -g
 LIB = -lraylib

@@ -14,7 +14,7 @@ void memory_reset(struct shared *memory)
 				write_u8(memory, i, 0xff);
 			}
 		} else if (i == P1_JOYP) {
-			write_u8(memory, i, 0xcf);
+			write_u8(memory, i, 0xff);
 		} else if (i == IF) {
 			write_u8(memory, i, 0xe1);
 		} else {
@@ -56,11 +56,6 @@ void write_u8(struct shared *memory, u16 addr, u8 value)
 {
 	if (!memory)
 		panic("try to access unalocated memory");
-	if (addr == P1_JOYP) {
-		u8 current = load_u8(memory, P1_JOYP);
-		u8 result = value | (current & 0xf);
-		value = result;
-	}
 	set(memory->array, addr, value);
 }
 

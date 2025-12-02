@@ -29,6 +29,11 @@ static void gb_dma_transfer(struct gb_emulator *gb, u16 start_addr)
 static u8 gb_load(struct sm83_core *cpu, u16 addr)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
+	switch (addr) {
+	case P1_JOYP:
+		return update_joypad(gb);
+		break;
+	}
 	return load_u8(gb->memory, addr);
 }
 
@@ -37,24 +42,26 @@ static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
 	switch (addr) {
 	case P1_JOYP: {
-		u8 joyp = load_u8(gb->memory, P1_JOYP);
-		value = (joyp & 0xF) | (value & 0x30);
+		gb->memory->array->bytes[P1_JOYP] = value | 0x0f;
+		read_joypad(gb);
 		break;
 	}
 	case LY_LCD:
 		return;
 	case STAT_LCD: {
 		u8 stat = load_u8(gb->memory, STAT_LCD);
-		value = (stat & 0x3) | (value & 0xfc);
+		gb->memory->array->bytes[addr] = (stat & 0x3) | (value & 0xfc);
 		break;
 	}
 	case DMA_OAM_DMA: {
 		// Starting DMA transfer
+		gb->memory->array->bytes[addr] = value;
 		gb_dma_transfer(gb, value * 0x100);
 		break;
 	}
+	default:
+		write_u8(gb->memory, addr, value);
 	}
-	write_u8(gb->memory, addr, value);
 }
 
 static int init_devices(struct gb_emulator *gb)
@@ -178,8 +185,7 @@ static void *run_emulator_gpu_thread(void *arg)
 	render_init(gpu->width, gpu->height, gpu->scale);
 	gpu->renderer->draw = draw;
 	while (render_is_running() && GB_FLAG(GB_ON)) {
-		render_handle_inputs(&ctx->keys);
-		joypad_handler(ctx);
+		render_handle_inputs(&ctx->gb->keys);
 		render_begin();
 		ClearBackground(BLACK);
 		ppu_draw(ctx->gb->gpu);

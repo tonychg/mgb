@@ -37,10 +37,11 @@ void render_handle_inputs(u8 *keys)
 	for (int i = 0; i < 8; i++) {
 		struct keybind key = keybindings[0 + i];
 		if (IsKeyDown(key.keyboard)) {
-			*keys |= (1 << i);
-			printf("Key pressed %s %08b\n", key.label, *keys);
+			*keys |= (1 << key.button);
+			return;
 		}
 	}
+	*keys = 0;
 }
 
 bool render_is_running(void)
