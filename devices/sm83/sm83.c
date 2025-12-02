@@ -69,6 +69,10 @@ struct sm83_core *sm83_init(void)
 		return NULL;
 	sm83_cpu_reset(cpu);
 	cpu->timer_enabled = true;
+	// DMA
+	cpu->dma.start_addr = 0;
+	cpu->dma.scheduled = false;
+	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
 	return cpu;
 }
 
@@ -83,12 +87,44 @@ void sm83_halt(struct sm83_core *cpu)
 	}
 }
 
+void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr)
+{
+	if (start_addr >= 0xE000) {
+		start_addr &= 0xDFFF;
+	}
+	cpu->dma.start_addr = start_addr;
+	cpu->dma.scheduled = true;
+	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
+	cpu->previous = cpu->state;
+	cpu->state = SM83_CORE_DMA_TRANSFER;
+	// printf("%d\n", cpu->dma.cursor);
+}
+
 void sm83_cpu_step(struct sm83_core *cpu)
 {
 	u16 irq_ack;
 
 	cpu->cycles += cpu->multiplier;
 	switch (cpu->state) {
+	case SM83_CORE_DMA_TRANSFER: {
+		if (cpu->dma.scheduled && cpu->dma.cursor > 0) {
+			// printf("[%lu] [$%04X] Cursor %d, Start address %04X Scheduled: %d\n",
+			//        cpu->cycles, cpu->index, cpu->dma.cursor,
+			//        cpu->dma.start_addr + cpu->dma.cursor,
+			//        cpu->dma.scheduled);
+			u8 value = cpu->memory->load8(
+				cpu, cpu->dma.start_addr + cpu->dma.cursor);
+			cpu->memory->write8(cpu, 0xFE00 + cpu->dma.cursor,
+					    value);
+			cpu->dma.cursor--;
+		} else {
+			cpu->dma.scheduled = false;
+			cpu->pc++;
+			cpu->state = SM83_CORE_FETCH;
+			sm83_isa_execute(cpu);
+		}
+		break;
+	}
 	case SM83_CORE_FETCH:
 		irq_ack = sm83_irq_ack(cpu);
 		if (irq_ack) {
@@ -146,7 +182,7 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		// FIX ME
 		u8 irq_regs;
 		u8 irq_reqs;
-		printf("Halt bug is triggered\n");
+		// printf("Halt bug is triggered\n");
 		irq_reqs = cpu->memory->load8(cpu, IF);
 		irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
 		if (irq_regs != 0) {

@@ -5,7 +5,10 @@
 
 struct sm83_core;
 
-enum { SM83_FREQ = 4194304 };
+enum {
+	SM83_FREQ = 4194304,
+	SM83_DMA_TRANSFER_CYCLES = 160
+};
 
 struct sm83_memory {
 	u8 (*load8)(struct sm83_core *, u16 addr);
@@ -33,6 +36,7 @@ enum sm83_state {
 	SM83_CORE_IDLE_1,
 	SM83_CORE_HALT,
 	SM83_CORE_HALT_BUG,
+	SM83_CORE_DMA_TRANSFER,
 };
 
 enum sm83_flag_register {
@@ -49,6 +53,12 @@ enum sm83_irq_vector {
 	VEC_TIMER = 0x50,
 	VEC_SERIAL = 0x58,
 	VEC_JOYPAD = 0x60,
+};
+
+struct dma_transfer {
+	bool scheduled;
+	u16 start_addr;
+	u16 cursor;
 };
 
 struct sm83_core {
@@ -74,6 +84,7 @@ struct sm83_core {
 	u16 acc;
 	struct sm83_memory *memory;
 	struct sm83_instruction instruction;
+	struct dma_transfer dma;
 
 	bool ime;
 	bool halted;
@@ -85,26 +96,6 @@ struct sm83_core {
 
 	u8 multiplier;
 };
-
-/* sm83.c */
-struct sm83_core *sm83_init(void);
-void sm83_cpu_step(struct sm83_core *cpu);
-void sm83_cpu_execute(struct sm83_core *cpu);
-void sm83_cpu_reset(struct sm83_core *cpu);
-void sm83_cpu_plug_memory(struct sm83_core *cpu, struct sm83_memory *bus);
-void sm83_destroy(struct sm83_core *cpu);
-void sm83_halt(struct sm83_core *cpu);
-
-/* isa.c */
-void sm83_isa_execute(struct sm83_core *cpu);
-
-/* decoder.c */
-struct sm83_instruction sm83_decode(struct sm83_core *cpu);
-char *sm83_disassemble(struct sm83_core *cpu);
-void sm83_cpu_debug(struct sm83_core *cpu);
-
-/* interrupt.c */
-u8 sm83_irq_ack(struct sm83_core *cpu);
 
 static inline u8 msb(u16 value)
 {
@@ -174,5 +165,26 @@ static inline void cpu_flag_set_or_clear(struct sm83_core *cpu, int flag)
 	else
 		cpu_flag_clear(cpu);
 }
+
+/* sm83.c */
+struct sm83_core *sm83_init(void);
+void sm83_cpu_step(struct sm83_core *cpu);
+void sm83_cpu_execute(struct sm83_core *cpu);
+void sm83_cpu_reset(struct sm83_core *cpu);
+void sm83_cpu_plug_memory(struct sm83_core *cpu, struct sm83_memory *bus);
+void sm83_destroy(struct sm83_core *cpu);
+void sm83_halt(struct sm83_core *cpu);
+void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr);
+
+/* isa.c */
+void sm83_isa_execute(struct sm83_core *cpu);
+
+/* decoder.c */
+struct sm83_instruction sm83_decode(struct sm83_core *cpu);
+char *sm83_disassemble(struct sm83_core *cpu);
+void sm83_cpu_debug(struct sm83_core *cpu);
+
+/* interrupt.c */
+u8 sm83_irq_ack(struct sm83_core *cpu);
 
 #endif

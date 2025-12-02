@@ -17,15 +17,6 @@ static void sigint_handler(int dummy)
 	sigint_catcher = 1;
 }
 
-static void gb_dma_transfer(struct gb_emulator *gb, u16 start_addr)
-{
-	for (int i = 0; i < 160; i++) {
-		// printf("DMA transfer triggered with start address %04X %04X\n", 0xFE00 + i, start_addr + i);
-		gb->memory->array->bytes[0xFE00 + i] =
-			gb->memory->array->bytes[start_addr + i];
-	}
-}
-
 static u8 gb_load(struct sm83_core *cpu, u16 addr)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
@@ -54,9 +45,8 @@ static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 	}
 	case DMA_OAM_DMA: {
 		// Starting DMA transfer
-		gb->memory->array->bytes[addr] = value;
-		gb_dma_transfer(gb, value * 0x100);
-		break;
+		sm83_schedule_dma_transfer(cpu, value << 8);
+		return;
 	}
 	default:
 		write_u8(gb->memory, addr, value);

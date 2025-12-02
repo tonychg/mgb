@@ -98,7 +98,6 @@ static void draw_oam(struct ppu *gpu, int x, int y)
 
 static void draw_viewport(struct ppu *gpu, int x, int y)
 {
-	draw_oam(gpu, x, y);
 	for (int j = 0; j < GB_HEIGHT; j++) {
 		for (int i = 0; i < GB_WIDTH; i++) {
 			u8 color = gpu->frame_buffer[j * GB_WIDTH + i];
@@ -106,6 +105,7 @@ static void draw_viewport(struct ppu *gpu, int x, int y)
 					    DMG_PALETTE[color]);
 		}
 	}
+	draw_oam(gpu, x, y);
 }
 
 static struct vram_area_range current_vram_area_range(struct ppu *gpu,
