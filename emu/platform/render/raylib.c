@@ -1,4 +1,5 @@
 #include "platform/render.h"
+#include <raylib.h>
 #include <stdio.h>
 
 static Color convert_color(int color)
@@ -35,7 +36,7 @@ void render_debug(char *label, int value, int x, int y, int height)
 void render_handle_inputs(u8 *keys)
 {
 	for (int i = 0; i < 8; i++) {
-		struct keybind key = keybindings[0 + i];
+		struct keybind key = keybindings[i];
 		if (IsKeyDown(key.keyboard)) {
 			*keys |= (1 << key.button);
 			return;

@@ -186,6 +186,7 @@ static void *run_emulator_gpu_thread(void *arg)
 			     ctx->scale * 444, 20);
 		render_end();
 	}
+	render_release();
 	pthread_exit(NULL);
 }
 

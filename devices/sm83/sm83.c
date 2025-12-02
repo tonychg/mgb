@@ -53,11 +53,12 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	cpu->index = 0;
 	cpu->state = SM83_CORE_FETCH;
 	cpu->previous = SM83_CORE_FETCH;
-	cpu->multiplier = 2;
+	cpu->multiplier = 1;
 
 	// Timers
 	cpu->internal_divider = 0;
 	cpu->internal_timer = 0;
+	cpu->dma.scheduled = false;
 }
 
 struct sm83_core *sm83_init(void)
@@ -97,7 +98,6 @@ void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr)
 	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
 	cpu->previous = cpu->state;
 	cpu->state = SM83_CORE_DMA_TRANSFER;
-	// printf("%d\n", cpu->dma.cursor);
 }
 
 void sm83_cpu_step(struct sm83_core *cpu)

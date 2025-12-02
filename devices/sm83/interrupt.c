@@ -17,6 +17,17 @@ const static struct interrupt_struct interrupts[] = {
 };
 // clang-format on
 
+void debug_interrupt(struct sm83_core *cpu, struct interrupt_struct interrupt,
+		     u8 if_reg, u8 bitmask)
+{
+	if (interrupt.number != IRQ_VBLANK) {
+		const char *disasm = sm83_disassemble(cpu);
+		printf("[%lu] [%s] Acknowledge %s interrupt irqs: %08b bitmask: %08b\n",
+		       cpu->cycles, disasm, interrupt.description, if_reg,
+		       bitmask);
+	}
+}
+
 u8 sm83_irq_ack(struct sm83_core *cpu)
 {
 	u8 irqs;
@@ -31,12 +42,6 @@ u8 sm83_irq_ack(struct sm83_core *cpu)
 		u8 bitmask = 1 << interrupt.number;
 		if ((irqs & bitmask) != 0) {
 			if_reg &= ~bitmask;
-			if (interrupt.number != IRQ_VBLANK) {
-				const char *disasm = sm83_disassemble(cpu);
-				printf("[%lu] [%s] Acknowledge %s interrupt irqs: %08b bitmask: %08b\n",
-				       cpu->cycles, disasm,
-				       interrupt.description, if_reg, bitmask);
-			}
 			cpu->memory->write8(cpu, IF, if_reg);
 			return interrupt.vector;
 		}

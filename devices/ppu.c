@@ -70,34 +70,68 @@ static void draw_tile(struct ppu *gpu, u8 *vram, int tile_index, int x, int y)
 	}
 }
 
+static void draw_sprite(struct ppu *gpu, u8 *vram, int tile_index, u8 x, u8 y,
+			bool obj_mode)
+{
+	int j = 0;
+	int indice = tile_index * 16;
+	u8 obj_size = 8;
+
+	if (obj_mode)
+		obj_size = 16;
+	y -= obj_size;
+	for (int b = 0; b < (obj_size * 2); b = b + 2) {
+		int i = 0;
+		u8 right = vram[indice + b];
+		u8 left = vram[indice + b + 1];
+		for (int bit = 7; bit >= 0; bit--) {
+			u8 color = encode_pixel_color(right, left, bit);
+			u8 pos_x = x + i;
+			u8 pos_y = y + j;
+			gpu->frame_buffer[pos_y * GB_WIDTH + pos_x] = color;
+			i++;
+		}
+		j++;
+	}
+}
+
 static void draw_tiledata(struct ppu *gpu, u8 *vram)
 {
 	for (int j = 0; j <= 23; j++) {
 		for (int i = 0; i < 16; i++) {
-			int tile_id = (j * 16) + i;
-			draw_tile(gpu, vram, tile_id, i, j);
+			draw_tile(gpu, vram, (j * 16) + i, i, j);
 		}
 	}
 }
 
-static void draw_oam(struct ppu *gpu, int x, int y)
+static void clear_frame(struct ppu *gpu)
 {
-	// u8 obj_mode = LCD_CONTROL(LCD_OBJ_SIZE);
+	for (int i = 0; i < ARRAY_SIZE(gpu->frame_buffer); i++)
+		gpu->frame_buffer[i] = 0;
+}
+
+static void draw_oam(struct ppu *gpu)
+{
+	u8 obj_mode = LCD_CONTROL(LCD_OBJ_SIZE);
 
 	for (int i = 0xFE00; i <= 0xFE9F; i = i + 4) {
 		u8 oam_y = gpu->memory->array->bytes[i];
 		u8 oam_x = gpu->memory->array->bytes[i + 1];
 		u8 oam_tile_index = gpu->memory->array->bytes[i + 2];
-		u8 oam_flags = gpu->memory->array->bytes[i + 3];
+		// u8 oam_flags = gpu->memory->array->bytes[i + 3];
 		// bool is_y_flip = FLAG_ENABLE(oam_flags, OAM_Y_FLIP);
 		// bool is_x_flip = FLAG_ENABLE(oam_flags, OAM_X_FLIP);
-		draw_tile(gpu, gpu->memory->array->bytes + 0x8000,
-			  oam_tile_index, oam_x + x, oam_y + y);
+		// Object is hide
+		if (oam_y == 0 || oam_y == 160)
+			continue;
+		draw_sprite(gpu, gpu->memory->array->bytes + 0x8000,
+			    oam_tile_index, oam_x, oam_y, obj_mode);
 	}
 }
 
 static void draw_viewport(struct ppu *gpu, int x, int y)
 {
+	draw_oam(gpu);
 	for (int j = 0; j < GB_HEIGHT; j++) {
 		for (int i = 0; i < GB_WIDTH; i++) {
 			u8 color = gpu->frame_buffer[j * GB_WIDTH + i];
@@ -105,7 +139,6 @@ static void draw_viewport(struct ppu *gpu, int x, int y)
 					    DMG_PALETTE[color]);
 		}
 	}
-	draw_oam(gpu, x, y);
 }
 
 static struct vram_area_range current_vram_area_range(struct ppu *gpu,
@@ -152,61 +185,65 @@ static void request_stat_interrupt(struct ppu *gpu)
 	}
 }
 
+struct addressing {
+	u16 offset;
+	u16 index;
+};
+
+static struct addressing determine_tiles_addressing(struct ppu *gpu,
+						    u8 tile_index)
+{
+	struct addressing method = { .offset = 0x8000, .index = tile_index };
+	// Simulate signed indexing
+	// https://gbdev.io/pandocs/Tile_Data.html#vram-tile-data
+	if (!(LCD_CONTROL(LCD_BG_WINDOW_TILE_AREA))) {
+		if (tile_index > 127) {
+			method.index -= 128;
+			method.offset = 0x8800;
+		} else {
+			method.offset = 0x9000;
+		}
+	}
+	return method;
+}
+
+static void draw_tiles(struct ppu *gpu, u16 offset, int x, int y)
+{
+	u8 *tilemap = gpu->memory->array->bytes + offset;
+	u8 *tiledata = gpu->memory->array->bytes;
+	for (u8 j = 0; j < 32; j++) {
+		for (u8 i = 0; i < 32; i++) {
+			int tile_index = tilemap[j * 32 + i];
+			struct addressing method =
+				determine_tiles_addressing(gpu, tile_index);
+			draw_tile(gpu, tiledata + method.offset, method.index,
+				  i + (x / 8), j + (y / 8));
+		}
+	}
+}
+
 static void draw_window(struct ppu *gpu, int x, int y)
 {
 	struct vram_area_range win_area =
 		current_vram_area_range(gpu, VRAM_AREA_WINDOW_TILEMAP);
-	u8 *tiledata = gpu->memory->array->bytes;
-	u8 *tilemap = gpu->memory->array->bytes + win_area.begin;
-	for (int j = 0; j < 32; j++) {
-		for (int i = 0; i < 32; i++) {
-			int tile_index = tilemap[j * 32 + i];
-			u16 begin = 0x8000;
-			// Simulate signed indexing
-			// https://gbdev.io/pandocs/Tile_Data.html#vram-tile-data
-			if (!(LCD_CONTROL(LCD_BG_WINDOW_TILE_AREA))) {
-				if (tile_index > 127)
-					tile_index -= 128;
-				else
-					begin = 0x9000;
-			}
-			draw_tile(gpu, tiledata + begin, tile_index,
-				  i + (x / 8), j + (y / 8));
-		}
-	}
+	draw_tiles(gpu, win_area.begin, x, y);
 }
 
 static void draw_background(struct ppu *gpu, int x, int y)
 {
 	struct vram_area_range bg_area =
 		current_vram_area_range(gpu, VRAM_AREA_BG_TILEMAP);
-	u8 *tiledata = gpu->memory->array->bytes;
-	u8 *tilemap = gpu->memory->array->bytes + bg_area.begin;
-	for (int j = 0; j < 32; j++) {
-		for (int i = 0; i < 32; i++) {
-			int tile_index = tilemap[j * 32 + i];
-			u16 begin = 0x8000;
-			// Simulate signed indexing
-			// https://gbdev.io/pandocs/Tile_Data.html#vram-tile-data
-			if (!(LCD_CONTROL(LCD_BG_WINDOW_TILE_AREA))) {
-				if (tile_index > 127)
-					tile_index -= 128;
-				else
-					begin = 0x9000;
-			}
-			draw_tile(gpu, tiledata + begin, tile_index,
-				  i + (x / 8), j + (y / 8));
-		}
-	}
+	draw_tiles(gpu, bg_area.begin, x, y);
 }
 
 void ppu_draw(struct ppu *gpu)
 {
 	if (LCD_CONTROL(LCD_ENABLE))
-		draw_viewport(gpu, 0, 8 * 23);
+		draw_viewport(gpu, 0, 8 * 24);
 	draw_tiledata(gpu, gpu->memory->array->bytes + 0x8000);
 	draw_window(gpu, GB_WIDTH, 0);
 	draw_background(gpu, GB_WIDTH, 256);
+	clear_frame(gpu);
 }
 
 static void increment_scanline(struct ppu *gpu, struct sm83_core *cpu)
