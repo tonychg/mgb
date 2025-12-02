@@ -1,0 +1,53 @@
+# You can include this Makefile into another to compile a c program without
+# duplicating targets. Just include this file with:
+#    include ../Makefile.common
+# By default the following variables are defined :
+SRC ?=
+DESTINATION ?= ../..
+PROGRAM ?= a.out
+LIB ?=
+CFLAGS ?=
+# You can override this variables by defining them in your Makefile like this
+#    SRC = main.c
+#    DESTINATION = .
+#    PROGRAM = binary
+#    LIB = -lcurl
+#    CFLAGS ?= -g -Wall
+# Be careful you have to put the include after your variables
+SRC += \
+	   $(DESTINATION)/devices/sm83/sm83.c \
+	   $(DESTINATION)/devices/sm83/decoder.c \
+	   $(DESTINATION)/devices/sm83/interrupt.c \
+	   $(DESTINATION)/devices/sm83/isa.c \
+	   $(DESTINATION)/devices/memory.c \
+	   $(DESTINATION)/devices/timer.c \
+	   $(DESTINATION)/emu/platform/mm.c \
+	   $(DESTINATION)/emu/platform/io.c \
+
+CC = gcc
+RM = rm -fr
+MKDIR = mkdir -p
+
+BUILD_DIR = $(DESTINATION)/build
+OUTPUT = $(BUILD_DIR)/$(PROGRAM)
+
+OBJ = $(SRC:.c=.o)
+
+.PHONY: all
+all: $(BUILD_DIR) $(OUTPUT)
+
+build: $(BUILD_DIR)
+
+$(BUILD_DIR):
+	@$(MKDIR) $(BUILD_DIR)
+
+$(OBJ): %.o: %.c
+	$(CC) $(INCLUDE) $(CFLAGS) -c $^ -o $@
+
+$(OUTPUT): $(OBJ)
+	$(CC) $(INCLUDE) $(LIB) -o $(OUTPUT) $(OBJ)
+
+clean:
+	@$(RM) $(OBJ)
+	@$(RM) $(BUILD_DIR)
+
