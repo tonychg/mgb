@@ -2,7 +2,6 @@ MAKE = make
 MAKEFLAGS += --no-print-directory
 
 ALL_PROGRAMS =
-ALL_PROGRAMS += debugger
 ALL_PROGRAMS += emu/gb
 ALL_PROGRAMS += tests
 

@@ -113,7 +113,7 @@ static void gb_log_error(struct gb_context *ctx, char *msg)
 	ctx->exit_code = -1;
 }
 
-static void wait_ms_after(struct timeval *start_time, int milliseconds)
+static void throttling(struct timeval *start_time, int milliseconds)
 {
 	unsigned long elapsed = 0;
 	struct timeval now, diff;
@@ -124,21 +124,28 @@ static void wait_ms_after(struct timeval *start_time, int milliseconds)
 	}
 }
 
+static void bind_debugger(struct debugger_context *dbg, struct gb_context *ctx)
+{
+	debugger_new(dbg);
+	dbg->gb = ctx->gb;
+	dbg->cpu = ctx->gb->cpu;
+	dbg->gpu = ctx->gb->gpu;
+	dbg->memory = ctx->gb->memory;
+}
+
 static void run_cpu_debugger(struct gb_context *ctx)
 {
-	struct debugger_context debugger_ctx;
+	struct debugger_context dbg;
 	struct timeval start_time;
 	int cycles = 0;
-	debugger_new(&debugger_ctx);
-	debugger_ctx.memory = ctx->gb->memory;
-	debugger_ctx.cpu = ctx->gb->cpu;
-	while (debugger_ctx.state != STATE_QUIT) {
+	bind_debugger(&dbg, ctx);
+	while (dbg.state != STATE_QUIT) {
 		gettimeofday(&start_time, NULL);
 		if (sigint_catcher) {
-			debugger_ctx.state = STATE_WAIT;
+			dbg.state = STATE_WAIT;
 			sigint_catcher = 0;
 		}
-		if (debugger_step(&debugger_ctx))
+		if (debugger_step(&dbg))
 			break;
 		ppu_tick(ctx->gb->gpu, ctx->gb->cpu);
 		if (!ctx->gb->cpu->halted && GB_FLAG(GB_THROTTLING)) {
@@ -146,7 +153,7 @@ static void run_cpu_debugger(struct gb_context *ctx)
 			// Throttling
 			if (cycles >= 17476) {
 				cycles -= 17476;
-				wait_ms_after(&start_time, 16670);
+				throttling(&start_time, 16670);
 			}
 		}
 	}

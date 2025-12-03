@@ -1,8 +1,7 @@
 #ifndef _SM83_DEBUGGER_H
 #define _SM83_DEBUGGER_H
 
-#include "emu/sm83.h"
-#include "emu/memory.h"
+#include "emu/gb.h"
 
 #define COMMAND_MAX_LENGTH 256
 #define COMMAND_DELIMITERS " \n"
@@ -83,9 +82,10 @@ struct debugger_command_context {
 struct debugger_context {
 	u16 index;
 
-	struct sm83_core *cpu;
+	struct gb_emulator *gb;
 	struct shared *memory;
-	struct gb_context *gb;
+	struct ppu *gpu;
+	struct sm83_core *cpu;
 
 	u16 breakpoints[MAX_BREAKPOINTS];
 	u16 watched_addresses[MAX_WATCHERS];
@@ -95,14 +95,8 @@ struct debugger_context {
 	struct debugger_command_context command;
 };
 
-/* sm83_debug.c */
-char *sm83_disassemble(struct sm83_core *cpu);
-void sm83_cpu_debug(struct sm83_core *cpu);
-void sm83_printd(const char *msg);
-
 /* debugger.c */
 int debugger_step(struct debugger_context *ctx);
-int debugger_run(char *path);
 int debugger_new(struct debugger_context *ctx);
 
 #endif

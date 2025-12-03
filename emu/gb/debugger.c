@@ -2,11 +2,8 @@
 #include "platform/mm.h"
 #include "platform/types.h"
 #include "debugger.h"
-#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-
-static volatile int sigint_catcher = 0;
 
 static void print_help()
 {
@@ -79,7 +76,7 @@ static int parse_int(struct debugger_context *ctx, char **buffer)
 
 static void move_to_wait(struct debugger_context *ctx)
 {
-	sm83_cpu_debug(ctx->cpu);
+	sm83_cpu_debug(ctx->gb->cpu);
 	ctx->state = STATE_WAIT;
 }
 
@@ -170,42 +167,42 @@ static int command_parse(struct debugger_context *ctx, char *buffer)
 		struct cmd_struct s = commands[i];
 		if (command_match(s, option)) {
 			ctx->command.type = s.type;
-			switch (ctx->command.type) {
-			case COMMAND_NEXT:
-			case COMMAND_STEP:
-			case COMMAND_MEM:
-			case COMMAND_IO:
-			case COMMAND_RESET:
-			case COMMAND_REGISTERS:
-			case COMMAND_QUIT:
-			case COMMAND_HELP:
-			case COMMAND_FRAME:
-			case COMMAND_CONTINUE:
-			case COMMAND_LIST:
-			case COMMAND_SAVE:
-			case COMMAND_CLEAR:
-				break;
-			case COMMAND_BREAKPOINT:
-			case COMMAND_DELETE:
-			case COMMAND_PRINT:
-			case COMMAND_WATCH:
-			case COMMAND_GOTO:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				break;
-			case COMMAND_LOOP:
-				ctx->command.counter = parse_int(ctx, &buffer);
-				break;
-			case COMMAND_SET:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				ctx->command.value = parse_hex(ctx, &buffer);
-				break;
-			case COMMAND_RANGE:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				ctx->command.end = parse_hex(ctx, &buffer);
-				break;
-			}
 			break;
 		}
+	}
+	switch (ctx->command.type) {
+	case COMMAND_NEXT:
+	case COMMAND_STEP:
+	case COMMAND_MEM:
+	case COMMAND_IO:
+	case COMMAND_RESET:
+	case COMMAND_REGISTERS:
+	case COMMAND_QUIT:
+	case COMMAND_HELP:
+	case COMMAND_FRAME:
+	case COMMAND_CONTINUE:
+	case COMMAND_LIST:
+	case COMMAND_SAVE:
+	case COMMAND_CLEAR:
+		break;
+	case COMMAND_BREAKPOINT:
+	case COMMAND_DELETE:
+	case COMMAND_PRINT:
+	case COMMAND_WATCH:
+	case COMMAND_GOTO:
+		ctx->command.addr = parse_hex(ctx, &buffer);
+		break;
+	case COMMAND_LOOP:
+		ctx->command.counter = parse_int(ctx, &buffer);
+		break;
+	case COMMAND_SET:
+		ctx->command.addr = parse_hex(ctx, &buffer);
+		ctx->command.value = parse_hex(ctx, &buffer);
+		break;
+	case COMMAND_RANGE:
+		ctx->command.addr = parse_hex(ctx, &buffer);
+		ctx->command.end = parse_hex(ctx, &buffer);
+		break;
 	}
 	return 0;
 }
@@ -324,34 +321,6 @@ static int debugger_command_handle(struct debugger_context *ctx)
 	return 0;
 }
 
-static u8 load8(struct sm83_core *cpu, u16 addr)
-{
-	struct debugger_context *ctx = (struct debugger_context *)cpu->parent;
-	return load_u8(ctx->memory, addr);
-}
-
-static void write8(struct sm83_core *cpu, u16 addr, u8 value)
-{
-	struct debugger_context *ctx = (struct debugger_context *)cpu->parent;
-	write_u8(ctx->memory, addr, value);
-}
-
-static struct sm83_core *debugger_setup_cpu()
-{
-	struct sm83_core *cpu;
-	cpu = sm83_init();
-	if (!cpu)
-		return NULL;
-	cpu->memory->load8 = &load8;
-	cpu->memory->write8 = &write8;
-	return cpu;
-}
-
-static void sigint_handler(int dummy)
-{
-	sigint_catcher = 1;
-}
-
 int debugger_new(struct debugger_context *ctx)
 {
 	ctx->state = STATE_WAIT;
@@ -378,37 +347,4 @@ int debugger_step(struct debugger_context *ctx)
 	if (ctx->state == STATE_EXECUTE)
 		sm83_cpu_step(ctx->cpu);
 	return 0;
-}
-
-int debugger_run(char *path)
-{
-	struct debugger_context ctx;
-	debugger_new(&ctx);
-	signal(SIGINT, sigint_handler);
-	if (!(ctx.cpu = debugger_setup_cpu())) {
-		printf("failed to allocate new cpu\n");
-		return -1;
-	}
-	if (!(ctx.memory = allocate_memory())) {
-		printf("failed to allocate new memory\n");
-		goto err;
-	}
-	ctx.cpu->parent = &ctx;
-	if (load_rom(ctx.memory, path))
-		return -1;
-	move_to_wait(&ctx);
-	while (ctx.state != STATE_QUIT) {
-		if (sigint_catcher) {
-			ctx.state = STATE_WAIT;
-			sigint_catcher = 0;
-		}
-		if (debugger_step(&ctx))
-			break;
-	}
-	destroy_memory(ctx.memory);
-	sm83_destroy(ctx.cpu);
-	return 0;
-err:
-	sm83_destroy(ctx.cpu);
-	return -1;
 }

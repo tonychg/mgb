@@ -5,9 +5,9 @@ LIB = -lraylib
 SRC = \
 	  $(DESTINATION)/devices/ppu.c \
 	  $(DESTINATION)/devices/joypad.c \
-	  $(DESTINATION)/debugger/debugger.c \
 	  $(DESTINATION)/platform/render/raylib.c \
-	  emulator.c \
+	  debugger.c \
+	  gb.c \
 	  main.c \
 
 include $(DESTINATION)/Makefile.common
