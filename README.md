@@ -1,7 +1,8 @@
 # Unaccurate Gameboy Emulator
 
-It's really a work in progress project. Mainly because I was interested in
-learning how an emulator work and also progressing in low level programming.
+It's really a work in progress project.
+I started the project mainly because I was interested in learning how an emulator
+work and also to progress in low level programming in C.
 
 ## Features
 
