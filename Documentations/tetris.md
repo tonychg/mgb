@@ -1,32 +1,56 @@
-Debug SM83 using tetris ROM (World)
+# Debug SM83 using tetris ROM (World)
 
-```bash
-./build/sm83-debugger <rom>
-watch FF44
-goto 0233
-set FF44 94
-goto 02c2
+## Some useful addresses
+
+```
+# Select Players Screen
+break 0x03ae 
+break 0x041c
+
+# Demo range
+break 0x041f
+break 0x0471
+
+# Display Type-A Level Select / Top Score screen
+break 0x157b
+break 0x15b9
 ```
 
-After the previous operations
+## Simulate inputs
+
 ```
-00:02C0 E0 4B -> LDH a8[$4B] A
-     Z = 1 | N = 0
-     H = 0 | C = 0
-  A = $00  |  F = $80
-  00000000 | 10000000
-  B = $00  |  C = $00
-  00000000 | 00000000
-  D = $00  |  E = $D8
-  00000000 | 11011000
-  H = $97  |  L = $FF
-  10010111 | 11111111
-      SP = $CFFF
-   1100111111111111
-      PC = $02C3
-   0000001011000011
-  IME = 1  | HALT = 0
-  DIV = 0  | TIMA = 0
-  M-cycles = 229110 | T-cycles = 916440
-00:02C2 E0 06 -> LDH a8[$06] A
+# Set a breakpoint before read
+break 29ce
+# A
+0b11011110
+set ff00 0xde
+set ff0f 0x10
+# B
+0b11011101
+set ff00 0xdd
+set ff0f 0x10
+# Select
+0b11011011
+set ff00 0xdb
+set ff0f 0x10
+# Start
+0b11010111
+set ff00 0xd7
+set ff0f 0x10
+# Right
+0b11101110
+set ff00 0xee
+set ff0f 0x10
+# Left
+0b11101101
+set ff00 0xed
+set ff0f 0x10
+# Up
+0b11101011
+set ff00 0xeb
+set ff0f 0x10
+# Down
+0b11100111
+set ff00 0xe7
+set ff0f 0x10
 ```

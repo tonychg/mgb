@@ -183,6 +183,7 @@ static int command_parse(struct debugger_context *ctx, char *buffer)
 			case COMMAND_CONTINUE:
 			case COMMAND_LIST:
 			case COMMAND_SAVE:
+			case COMMAND_CLEAR:
 				break;
 			case COMMAND_BREAKPOINT:
 			case COMMAND_DELETE:
@@ -245,8 +246,8 @@ static int debugger_command_handle(struct debugger_context *ctx)
 		break;
 	case COMMAND_DELETE:
 		if (!unregister_breakpoint(ctx, ctx->command.addr))
-			printf("Remove breakpoint $%04X", ctx->command.addr);
-		if (unregister_watcher(ctx, ctx->command.addr))
+			printf("Remove breakpoint $%04X\n", ctx->command.addr);
+		if (!unregister_watcher(ctx, ctx->command.addr))
 			printf("Remove watcher %04X\n", ctx->command.addr);
 		break;
 	case COMMAND_CONTINUE:
@@ -309,6 +310,15 @@ static int debugger_command_handle(struct debugger_context *ctx)
 	case COMMAND_SAVE:
 		printf("Dumping memory to dump.sav\n");
 		dump_memory_to_file(ctx->memory, "dump.sav");
+		break;
+	case COMMAND_CLEAR:
+		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
+			ctx->breakpoints[i] = 0;
+		}
+		for (int i = 0; i < MAX_WATCHERS; i++) {
+			ctx->watched_addresses[i] = 0;
+			ctx->watched_values[i] = 0;
+		}
 		break;
 	}
 	return 0;

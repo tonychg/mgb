@@ -1,3 +1,4 @@
+#include "emu/memory.h"
 #include "emu/sm83.h"
 #include "platform/mm.h"
 #include "platform/types.h"
@@ -316,27 +317,27 @@ void sm83_cpu_debug(struct sm83_core *cpu)
 {
 	char *decoded = NULL;
 
-	printf("     Z = %d | N = %d\n", cpu_flag_is_set(cpu, FLAG_Z),
-	       cpu_flag_is_set(cpu, FLAG_N));
-	printf("     H = %d | C = %d\n", cpu_flag_is_set(cpu, FLAG_H),
-	       cpu_flag_is_set(cpu, FLAG_C));
-	printf("  A = $%02X  |  F = $%02X\n", cpu->a, cpu->f);
-	printf("  %08b | %08b\n", cpu->a, cpu->f);
-	printf("  B = $%02X  |  C = $%02X\n", cpu->b, cpu->c);
-	printf("  %08b | %08b\n", cpu->b, cpu->c);
-	printf("  D = $%02X  |  E = $%02X\n", cpu->d, cpu->e);
-	printf("  %08b | %08b\n", cpu->d, cpu->e);
-	printf("  H = $%02X  |  L = $%02X\n", cpu->h, cpu->l);
-	printf("  %08b | %08b\n", cpu->h, cpu->l);
-	printf("      SP = $%04X\n", cpu->sp);
-	printf("   %016b\n", cpu->sp);
-	printf("      PC = $%04X\n", cpu->pc);
-	printf("   %016b\n", cpu->pc);
-	printf("  IME = %d  | HALT = %d\n", cpu->ime, cpu->halted);
-	printf("  DIV = %d  | TIMA = %d\n", cpu->memory->load8(cpu, 0xFF04),
-	       cpu->memory->load8(cpu, 0xFF05));
-	printf("  M-cycles = %lu | T-cycles = %lu\n", cpu->cycles,
-	       cpu->cycles * 4);
+	printf("  A = $%1$02X [%1$08b] |  F = $%2$02X [%2$08b]\n", cpu->a,
+	       cpu->f);
+	printf("  B = $%1$02X [%1$08b] |  C = $%2$02X [%2$08b]\n", cpu->b,
+	       cpu->c);
+	printf("  D = $%1$02X [%1$08b] |  E = $%2$02X [%2$08b]\n", cpu->d,
+	       cpu->e);
+	printf("  H = $%1$02X [%1$08b] |  L = $%2$02X [%2$08b]\n", cpu->h,
+	       cpu->l);
+	printf("     Z = %1$d | N = %2$d   |  SP = $%3$04X\n",
+	       cpu_flag_is_set(cpu, FLAG_Z), cpu_flag_is_set(cpu, FLAG_N),
+	       cpu->sp);
+	printf("     H = %1$d | C = %2$d   |  PC = $%3$04X\n",
+	       cpu_flag_is_set(cpu, FLAG_H), cpu_flag_is_set(cpu, FLAG_C),
+	       cpu->pc);
+	printf(" IME = %3d | HALT = %3d | DMA = %3d\n", cpu->ime, cpu->halted,
+	       cpu->dma.scheduled);
+	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
+	       cpu->memory->load8(cpu, DIV), cpu->memory->load8(cpu, TIMA),
+	       cpu->cycles);
+	printf(" LY  = %3d | LYC  = %3d\n", cpu->memory->load8(cpu, LY_LCD),
+	       cpu->memory->load8(cpu, LYC_LY));
 	decoded = sm83_disassemble(cpu);
 	printf("%s\n", decoded);
 	zfree(decoded);

@@ -30,6 +30,7 @@ enum debugger_command_type {
 	COMMAND_WATCH,
 	COMMAND_LIST,
 	COMMAND_SAVE,
+	COMMAND_CLEAR,
 };
 
 enum debugger_state {
@@ -67,6 +68,7 @@ static const struct cmd_struct commands[] = {
 	{ "watch (w) <addr>            Watch address\n", "watch", "w", COMMAND_WATCH },
 	{ "list (ll)                   List breakpoints and watchers\n", "list", "ll", COMMAND_LIST },
 	{ "save (sv)                   Save the current state\n", "save", "sv", COMMAND_SAVE },
+	{ "clear (cl)                  Clear all watch and break points\n", "clear", "cl", COMMAND_CLEAR },
 };
 // clang-format on
 
