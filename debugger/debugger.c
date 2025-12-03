@@ -77,67 +77,6 @@ static int parse_int(struct debugger_context *ctx, char **buffer)
 	return atoi(option);
 }
 
-static int command_parse(struct debugger_context *ctx, char *buffer)
-{
-	char option[COMMAND_MAX_LENGTH] = "";
-	get_option(&buffer, option, COMMAND_DELIMITERS);
-	ctx->command.type = COMMAND_NEXT;
-	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
-		struct cmd_struct s = commands[i];
-		if (command_match(s, option)) {
-			ctx->command.type = s.type;
-			switch (ctx->command.type) {
-			case COMMAND_NEXT:
-			case COMMAND_STEP:
-			case COMMAND_MEM:
-			case COMMAND_IO:
-			case COMMAND_RESET:
-			case COMMAND_REGISTERS:
-			case COMMAND_QUIT:
-			case COMMAND_HELP:
-			case COMMAND_FRAME:
-			case COMMAND_CONTINUE:
-			case COMMAND_LIST:
-			case COMMAND_SAVE:
-				break;
-			case COMMAND_BREAKPOINT:
-			case COMMAND_DELETE:
-			case COMMAND_PRINT:
-			case COMMAND_WATCH:
-			case COMMAND_GOTO:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				break;
-			case COMMAND_LOOP:
-				ctx->command.counter = parse_int(ctx, &buffer);
-				break;
-			case COMMAND_SET:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				ctx->command.value = parse_hex(ctx, &buffer);
-				break;
-			case COMMAND_RANGE:
-				ctx->command.addr = parse_hex(ctx, &buffer);
-				ctx->command.end = parse_hex(ctx, &buffer);
-				break;
-			}
-			break;
-		}
-	}
-	return 0;
-}
-
-static int debugger_prompt(struct debugger_context *ctx)
-{
-	char buffer[COMMAND_MAX_LENGTH];
-	printf("> ");
-	if (!fgets(buffer, COMMAND_MAX_LENGTH, stdin)) {
-		return -1;
-	}
-	if (command_parse(ctx, buffer)) {
-		return -1;
-	}
-	return 0;
-}
-
 static void move_to_wait(struct debugger_context *ctx)
 {
 	sm83_cpu_debug(ctx->cpu);
@@ -220,6 +159,67 @@ static void check_watchers(struct debugger_context *ctx)
 			break;
 		}
 	}
+}
+
+static int command_parse(struct debugger_context *ctx, char *buffer)
+{
+	char option[COMMAND_MAX_LENGTH] = "";
+	get_option(&buffer, option, COMMAND_DELIMITERS);
+	ctx->command.type = COMMAND_NEXT;
+	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
+		struct cmd_struct s = commands[i];
+		if (command_match(s, option)) {
+			ctx->command.type = s.type;
+			switch (ctx->command.type) {
+			case COMMAND_NEXT:
+			case COMMAND_STEP:
+			case COMMAND_MEM:
+			case COMMAND_IO:
+			case COMMAND_RESET:
+			case COMMAND_REGISTERS:
+			case COMMAND_QUIT:
+			case COMMAND_HELP:
+			case COMMAND_FRAME:
+			case COMMAND_CONTINUE:
+			case COMMAND_LIST:
+			case COMMAND_SAVE:
+				break;
+			case COMMAND_BREAKPOINT:
+			case COMMAND_DELETE:
+			case COMMAND_PRINT:
+			case COMMAND_WATCH:
+			case COMMAND_GOTO:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				break;
+			case COMMAND_LOOP:
+				ctx->command.counter = parse_int(ctx, &buffer);
+				break;
+			case COMMAND_SET:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				ctx->command.value = parse_hex(ctx, &buffer);
+				break;
+			case COMMAND_RANGE:
+				ctx->command.addr = parse_hex(ctx, &buffer);
+				ctx->command.end = parse_hex(ctx, &buffer);
+				break;
+			}
+			break;
+		}
+	}
+	return 0;
+}
+
+static int debugger_prompt(struct debugger_context *ctx)
+{
+	char buffer[COMMAND_MAX_LENGTH];
+	printf("> ");
+	if (!fgets(buffer, COMMAND_MAX_LENGTH, stdin)) {
+		return -1;
+	}
+	if (command_parse(ctx, buffer)) {
+		return -1;
+	}
+	return 0;
 }
 
 static int debugger_command_handle(struct debugger_context *ctx)
