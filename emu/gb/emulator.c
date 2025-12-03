@@ -20,8 +20,6 @@ static void sigint_handler(int dummy)
 static u8 gb_load(struct sm83_core *cpu, u16 addr)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
-	// if (addr < 0x100)
-	// 	return dmg_boot_rom[addr];
 	switch (addr) {
 	case P1_JOYP:
 		return update_joypad(gb);
