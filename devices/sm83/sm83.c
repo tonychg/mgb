@@ -33,7 +33,7 @@ static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
 void sm83_cpu_reset(struct sm83_core *cpu)
 {
 	cpu->sp = 0xFFFE;
-	cpu->pc = 0x100;
+	cpu->pc = 0x0100;
 
 	SET_AF(cpu, 0x01B0);
 	SET_BC(cpu, 0x0013);
