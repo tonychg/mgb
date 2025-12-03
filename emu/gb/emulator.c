@@ -25,6 +25,8 @@ static u8 gb_load(struct sm83_core *cpu, u16 addr)
 	switch (addr) {
 	case P1_JOYP:
 		return update_joypad(gb);
+	case 0xC000 ... 0xDE00:
+		addr += 0x2000;
 	}
 	return load_u8(gb->memory, addr);
 }
@@ -50,6 +52,12 @@ static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 		sm83_schedule_dma_transfer(cpu, value << 8);
 		return;
 	}
+	case 0xC000 ... 0xDE00:
+		write_u8(gb->memory, addr, value);
+		write_u8(gb->memory, addr + 0x2000, value);
+	case 0xE000 ... 0xFE00:
+		write_u8(gb->memory, addr, value);
+		write_u8(gb->memory, addr - 0x2000, value);
 	default:
 		write_u8(gb->memory, addr, value);
 	}
