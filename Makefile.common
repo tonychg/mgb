@@ -21,8 +21,8 @@ SRC += \
 	   $(DESTINATION)/devices/sm83/isa.c \
 	   $(DESTINATION)/devices/memory.c \
 	   $(DESTINATION)/devices/timer.c \
-	   $(DESTINATION)/emu/platform/mm.c \
-	   $(DESTINATION)/emu/platform/io.c \
+	   $(DESTINATION)/platform/mm.c \
+	   $(DESTINATION)/platform/io.c \
 
 CC = gcc
 RM = rm -fr
