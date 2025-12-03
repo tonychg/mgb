@@ -182,7 +182,7 @@ void sm83_isa_execute(struct sm83_core *cpu);
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
 char *sm83_disassemble(struct sm83_core *cpu);
-void sm83_cpu_debug(struct sm83_core *cpu);
+void sm83_info(struct sm83_core *cpu);
 
 /* interrupt.c */
 u8 sm83_irq_ack(struct sm83_core *cpu);

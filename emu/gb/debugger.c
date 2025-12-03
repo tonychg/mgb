@@ -1,7 +1,8 @@
+#include "emu/gb.h"
 #include "emu/memory.h"
 #include "platform/mm.h"
 #include "platform/types.h"
-#include "debugger.h"
+#include "platform/debugger.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -52,73 +53,62 @@ static int get_option(char **buffer, char *option, char *delims)
 	return 0;
 }
 
-static int parse_hex(struct debugger_context *ctx, char **buffer)
+static int parse_hex(struct debugger *dbg, char **buffer)
 {
 	char option[COMMAND_MAX_LENGTH] = "";
 
 	if (get_option(buffer, option, COMMAND_DELIMITERS) || !strlen(option)) {
-		ctx->command.type = COMMAND_HELP;
+		dbg->command.type = COMMAND_HELP;
 		return 0;
 	}
 	return strtol(option, NULL, 16);
 }
 
-static int parse_int(struct debugger_context *ctx, char **buffer)
+static void move_to_wait(struct debugger *dbg)
 {
-	char option[COMMAND_MAX_LENGTH] = "";
-
-	if (get_option(buffer, option, COMMAND_DELIMITERS) || !strlen(option)) {
-		ctx->command.type = COMMAND_HELP;
-		return 0;
-	}
-	return atoi(option);
+	sm83_info(dbg->gb->cpu);
+	dbg->state = STATE_WAIT;
 }
 
-static void move_to_wait(struct debugger_context *ctx)
-{
-	sm83_cpu_debug(ctx->gb->cpu);
-	ctx->state = STATE_WAIT;
-}
-
-static int register_breakpoint(struct debugger_context *ctx, u16 addr)
+static int register_breakpoint(struct debugger *dbg, u16 addr)
 {
 	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-		if (ctx->breakpoints[i] == 0) {
+		if (dbg->breakpoints[i] == 0) {
 			printf("New breakpoint $%04X\n", addr);
-			ctx->breakpoints[i] = addr;
+			dbg->breakpoints[i] = addr;
 			return 0;
 		}
 	}
 	return -1;
 }
 
-static int unregister_breakpoint(struct debugger_context *ctx, u16 addr)
+static int unregister_breakpoint(struct debugger *dbg, u16 addr)
 {
 	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-		if (ctx->breakpoints[i] == addr) {
-			ctx->breakpoints[i] = 0;
+		if (dbg->breakpoints[i] == addr) {
+			dbg->breakpoints[i] = 0;
 			return 0;
 		}
 	}
 	return -1;
 }
 
-static void check_breakpoints(struct debugger_context *ctx)
+static void check_breakpoints(struct debugger *dbg)
 {
 	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-		if (ctx->breakpoints[i]) {
-			if (ctx->index == ctx->breakpoints[i])
-				move_to_wait(ctx);
+		if (dbg->breakpoints[i]) {
+			if (dbg->index == dbg->breakpoints[i])
+				move_to_wait(dbg);
 		}
 	}
 }
 
-static int register_watcher(struct debugger_context *ctx, u16 addr)
+static int register_watcher(struct debugger *dbg, u16 addr)
 {
 	for (int i = 0; i < MAX_WATCHERS; i++) {
-		if (!ctx->watched_addresses[i]) {
-			ctx->watched_addresses[i] = addr;
-			ctx->watched_values[i] = load_u8(ctx->memory, addr);
+		if (!dbg->watched_addresses[i]) {
+			dbg->watched_addresses[i] = addr;
+			dbg->watched_values[i] = load_u8(dbg->memory, addr);
 			printf("New watcher $%04X\n", addr);
 			return 0;
 		}
@@ -126,57 +116,57 @@ static int register_watcher(struct debugger_context *ctx, u16 addr)
 	return -1;
 }
 
-static int unregister_watcher(struct debugger_context *ctx, u16 addr)
+static int unregister_watcher(struct debugger *dbg, u16 addr)
 {
 	for (int i = 0; i < MAX_WATCHERS; i++) {
-		if (ctx->watched_addresses[i] == addr) {
-			ctx->watched_addresses[i] = 0;
-			ctx->watched_values[i] = 0;
+		if (dbg->watched_addresses[i] == addr) {
+			dbg->watched_addresses[i] = 0;
+			dbg->watched_values[i] = 0;
 			return 0;
 		}
 	}
 	return -1;
 }
 
-static void check_watchers(struct debugger_context *ctx)
+static void check_watchers(struct debugger *dbg)
 {
 	const char *format =
 		"$%1$04X $%2$02X (0b%2$08b) -> $%03$2X (0b%3$08b)\n";
 	for (int i = 0; i < MAX_WATCHERS; i++) {
-		if (ctx->watched_addresses[i]) {
-			u16 addr = ctx->watched_addresses[i];
-			u8 prev = ctx->watched_values[i];
-			u8 curr = load_u8(ctx->memory, addr);
+		if (dbg->watched_addresses[i]) {
+			u16 addr = dbg->watched_addresses[i];
+			u8 prev = dbg->watched_values[i];
+			u8 curr = load_u8(dbg->memory, addr);
 			if (curr == prev)
 				continue;
 			printf("Hit watchpoint at %04X\n", addr);
-			printf(format, ctx->cpu->index, prev, curr);
-			ctx->watched_values[i] = curr;
-			move_to_wait(ctx);
+			printf(format, dbg->cpu->index, prev, curr);
+			dbg->watched_values[i] = curr;
+			move_to_wait(dbg);
 			break;
 		}
 	}
 }
 
-static int command_parse(struct debugger_context *ctx, char *buffer)
+static int command_parse(struct debugger *dbg, char *buffer)
 {
 	char option[COMMAND_MAX_LENGTH] = "";
 	get_option(&buffer, option, COMMAND_DELIMITERS);
-	ctx->command.type = COMMAND_NEXT;
+	dbg->command.type = COMMAND_NEXT;
 	for (int i = 0; i < ARRAY_SIZE(commands); i++) {
 		struct cmd_struct s = commands[i];
 		if (command_match(s, option)) {
-			ctx->command.type = s.type;
+			dbg->command.type = i;
 			break;
 		}
 	}
-	switch (ctx->command.type) {
+	switch (dbg->command.type) {
 	case COMMAND_NEXT:
 	case COMMAND_STEP:
 	case COMMAND_MEM:
 	case COMMAND_IO:
 	case COMMAND_RESET:
-	case COMMAND_REGISTERS:
+	case COMMAND_INFO:
 	case COMMAND_QUIT:
 	case COMMAND_HELP:
 	case COMMAND_FRAME:
@@ -189,162 +179,163 @@ static int command_parse(struct debugger_context *ctx, char *buffer)
 	case COMMAND_DELETE:
 	case COMMAND_PRINT:
 	case COMMAND_WATCH:
-	case COMMAND_GOTO:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		break;
-	case COMMAND_LOOP:
-		ctx->command.counter = parse_int(ctx, &buffer);
-		break;
 	case COMMAND_SET:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		ctx->command.value = parse_hex(ctx, &buffer);
+		dbg->command.addr = parse_hex(dbg, &buffer);
+		dbg->command.value = parse_hex(dbg, &buffer);
 		break;
 	case COMMAND_RANGE:
-		ctx->command.addr = parse_hex(ctx, &buffer);
-		ctx->command.end = parse_hex(ctx, &buffer);
+		dbg->command.addr = parse_hex(dbg, &buffer);
+		dbg->command.end = parse_hex(dbg, &buffer);
 		break;
 	}
 	return 0;
 }
 
-static int debugger_prompt(struct debugger_context *ctx)
+static int debugger_prompt(struct debugger *dbg)
 {
 	char buffer[COMMAND_MAX_LENGTH];
 	printf("> ");
 	if (!fgets(buffer, COMMAND_MAX_LENGTH, stdin)) {
 		return -1;
 	}
-	if (command_parse(ctx, buffer)) {
+	if (command_parse(dbg, buffer)) {
 		return -1;
 	}
 	return 0;
 }
 
-static int debugger_command_handle(struct debugger_context *ctx)
+static int debugger_command_handle(struct debugger *dbg)
 {
-	switch (ctx->command.type) {
+	switch (dbg->command.type) {
 	case COMMAND_NEXT:
-		if (ctx->state == STATE_EXECUTE &&
-		    ctx->cpu->index != ctx->index) {
-			move_to_wait(ctx);
+		if (dbg->state == STATE_EXECUTE &&
+		    dbg->cpu->index != dbg->index) {
+			move_to_wait(dbg);
 		} else {
-			ctx->state = STATE_EXECUTE;
+			dbg->state = STATE_EXECUTE;
 		}
 		break;
 	case COMMAND_STEP:
-		if (ctx->state == STATE_EXECUTE)
-			move_to_wait(ctx);
+		if (dbg->state == STATE_EXECUTE)
+			move_to_wait(dbg);
 		else
-			ctx->state = STATE_EXECUTE;
+			dbg->state = STATE_EXECUTE;
 		break;
 	case COMMAND_BREAKPOINT:
-		if (register_breakpoint(ctx, ctx->command.addr))
+		if (register_breakpoint(dbg, dbg->command.addr))
 			printf("Failed to register new breakpoints, remove some");
 		break;
 	case COMMAND_DELETE:
-		if (!unregister_breakpoint(ctx, ctx->command.addr))
-			printf("Remove breakpoint $%04X\n", ctx->command.addr);
-		if (!unregister_watcher(ctx, ctx->command.addr))
-			printf("Remove watcher %04X\n", ctx->command.addr);
+		if (!unregister_breakpoint(dbg, dbg->command.addr))
+			printf("Remove breakpoint $%04X\n", dbg->command.addr);
+		if (!unregister_watcher(dbg, dbg->command.addr))
+			printf("Remove watcher %04X\n", dbg->command.addr);
 		break;
 	case COMMAND_CONTINUE:
-		if (ctx->state == STATE_EXECUTE) {
-			check_breakpoints(ctx);
-			check_watchers(ctx);
+		if (dbg->state == STATE_EXECUTE) {
+			check_breakpoints(dbg);
+			check_watchers(dbg);
 		} else {
-			ctx->state = STATE_EXECUTE;
+			dbg->state = STATE_EXECUTE;
 		}
 		break;
 	case COMMAND_PRINT:
-		print_addr(ctx->memory, ctx->command.addr);
-		break;
-	case COMMAND_LOOP:
+		print_addr(dbg->memory, dbg->command.addr);
 		break;
 	case COMMAND_RANGE:
 		break;
-	case COMMAND_GOTO:
-		break;
 	case COMMAND_MEM:
-		dump_memory(ctx->memory);
+		dump_memory(dbg->memory);
 		break;
 	case COMMAND_IO:
-		print_hardware_registers(ctx->memory);
+		print_hardware_registers(dbg->memory);
 		break;
 	case COMMAND_SET:
-		write_u8(ctx->memory, ctx->command.addr, ctx->command.value);
+		write_u8(dbg->memory, dbg->command.addr, dbg->command.value);
 		break;
 	case COMMAND_RESET:
-		sm83_cpu_reset(ctx->cpu);
+		sm83_cpu_reset(dbg->cpu);
 		break;
-	case COMMAND_REGISTERS:
-		sm83_cpu_debug(ctx->cpu);
+	case COMMAND_INFO:
+		sm83_info(dbg->cpu);
+		ppu_info(dbg->gpu);
 		break;
-	case COMMAND_FRAME:
+	case COMMAND_FRAME: {
+		if (dbg->state == STATE_EXECUTE) {
+			dbg->until -= dbg->cpu->multiplier;
+			if (dbg->until == 0) {
+				dbg->state = STATE_WAIT;
+			}
+		} else {
+			dbg->state = STATE_EXECUTE;
+			dbg->until = GB_VIDEO_FRAME_PERIOD;
+		}
 		break;
+	}
 	case COMMAND_QUIT:
-		ctx->state = STATE_QUIT;
+		dbg->state = STATE_QUIT;
 		break;
 	case COMMAND_HELP:
 		print_help();
 		break;
 	case COMMAND_WATCH:
-		if (register_watcher(ctx, ctx->command.addr))
+		if (register_watcher(dbg, dbg->command.addr))
 			printf("Too many watchers\n");
 		break;
 	case COMMAND_LIST:
 		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-			if (ctx->breakpoints[i])
+			if (dbg->breakpoints[i])
 				printf("Breakpoint $%04X\n",
-				       ctx->breakpoints[i]);
+				       dbg->breakpoints[i]);
 		}
 		for (int i = 0; i < MAX_WATCHERS; i++) {
-			if (ctx->watched_addresses[i]) {
+			if (dbg->watched_addresses[i]) {
 				printf("Watch %04X\n",
-				       ctx->watched_addresses[i]);
+				       dbg->watched_addresses[i]);
 			}
 		}
 		break;
 	case COMMAND_SAVE:
 		printf("Dumping memory to dump.sav\n");
-		dump_memory_to_file(ctx->memory, "dump.sav");
+		dump_memory_to_file(dbg->memory, "dump.sav");
 		break;
 	case COMMAND_CLEAR:
 		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-			ctx->breakpoints[i] = 0;
+			dbg->breakpoints[i] = 0;
 		}
 		for (int i = 0; i < MAX_WATCHERS; i++) {
-			ctx->watched_addresses[i] = 0;
-			ctx->watched_values[i] = 0;
+			dbg->watched_addresses[i] = 0;
+			dbg->watched_values[i] = 0;
 		}
 		break;
 	}
 	return 0;
 }
 
-int debugger_new(struct debugger_context *ctx)
+int debugger_new(struct debugger *dbg)
 {
-	ctx->state = STATE_WAIT;
+	dbg->state = STATE_WAIT;
 	for (int i = 0; i < MAX_BREAKPOINTS; i++)
-		ctx->breakpoints[i] = 0;
+		dbg->breakpoints[i] = 0;
 	for (int i = 0; i < MAX_WATCHERS; i++) {
-		ctx->watched_addresses[i] = 0;
-		ctx->watched_values[i] = 0;
+		dbg->watched_addresses[i] = 0;
+		dbg->watched_values[i] = 0;
 	}
 	return 0;
 }
 
-int debugger_step(struct debugger_context *ctx)
+int debugger_step(struct debugger *dbg)
 {
-	while (ctx->state == STATE_WAIT) {
-		if (debugger_prompt(ctx))
+	struct cmd_struct cmd = commands[dbg->command.type];
+	while (dbg->state == STATE_WAIT) {
+		if (debugger_prompt(dbg))
 			return -1;
-		debugger_command_handle(ctx);
-		printf("Command: %d State: %d\n", ctx->command.type,
-		       ctx->state);
+		debugger_command_handle(dbg);
+		printf("Command: %s State: %d\n", cmd.name, dbg->state);
 	}
-	debugger_command_handle(ctx);
-	ctx->index = ctx->cpu->index;
-	if (ctx->state == STATE_EXECUTE)
-		sm83_cpu_step(ctx->cpu);
+	debugger_command_handle(dbg);
+	dbg->index = dbg->cpu->index;
+	if (dbg->state == STATE_EXECUTE)
+		sm83_cpu_step(dbg->cpu);
 	return 0;
 }

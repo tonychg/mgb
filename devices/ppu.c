@@ -297,3 +297,10 @@ void ppu_tick(struct ppu *gpu, struct sm83_core *cpu)
 		increment_scanline(gpu, cpu);
 	}
 }
+
+void ppu_info(struct ppu *gpu)
+{
+	u8 *mem = gpu->memory->array->bytes;
+	printf(" LY  = %2d | LYC = %2d | ", gpu->ly, mem[LYC_LY]);
+	printf("MODE = %2d | LX  = %2d\n", gpu->mode, gpu->x);
+}

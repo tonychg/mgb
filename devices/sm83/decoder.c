@@ -313,10 +313,9 @@ static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
 	return buffer;
 }
 
-void sm83_cpu_debug(struct sm83_core *cpu)
+void sm83_info(struct sm83_core *cpu)
 {
-	char *decoded = NULL;
-
+	char *disasm = NULL;
 	printf("  A = $%1$02X [%1$08b] |  F = $%2$02X [%2$08b]\n", cpu->a,
 	       cpu->f);
 	printf("  B = $%1$02X [%1$08b] |  C = $%2$02X [%2$08b]\n", cpu->b,
@@ -336,11 +335,9 @@ void sm83_cpu_debug(struct sm83_core *cpu)
 	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
 	       cpu->memory->load8(cpu, DIV), cpu->memory->load8(cpu, TIMA),
 	       cpu->cycles);
-	printf(" LY  = %3d | LYC  = %3d\n", cpu->memory->load8(cpu, LY_LCD),
-	       cpu->memory->load8(cpu, LYC_LY));
-	decoded = sm83_disassemble(cpu);
-	printf("%s\n", decoded);
-	zfree(decoded);
+	disasm = sm83_disassemble(cpu);
+	printf("  %s\n", disasm);
+	zfree(disasm);
 }
 
 void sm83_memory_io_debug(struct sm83_core *cpu)

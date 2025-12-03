@@ -3,7 +3,7 @@
 #include "emu/sm83.h"
 #include "platform/mm.h"
 #include "platform/render.h"
-#include "debugger.h"
+#include "platform/debugger.h"
 #include <pthread.h>
 #include <raylib.h>
 #include <stdlib.h>
@@ -124,7 +124,7 @@ static void throttling(struct timeval *start_time, int milliseconds)
 	}
 }
 
-static void bind_debugger(struct debugger_context *dbg, struct gb_context *ctx)
+static void bind_debugger(struct debugger *dbg, struct gb_context *ctx)
 {
 	debugger_new(dbg);
 	dbg->gb = ctx->gb;
@@ -135,7 +135,7 @@ static void bind_debugger(struct debugger_context *dbg, struct gb_context *ctx)
 
 static void run_cpu_debugger(struct gb_context *ctx)
 {
-	struct debugger_context dbg;
+	struct debugger dbg;
 	struct timeval start_time;
 	int cycles = 0;
 	bind_debugger(&dbg, ctx);

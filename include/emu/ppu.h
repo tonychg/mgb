@@ -131,3 +131,4 @@ void ppu_reset(struct ppu *gpu);
 void draw_scanline(struct ppu *gpu);
 void ppu_draw(struct ppu *gpu);
 void ppu_tick(struct ppu *gpu, struct sm83_core *cpu);
+void ppu_info(struct ppu *gpu);
