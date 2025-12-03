@@ -1,9 +1,0 @@
-[submodule "sm83"]
-	path = misc/sm83
-	url = https://github.com/SingleStepTests/sm83
-[submodule "gb-test-roms"]
-	path = misc/gb-test-roms
-	url = https://github.com/retrio/gb-test-roms.git
-[submodule "misc/gb-tetris"]
-	path = misc/gb-tetris
-	url = https://github.com/dctucker/gb-tetris.git
