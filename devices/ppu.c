@@ -134,7 +134,8 @@ static void push_sprite(struct ppu *gpu, u8 *vram, int tile_index, u8 x, u8 y,
 			u8 pos_x = x + i;
 			u8 pos_y = y + j;
 			if (color != 0)
-				gpu->frame_buffer[pos_y * GB_WIDTH + pos_x] = color;
+				gpu->frame_buffer[pos_y * GB_WIDTH + pos_x] =
+					color;
 			i++;
 		}
 		j++;
@@ -175,7 +176,6 @@ static void clear_frame(struct ppu *gpu)
 static void draw_oam(struct ppu *gpu)
 {
 	u8 obj_mode = LCD_CONTROL(LCD_OBJ_SIZE);
-
 	for (int i = 0xFE00; i <= 0xFE9F; i = i + 4) {
 		u8 oam_y = gpu->memory->array->bytes[i] - 8;
 		u8 oam_x = gpu->memory->array->bytes[i + 1] - 8;
@@ -187,7 +187,7 @@ static void draw_oam(struct ppu *gpu)
 		if (oam_y == 0 || oam_y == 160)
 			continue;
 		push_sprite(gpu, gpu->memory->array->bytes + 0x8000,
-			    oam_tile_index, oam_x, oam_y, obj_mode);
+			    oam_tile_index, oam_x, oam_y - 8, obj_mode);
 	}
 }
 
