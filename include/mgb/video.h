@@ -1,5 +1,4 @@
 #include "mgb/sm83.h"
-#include "mgb/memory.h"
 #include "platform/types.h"
 
 enum {

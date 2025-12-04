@@ -306,6 +306,22 @@ void sm83_resolve_operand(struct sm83_core *cpu, const char *op, u16 indice,
 	}
 }
 
+// clang-format off
+const char *sm83_state_names[] = {
+	[SM83_CORE_FETCH]        = "FETCH",
+	[SM83_CORE_PC]           = "PC",
+	[SM83_CORE_READ_0]       = "READ_0",
+	[SM83_CORE_READ_1]       = "READ_1",
+	[SM83_CORE_WRITE_0]      = "WRITE_0",
+	[SM83_CORE_WRITE_1]      = "WRITE_1",
+	[SM83_CORE_IDLE_0]       = "IDLE_0",
+	[SM83_CORE_IDLE_1]       = "IDLE_1",
+	[SM83_CORE_HALT]         = "HALT",
+	[SM83_CORE_HALT_BUG]     = "HALT_BUG",
+	[SM83_CORE_DMA_TRANSFER] = "DMA_TRANSFER",
+};
+// clang-format on
+
 void sm83_info(struct sm83_core *cpu)
 {
 	char disasm[256];
@@ -328,6 +344,7 @@ void sm83_info(struct sm83_core *cpu)
 	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
 	       cpu->memory.load8(cpu, DIV), cpu->memory.load8(cpu, TIMA),
 	       cpu->cycles);
+	printf(" State = %s\n", sm83_state_names[cpu->state]);
 	sm83_disassemble(cpu, disasm);
 	printf("  %s\n", disasm);
 }
