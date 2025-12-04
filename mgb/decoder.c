@@ -1,6 +1,5 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
-#include "platform/mm.h"
 #include "platform/types.h"
 #include <stdio.h>
 #include <string.h>
@@ -288,14 +287,9 @@ struct sm83_instruction sm83_decode(struct sm83_core *cpu)
 	return instruction;
 }
 
-static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
-				  u16 indice)
+void sm83_resolve_operand(struct sm83_core *cpu, const char *op, u16 indice,
+			  char *buffer)
 {
-	char *buffer;
-
-	buffer = (char *)calloc(16, sizeof(char));
-	if (!buffer)
-		return NULL;
 	if (!strcmp(op, "a16") || !strcmp(op, "n16")) {
 		u16 segment = unsigned_16(cpu->memory.load8(cpu, indice + 1),
 					  cpu->memory.load8(cpu, indice + 2));
@@ -310,12 +304,11 @@ static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
 	} else {
 		sprintf(buffer, "%s", op);
 	}
-	return buffer;
 }
 
 void sm83_info(struct sm83_core *cpu)
 {
-	char *disasm = NULL;
+	char disasm[256];
 	printf("  A = $%1$02X [%1$08b] |  F = $%2$02X [%2$08b]\n", cpu->a,
 	       cpu->f);
 	printf("  B = $%1$02X [%1$08b] |  C = $%2$02X [%2$08b]\n", cpu->b,
@@ -335,9 +328,8 @@ void sm83_info(struct sm83_core *cpu)
 	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
 	       cpu->memory.load8(cpu, DIV), cpu->memory.load8(cpu, TIMA),
 	       cpu->cycles);
-	disasm = sm83_disassemble(cpu);
+	sm83_disassemble(cpu, disasm);
 	printf("  %s\n", disasm);
-	zfree(disasm);
 }
 
 void sm83_memory_io_debug(struct sm83_core *cpu)
@@ -363,37 +355,27 @@ void sm83_memory_debug(struct sm83_core *cpu, u16 start, u16 end)
 	printf("\n");
 }
 
-char *sm83_disassemble(struct sm83_core *cpu)
+void sm83_disassemble(struct sm83_core *cpu, char *buffer)
 {
-	char *buffer;
+	char op1[256];
+	char op2[256];
+	struct sm83_instruction curr = cpu->instruction;
 
-	buffer = (char *)calloc(256, sizeof(char));
-	if (!buffer)
-		return NULL;
 	sprintf(buffer + strlen(buffer), "00:%04X", cpu->index);
-	for (int i = 0; i < cpu->instruction.length; i++) {
+	for (int i = 0; i < curr.length; i++) {
 		sprintf(buffer + strlen(buffer), " %02X",
 			cpu->memory.load8(cpu, cpu->index + i));
 	}
 	sprintf(buffer + strlen(buffer), " -> ");
-	if (cpu->instruction.op1 && cpu->instruction.op2) {
-		char *op1 = sm83_resolve_operand(cpu, cpu->instruction.op1,
-						 cpu->index);
-		char *op2 = sm83_resolve_operand(cpu, cpu->instruction.op2,
-						 cpu->index);
-		sprintf(buffer + strlen(buffer), "%s %s %s",
-			cpu->instruction.mnemonic, op1, op2);
-		zfree(op1);
-		zfree(op2);
-	} else if (cpu->instruction.op1) {
-		char *op1 = sm83_resolve_operand(cpu, cpu->instruction.op1,
-						 cpu->index);
-		sprintf(buffer + strlen(buffer), "%s %s",
-			cpu->instruction.mnemonic, op1);
-		zfree(op1);
+	if (curr.op1 && curr.op2) {
+		sm83_resolve_operand(cpu, curr.op1, cpu->index, op1);
+		sm83_resolve_operand(cpu, curr.op2, cpu->index, op2);
+		sprintf(buffer + strlen(buffer), "%s %s %s", curr.mnemonic, op1,
+			op2);
+	} else if (curr.op1) {
+		sm83_resolve_operand(cpu, curr.op1, cpu->index, op1);
+		sprintf(buffer + strlen(buffer), "%s %s", curr.mnemonic, op1);
 	} else {
-		sprintf(buffer + strlen(buffer), "%s",
-			cpu->instruction.mnemonic);
+		sprintf(buffer + strlen(buffer), "%s", curr.mnemonic);
 	}
-	return buffer;
 }

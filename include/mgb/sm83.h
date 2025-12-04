@@ -180,7 +180,7 @@ void sm83_isa_execute(struct sm83_core *cpu);
 
 /* decoder.c */
 struct sm83_instruction sm83_decode(struct sm83_core *cpu);
-char *sm83_disassemble(struct sm83_core *cpu);
+void sm83_disassemble(struct sm83_core *cpu, char *buffer);
 void sm83_info(struct sm83_core *cpu);
 
 /* interrupt.c */

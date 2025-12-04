@@ -21,7 +21,8 @@ void debug_interrupt(struct sm83_core *cpu, struct interrupt_struct interrupt,
 		     u8 if_reg, u8 bitmask)
 {
 	if (interrupt.number != IRQ_VBLANK) {
-		const char *disasm = sm83_disassemble(cpu);
+		char disasm[256];
+		sm83_disassemble(cpu, disasm);
 		printf("[%lu] [%s] Acknowledge %s interrupt irqs: %08b bitmask: %08b\n",
 		       cpu->cycles, disasm, interrupt.description, if_reg,
 		       bitmask);
