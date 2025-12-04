@@ -249,14 +249,15 @@ static int debugger_command_handle(struct debugger *dbg)
 		print_hardware_registers(dbg->gb->memory);
 		break;
 	case COMMAND_SET:
-		write_u8(dbg->gb->memory, dbg->command.addr, dbg->command.value);
+		write_u8(dbg->gb->memory, dbg->command.addr,
+			 dbg->command.value);
 		break;
 	case COMMAND_RESET:
 		sm83_cpu_reset(&dbg->gb->cpu);
 		break;
 	case COMMAND_INFO:
 		sm83_info(&dbg->gb->cpu);
-		ppu_info(dbg->gb->gpu);
+		ppu_info(&dbg->gb->gpu);
 		break;
 	case COMMAND_FRAME: {
 		if (dbg->state == STATE_EXECUTE) {

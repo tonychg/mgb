@@ -37,7 +37,7 @@ struct gb_emulator {
 	u8 keys;
 
 	struct sm83_core cpu;
-	struct ppu *gpu;
+	struct ppu gpu;
 	struct shared *memory;
 };
 

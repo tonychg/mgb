@@ -122,11 +122,10 @@ struct ppu {
 	u8 scale;
 	u64 frames;
 	u64 dots;
-	struct render *renderer;
+	struct render renderer;
 };
 
-struct ppu *ppu_init(void);
-void ppu_destroy(struct ppu *gpu);
+void ppu_init(struct ppu *gpu);
 void ppu_reset(struct ppu *gpu);
 void draw_scanline(struct ppu *gpu);
 void ppu_draw(struct ppu *gpu);

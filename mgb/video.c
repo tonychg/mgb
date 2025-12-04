@@ -1,34 +1,11 @@
 #include "mgb/mgb.h"
 #include "platform/mm.h"
-#include <stdlib.h>
 
-static struct ppu *allocate_ppu()
+void ppu_init(struct ppu *gpu)
 {
-	struct ppu *gpu;
-	gpu = (struct ppu *)malloc(sizeof(struct ppu));
-	if (!gpu)
-		return NULL;
-	gpu->renderer = (struct render *)malloc(sizeof(struct render));
-	if (!gpu->renderer)
-		return NULL;
-	return gpu;
-}
-
-struct ppu *ppu_init(void)
-{
-	struct ppu *gpu = allocate_ppu();
-	if (!gpu)
-		return NULL;
 	gpu->frames = 0;
 	gpu->dots = 0;
 	ppu_reset(gpu);
-	return gpu;
-}
-
-void ppu_destroy(struct ppu *gpu)
-{
-	zfree(gpu->renderer);
-	zfree(gpu);
 }
 
 void ppu_reset(struct ppu *gpu)
@@ -43,8 +20,7 @@ struct addressing {
 	u16 index;
 };
 
-static struct addressing determine_tiles_addressing(struct ppu *gpu,
-						    u8 tile_index)
+static struct addressing get_addressing(struct ppu *gpu, u8 tile_index)
 {
 	struct addressing method = { .offset = 0x8000, .index = tile_index };
 	// Simulate signed indexing
@@ -103,8 +79,8 @@ static void draw_tile(struct ppu *gpu, u8 *vram, int tile_index, int x, int y)
 		u8 left = vram[indice + b + 1];
 		for (int bit = 7; bit >= 0; bit--) {
 			u8 color = encode_pixel_color(right, left, bit);
-			gpu->renderer->draw(gpu, x * 8 + i, y * 8 + j,
-					    DMG_PALETTE[color]);
+			gpu->renderer.draw(gpu, x * 8 + i, y * 8 + j,
+					   DMG_PALETTE[color]);
 			i++;
 		}
 		j++;
@@ -148,7 +124,7 @@ static void push_win_bg(struct ppu *gpu, u16 offset, int x, int y)
 		for (u8 i = 0; i < GB_WIDTH / 8; i++) {
 			int tile_index = tilemap[j * 32 + i];
 			struct addressing method =
-				determine_tiles_addressing(gpu, tile_index);
+				get_addressing(gpu, tile_index);
 			push_sprite(gpu, tiledata + method.offset, method.index,
 				    i * 8 + (x / 8), j * 8 + (y / 8), 0);
 		}
@@ -201,8 +177,8 @@ static void draw_viewport(struct ppu *gpu, int x, int y)
 	for (int j = 0; j < GB_HEIGHT; j++) {
 		for (int i = 0; i < GB_WIDTH; i++) {
 			u8 color = gpu->frame_buffer[j * GB_WIDTH + i];
-			gpu->renderer->draw(gpu, x + i, y + j,
-					    DMG_PALETTE[color]);
+			gpu->renderer.draw(gpu, x + i, y + j,
+					   DMG_PALETTE[color]);
 		}
 	}
 }
@@ -238,7 +214,7 @@ static void draw_tiles(struct ppu *gpu, u16 offset, int x, int y)
 		for (u8 i = 0; i < 32; i++) {
 			int tile_index = tilemap[j * 32 + i];
 			struct addressing method =
-				determine_tiles_addressing(gpu, tile_index);
+				get_addressing(gpu, tile_index);
 			draw_tile(gpu, tiledata + method.offset, method.index,
 				  i + (x / 8), j + (y / 8));
 		}

@@ -69,15 +69,11 @@ static int init_devices(struct gb_emulator *gb)
 	gb->cpu.parent = gb;
 	gb->cpu.memory.load8 = gb_load;
 	gb->cpu.memory.write8 = gb_write;
-	gb->gpu = ppu_init();
-	gb->gpu->memory = gb->memory;
-	gb->gpu->width = 256 + GB_WIDTH;
-	gb->gpu->height = 512;
-	if (!gb->gpu)
-		goto free_memory;
+	ppu_init(&gb->gpu);
+	gb->gpu.memory = gb->memory;
+	gb->gpu.width = 256 + GB_WIDTH;
+	gb->gpu.height = 512;
 	return 0;
-free_memory:
-	destroy_memory(gb->memory);
 err:
 	zfree(gb);
 	return -1;
@@ -96,7 +92,6 @@ static struct gb_emulator *init_gb_emulator()
 
 static void destroy_gb_emulator(struct gb_emulator *gb)
 {
-	ppu_destroy(gb->gpu);
 	destroy_memory(gb->memory);
 	zfree(gb);
 }
@@ -141,7 +136,7 @@ static void run_cpu_debugger(struct gb_context *ctx)
 		}
 		if (debugger_step(&dbg))
 			break;
-		ppu_tick(ctx->gb->gpu, &ctx->gb->cpu);
+		ppu_tick(&ctx->gb->gpu, &ctx->gb->cpu);
 		if (!ctx->gb->cpu.halted && GB_FLAG(GB_THROTTLING)) {
 			cycles++;
 			// Throttling
@@ -165,7 +160,7 @@ static void *run_emulator_cpu_thread(void *arg)
 			if (sigint_catcher)
 				GB_FLAG_DISABLE(GB_ON);
 			sm83_cpu_step(&ctx->gb->cpu);
-			ppu_tick(ctx->gb->gpu, &ctx->gb->cpu);
+			ppu_tick(&ctx->gb->gpu, &ctx->gb->cpu);
 		}
 	}
 	pthread_exit(NULL);
@@ -176,23 +171,29 @@ static void draw(struct ppu *gpu, int x, int y, int color)
 	render_pixel(x, y, color, gpu->scale);
 }
 
+static void draw_debug_gui(struct ppu *gpu, struct gb_context *ctx)
+{
+	render_debug("Dots: %d", gpu->dots, 20, gpu->scale * 384, 20);
+	render_debug("Frames: %d", gpu->frames, 20, gpu->scale * 404, 20);
+	render_debug("LY: %d", gpu->ly, 20, gpu->scale * 424, 20);
+	render_debug("Cycles: %d", ctx->gb->cpu.cycles, 20, ctx->scale * 444,
+		     20);
+}
+
 static void *run_emulator_gpu_thread(void *arg)
 {
 	struct gb_context *ctx = arg;
-	struct ppu *gpu = ctx->gb->gpu;
-	render_init(gpu->width, gpu->height, gpu->scale);
-	gpu->renderer->draw = draw;
+
+	ctx->gb->gpu.renderer.draw = draw;
+
+	render_init(ctx->gb->gpu.width, ctx->gb->gpu.height,
+		    ctx->gb->gpu.scale);
 	while (render_is_running() && GB_FLAG(GB_ON)) {
 		render_handle_inputs(&ctx->gb->keys);
 		render_begin();
 		ClearBackground(BLACK);
-		ppu_draw(ctx->gb->gpu);
-		render_debug("Dots: %d", gpu->dots, 20, ctx->scale * 384, 20);
-		render_debug("Frames: %d", gpu->frames, 20, ctx->scale * 404,
-			     20);
-		render_debug("LY: %d", gpu->ly, 20, ctx->scale * 424, 20);
-		render_debug("Cycles: %d", ctx->gb->cpu.cycles, 20,
-			     ctx->scale * 444, 20);
+		ppu_draw(&ctx->gb->gpu);
+		draw_debug_gui(&ctx->gb->gpu, ctx);
 		render_end();
 	}
 	render_release();
@@ -215,9 +216,9 @@ int gb_start_emulator(struct gb_context *ctx)
 		gb_log_error(ctx, "failed to load ROM into emulator");
 	pthread_create(&thread_cpu, NULL, run_emulator_cpu_thread, ctx);
 	if (GB_FLAG(GB_VIDEO)) {
-		ctx->gb->gpu->scale = ctx->scale;
-		printf("Resolution: %dx%d Scale: %d\n", ctx->gb->gpu->width,
-		       ctx->gb->gpu->height, ctx->gb->gpu->scale);
+		ctx->gb->gpu.scale = ctx->scale;
+		printf("Resolution: %dx%d Scale: %d\n", ctx->gb->gpu.width,
+		       ctx->gb->gpu.height, ctx->gb->gpu.scale);
 		pthread_create(&thread_gpu, NULL, run_emulator_gpu_thread, ctx);
 		pthread_join(thread_gpu, NULL);
 	}
