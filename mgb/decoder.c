@@ -281,7 +281,7 @@ struct sm83_instruction sm83_decode(struct sm83_core *cpu)
 
 	if (cpu->bus == 0xCB) {
 		instruction = cpu_decode_prefixed(
-			cpu->memory->load8(cpu, cpu->pc + 1));
+			cpu->memory.load8(cpu, cpu->pc + 1));
 	} else {
 		instruction = cpu_decode_non_prefixed(cpu->bus);
 	}
@@ -297,14 +297,14 @@ static char *sm83_resolve_operand(struct sm83_core *cpu, const char *op,
 	if (!buffer)
 		return NULL;
 	if (!strcmp(op, "a16") || !strcmp(op, "n16")) {
-		u16 segment = unsigned_16(cpu->memory->load8(cpu, indice + 1),
-					  cpu->memory->load8(cpu, indice + 2));
+		u16 segment = unsigned_16(cpu->memory.load8(cpu, indice + 1),
+					  cpu->memory.load8(cpu, indice + 2));
 		sprintf(buffer, "%s[$%04X]", op, segment);
 	} else if (!strcmp(op, "a8") || !strcmp(op, "n8")) {
 		sprintf(buffer, "%s[$%02X]", op,
-			cpu->memory->load8(cpu, indice + 1));
+			cpu->memory.load8(cpu, indice + 1));
 	} else if (!strcmp(op, "e8")) {
-		u8 byte = cpu->memory->load8(cpu, indice + 1);
+		u8 byte = cpu->memory.load8(cpu, indice + 1);
 		s8 offset = (s8)byte;
 		sprintf(buffer, "%s[$%02X] [%d]", op, byte, offset);
 	} else {
@@ -333,7 +333,7 @@ void sm83_info(struct sm83_core *cpu)
 	printf(" IME = %3d | HALT = %3d | DMA = %3d\n", cpu->ime, cpu->halted,
 	       cpu->dma.scheduled);
 	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
-	       cpu->memory->load8(cpu, DIV), cpu->memory->load8(cpu, TIMA),
+	       cpu->memory.load8(cpu, DIV), cpu->memory.load8(cpu, TIMA),
 	       cpu->cycles);
 	disasm = sm83_disassemble(cpu);
 	printf("  %s\n", disasm);
@@ -343,7 +343,7 @@ void sm83_info(struct sm83_core *cpu)
 void sm83_memory_io_debug(struct sm83_core *cpu)
 {
 	for (int i = 0xFF00; i <= 0xFFFF; i++) {
-		u8 byte = cpu->memory->load8(cpu, i);
+		u8 byte = cpu->memory.load8(cpu, i);
 		printf("%04X : %02X [%08b] %d\n", i, byte, byte, byte);
 	}
 }
@@ -351,8 +351,8 @@ void sm83_memory_io_debug(struct sm83_core *cpu)
 void sm83_memory_debug(struct sm83_core *cpu, u16 start, u16 end)
 {
 	for (int i = start; i <= end; i++) {
-		if (cpu->memory->load8(cpu, start + i) != 0)
-			printf("%02X", cpu->memory->load8(cpu, start + i));
+		if (cpu->memory.load8(cpu, start + i) != 0)
+			printf("%02X", cpu->memory.load8(cpu, start + i));
 		else
 			printf("..");
 		if ((i + 1) % 32 == 0 && i > 0)
@@ -373,7 +373,7 @@ char *sm83_disassemble(struct sm83_core *cpu)
 	sprintf(buffer + strlen(buffer), "00:%04X", cpu->index);
 	for (int i = 0; i < cpu->instruction.length; i++) {
 		sprintf(buffer + strlen(buffer), " %02X",
-			cpu->memory->load8(cpu, cpu->index + i));
+			cpu->memory.load8(cpu, cpu->index + i));
 	}
 	sprintf(buffer + strlen(buffer), " -> ");
 	if (cpu->instruction.op1 && cpu->instruction.op2) {

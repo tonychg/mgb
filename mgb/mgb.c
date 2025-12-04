@@ -65,21 +65,17 @@ static int init_devices(struct gb_emulator *gb)
 	gb->memory = allocate_memory();
 	if (!gb->memory)
 		goto err;
-	gb->cpu = sm83_init();
-	if (!gb->cpu)
-		goto free_memory;
-	gb->cpu->parent = gb;
-	gb->cpu->memory->load8 = gb_load;
-	gb->cpu->memory->write8 = gb_write;
+	sm83_cpu_reset(&gb->cpu);
+	gb->cpu.parent = gb;
+	gb->cpu.memory.load8 = gb_load;
+	gb->cpu.memory.write8 = gb_write;
 	gb->gpu = ppu_init();
 	gb->gpu->memory = gb->memory;
 	gb->gpu->width = 256 + GB_WIDTH;
 	gb->gpu->height = 512;
 	if (!gb->gpu)
-		goto free_cpu;
+		goto free_memory;
 	return 0;
-free_cpu:
-	sm83_destroy(gb->cpu);
 free_memory:
 	destroy_memory(gb->memory);
 err:
@@ -101,7 +97,6 @@ static struct gb_emulator *init_gb_emulator()
 static void destroy_gb_emulator(struct gb_emulator *gb)
 {
 	ppu_destroy(gb->gpu);
-	sm83_destroy(gb->cpu);
 	destroy_memory(gb->memory);
 	zfree(gb);
 }
@@ -127,9 +122,9 @@ static void bind_debugger(struct debugger *dbg, struct gb_context *ctx)
 {
 	debugger_new(dbg);
 	dbg->gb = ctx->gb;
-	dbg->cpu = ctx->gb->cpu;
-	dbg->gpu = ctx->gb->gpu;
-	dbg->memory = ctx->gb->memory;
+	dbg->gb->cpu = ctx->gb->cpu;
+	dbg->gb->gpu = ctx->gb->gpu;
+	dbg->gb->memory = ctx->gb->memory;
 }
 
 static void run_cpu_debugger(struct gb_context *ctx)
@@ -146,8 +141,8 @@ static void run_cpu_debugger(struct gb_context *ctx)
 		}
 		if (debugger_step(&dbg))
 			break;
-		ppu_tick(ctx->gb->gpu, ctx->gb->cpu);
-		if (!ctx->gb->cpu->halted && GB_FLAG(GB_THROTTLING)) {
+		ppu_tick(ctx->gb->gpu, &ctx->gb->cpu);
+		if (!ctx->gb->cpu.halted && GB_FLAG(GB_THROTTLING)) {
 			cycles++;
 			// Throttling
 			if (cycles >= 17476) {
@@ -169,8 +164,8 @@ static void *run_emulator_cpu_thread(void *arg)
 		while (GB_FLAG(GB_ON)) {
 			if (sigint_catcher)
 				GB_FLAG_DISABLE(GB_ON);
-			sm83_cpu_step(ctx->gb->cpu);
-			ppu_tick(ctx->gb->gpu, ctx->gb->cpu);
+			sm83_cpu_step(&ctx->gb->cpu);
+			ppu_tick(ctx->gb->gpu, &ctx->gb->cpu);
 		}
 	}
 	pthread_exit(NULL);
@@ -196,7 +191,7 @@ static void *run_emulator_gpu_thread(void *arg)
 		render_debug("Frames: %d", gpu->frames, 20, ctx->scale * 404,
 			     20);
 		render_debug("LY: %d", gpu->ly, 20, ctx->scale * 424, 20);
-		render_debug("Cycles: %d", ctx->gb->cpu->cycles, 20,
+		render_debug("Cycles: %d", ctx->gb->cpu.cycles, 20,
 			     ctx->scale * 444, 20);
 		render_end();
 	}

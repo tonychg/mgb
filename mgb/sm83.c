@@ -1,33 +1,13 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
 #include "mgb/timer.h"
-#include "platform/mm.h"
-#include <stdlib.h>
-
-static struct sm83_core *sm83_cpu_alloc(void)
-{
-	struct sm83_core *cpu;
-	cpu = (struct sm83_core *)malloc(sizeof(struct sm83_core));
-	if (!cpu)
-		goto exit;
-	cpu->memory = (struct sm83_memory *)malloc(sizeof(struct sm83_memory));
-	if (!cpu->memory)
-		goto free_cpu;
-	cpu->parent = NULL;
-	return cpu;
-
-free_cpu:
-	zfree(cpu);
-exit:
-	return NULL;
-}
 
 static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
 {
 	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, msb(cpu->pc));
+	cpu->memory.write8(cpu, cpu->sp, msb(cpu->pc));
 	cpu->sp--;
-	cpu->memory->write8(cpu, cpu->sp, lsb(cpu->pc));
+	cpu->memory.write8(cpu, cpu->sp, lsb(cpu->pc));
 }
 
 void sm83_cpu_reset(struct sm83_core *cpu)
@@ -56,31 +36,19 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	cpu->multiplier = 1;
 
 	// Timers
+	cpu->timer_enabled = true;
 	cpu->internal_divider = 0;
 	cpu->internal_timer = 0;
-	cpu->dma.scheduled = false;
-}
-
-struct sm83_core *sm83_init(void)
-{
-	struct sm83_core *cpu = NULL;
-
-	cpu = sm83_cpu_alloc();
-	if (!cpu)
-		return NULL;
-	sm83_cpu_reset(cpu);
-	cpu->timer_enabled = true;
 	// DMA
 	cpu->dma.start_addr = 0;
 	cpu->dma.scheduled = false;
 	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
-	return cpu;
 }
 
 void sm83_halt(struct sm83_core *cpu)
 {
-	u8 reg_ie = cpu->memory->load8(cpu, IE);
-	u8 reg_if = cpu->memory->load8(cpu, IF);
+	u8 reg_ie = cpu->memory.load8(cpu, IE);
+	u8 reg_if = cpu->memory.load8(cpu, IF);
 	if (!(reg_ie & reg_if & 0x1F)) {
 		cpu->state = SM83_CORE_HALT;
 	} else if (!cpu->ime) {
@@ -112,9 +80,9 @@ void sm83_cpu_step(struct sm83_core *cpu)
 			//        cpu->cycles, cpu->index, cpu->dma.cursor,
 			//        cpu->dma.start_addr + cpu->dma.cursor,
 			//        cpu->dma.scheduled);
-			u8 value = cpu->memory->load8(
+			u8 value = cpu->memory.load8(
 				cpu, cpu->dma.start_addr + cpu->dma.cursor);
-			cpu->memory->write8(cpu, 0xFE00 + cpu->dma.cursor,
+			cpu->memory.write8(cpu, 0xFE00 + cpu->dma.cursor,
 					    value);
 			cpu->dma.cursor--;
 		} else {
@@ -132,25 +100,25 @@ void sm83_cpu_step(struct sm83_core *cpu)
 			sm83_stack_push_pc(cpu, &cpu->pc);
 			cpu->pc = irq_ack;
 		}
-		cpu->bus = cpu->memory->load8(cpu, cpu->pc);
+		cpu->bus = cpu->memory.load8(cpu, cpu->pc);
 		cpu->instruction = sm83_decode(cpu);
 		cpu->index = cpu->pc;
 		++cpu->pc;
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_PC:
-		cpu->bus = cpu->memory->load8(cpu, cpu->pc);
+		cpu->bus = cpu->memory.load8(cpu, cpu->pc);
 		++cpu->pc;
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_READ_0:
 	case SM83_CORE_READ_1:
-		cpu->bus = cpu->memory->load8(cpu, cpu->ptr);
+		cpu->bus = cpu->memory.load8(cpu, cpu->ptr);
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_WRITE_0:
 	case SM83_CORE_WRITE_1:
-		cpu->memory->write8(cpu, cpu->ptr, cpu->bus);
+		cpu->memory.write8(cpu, cpu->ptr, cpu->bus);
 		sm83_isa_execute(cpu);
 		break;
 	case SM83_CORE_IDLE_0:
@@ -168,10 +136,10 @@ void sm83_cpu_step(struct sm83_core *cpu)
 				cpu->pc = irq_ack;
 			}
 		} else {
-			u8 reg_ie = cpu->memory->load8(cpu, IE);
-			u8 reg_if = cpu->memory->load8(cpu, IF);
+			u8 reg_ie = cpu->memory.load8(cpu, IE);
+			u8 reg_if = cpu->memory.load8(cpu, IF);
 			if ((reg_ie & reg_if & 0x1F)) {
-				cpu->memory->write8(cpu, IF, 0);
+				cpu->memory.write8(cpu, IF, 0);
 				cpu->halted = false;
 				cpu->state = SM83_CORE_FETCH;
 				cpu->pc++;
@@ -183,13 +151,13 @@ void sm83_cpu_step(struct sm83_core *cpu)
 		u8 irq_regs;
 		u8 irq_reqs;
 		// printf("Halt bug is triggered\n");
-		irq_reqs = cpu->memory->load8(cpu, IF);
-		irq_regs = cpu->memory->load8(cpu, IE) & irq_reqs;
+		irq_reqs = cpu->memory.load8(cpu, IF);
+		irq_regs = cpu->memory.load8(cpu, IE) & irq_reqs;
 		if (irq_regs != 0) {
 			cpu->index = cpu->sp;
 			cpu->ime = false;
 			cpu->state = SM83_CORE_FETCH;
-			cpu->memory->write8(cpu, IF, 0);
+			cpu->memory.write8(cpu, IF, 0);
 		}
 		cpu->state = SM83_CORE_FETCH;
 		cpu->halted = false;
@@ -198,10 +166,4 @@ void sm83_cpu_step(struct sm83_core *cpu)
 	}
 	if (cpu->timer_enabled)
 		sm83_update_timer_registers(cpu);
-}
-
-void sm83_destroy(struct sm83_core *cpu)
-{
-	zfree(cpu->memory);
-	zfree(cpu);
 }

@@ -82,7 +82,7 @@ struct sm83_core {
 	u16 index;
 	u16 ptr;
 	u16 acc;
-	struct sm83_memory *memory;
+	struct sm83_memory memory;
 	struct sm83_instruction instruction;
 	struct dma_transfer dma;
 
@@ -167,7 +167,6 @@ static inline void cpu_flag_set_or_clear(struct sm83_core *cpu, int flag)
 }
 
 /* sm83.c */
-struct sm83_core *sm83_init(void);
 void sm83_cpu_step(struct sm83_core *cpu);
 void sm83_cpu_execute(struct sm83_core *cpu);
 void sm83_cpu_reset(struct sm83_core *cpu);
@@ -176,7 +175,7 @@ void sm83_destroy(struct sm83_core *cpu);
 void sm83_halt(struct sm83_core *cpu);
 void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr);
 
-/* isa.c */
+/* sm83_isa.c */
 void sm83_isa_execute(struct sm83_core *cpu);
 
 /* decoder.c */

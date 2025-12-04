@@ -80,9 +80,6 @@ struct debugger {
 	u32 until;
 
 	struct gb_emulator *gb;
-	struct shared *memory;
-	struct ppu *gpu;
-	struct sm83_core *cpu;
 
 	u16 breakpoints[MAX_BREAKPOINTS];
 	u16 watched_addresses[MAX_WATCHERS];

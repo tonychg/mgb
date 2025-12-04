@@ -35,14 +35,14 @@ u8 sm83_irq_ack(struct sm83_core *cpu)
 
 	if (!cpu->ime)
 		return 0;
-	if_reg = cpu->memory->load8(cpu, IF);
-	irqs = cpu->memory->load8(cpu, IE) & if_reg;
+	if_reg = cpu->memory.load8(cpu, IF);
+	irqs = cpu->memory.load8(cpu, IE) & if_reg;
 	for (int i = 0; i < ARRAY_SIZE(interrupts); i++) {
 		struct interrupt_struct interrupt = interrupts[i];
 		u8 bitmask = 1 << interrupt.number;
 		if ((irqs & bitmask) != 0) {
 			if_reg &= ~bitmask;
-			cpu->memory->write8(cpu, IF, if_reg);
+			cpu->memory.write8(cpu, IF, if_reg);
 			return interrupt.vector;
 		}
 	}

@@ -64,7 +64,7 @@ static int parse_hex(struct debugger *dbg, char **buffer)
 
 static void move_to_wait(struct debugger *dbg)
 {
-	sm83_info(dbg->gb->cpu);
+	sm83_info(&dbg->gb->cpu);
 	dbg->state = STATE_WAIT;
 }
 
@@ -106,7 +106,7 @@ static int register_watcher(struct debugger *dbg, u16 addr)
 	for (int i = 0; i < MAX_WATCHERS; i++) {
 		if (!dbg->watched_addresses[i]) {
 			dbg->watched_addresses[i] = addr;
-			dbg->watched_values[i] = load_u8(dbg->memory, addr);
+			dbg->watched_values[i] = load_u8(dbg->gb->memory, addr);
 			printf("New watcher $%04X\n", addr);
 			return 0;
 		}
@@ -134,11 +134,11 @@ static void check_watchers(struct debugger *dbg)
 		if (dbg->watched_addresses[i]) {
 			u16 addr = dbg->watched_addresses[i];
 			u8 prev = dbg->watched_values[i];
-			u8 curr = load_u8(dbg->memory, addr);
+			u8 curr = load_u8(dbg->gb->memory, addr);
 			if (curr == prev)
 				continue;
 			printf("Hit watchpoint at %04X\n", addr);
-			printf(format, dbg->cpu->index, prev, curr);
+			printf(format, dbg->gb->cpu.index, prev, curr);
 			dbg->watched_values[i] = curr;
 			move_to_wait(dbg);
 			break;
@@ -207,7 +207,7 @@ static int debugger_command_handle(struct debugger *dbg)
 	switch (dbg->command.type) {
 	case COMMAND_NEXT:
 		if (dbg->state == STATE_EXECUTE &&
-		    dbg->cpu->index != dbg->index) {
+		    dbg->gb->cpu.index != dbg->index) {
 			move_to_wait(dbg);
 		} else {
 			dbg->state = STATE_EXECUTE;
@@ -238,29 +238,29 @@ static int debugger_command_handle(struct debugger *dbg)
 		}
 		break;
 	case COMMAND_PRINT:
-		print_addr(dbg->memory, dbg->command.addr);
+		print_addr(dbg->gb->memory, dbg->command.addr);
 		break;
 	case COMMAND_RANGE:
 		break;
 	case COMMAND_MEM:
-		dump_memory(dbg->memory);
+		dump_memory(dbg->gb->memory);
 		break;
 	case COMMAND_IO:
-		print_hardware_registers(dbg->memory);
+		print_hardware_registers(dbg->gb->memory);
 		break;
 	case COMMAND_SET:
-		write_u8(dbg->memory, dbg->command.addr, dbg->command.value);
+		write_u8(dbg->gb->memory, dbg->command.addr, dbg->command.value);
 		break;
 	case COMMAND_RESET:
-		sm83_cpu_reset(dbg->cpu);
+		sm83_cpu_reset(&dbg->gb->cpu);
 		break;
 	case COMMAND_INFO:
-		sm83_info(dbg->cpu);
-		ppu_info(dbg->gpu);
+		sm83_info(&dbg->gb->cpu);
+		ppu_info(dbg->gb->gpu);
 		break;
 	case COMMAND_FRAME: {
 		if (dbg->state == STATE_EXECUTE) {
-			dbg->until -= dbg->cpu->multiplier;
+			dbg->until -= dbg->gb->cpu.multiplier;
 			if (dbg->until == 0) {
 				dbg->state = STATE_WAIT;
 			}
@@ -295,7 +295,7 @@ static int debugger_command_handle(struct debugger *dbg)
 		break;
 	case COMMAND_SAVE:
 		printf("Dumping memory to dump.sav\n");
-		dump_memory_to_file(dbg->memory, "dump.sav");
+		dump_memory_to_file(dbg->gb->memory, "dump.sav");
 		break;
 	case COMMAND_CLEAR:
 		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
@@ -332,8 +332,8 @@ int debugger_step(struct debugger *dbg)
 		printf("Command: %s State: %d\n", cmd.name, dbg->state);
 	}
 	debugger_command_handle(dbg);
-	dbg->index = dbg->cpu->index;
+	dbg->index = dbg->gb->cpu.index;
 	if (dbg->state == STATE_EXECUTE)
-		sm83_cpu_step(dbg->cpu);
+		sm83_cpu_step(&dbg->gb->cpu);
 	return 0;
 }

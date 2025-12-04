@@ -1396,7 +1396,7 @@ static void sm83_isa_execute_non_prefixed(struct sm83_core *cpu)
 		break;
 	case 0x10:
 		// STOP n8
-		cpu->memory->write8(cpu, DIV, 0);
+		cpu->memory.write8(cpu, DIV, 0);
 		break;
 	case 0x11:
 		// LD DE,nn
