@@ -1,7 +1,6 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
 #include "mgb/timer.h"
-#include <stdio.h>
 
 static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
 {

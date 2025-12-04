@@ -85,6 +85,9 @@ struct debugger {
 	u16 watched_addresses[MAX_WATCHERS];
 	u16 watched_values[MAX_WATCHERS];
 
+	u8 break_counter;
+	u8 watch_counter;
+
 	enum debugger_state state;
 	struct debugger_command_context command;
 };

@@ -75,6 +75,7 @@ static int register_breakpoint(struct debugger *dbg, u16 addr)
 		if (dbg->breakpoints[i] == 0) {
 			printf("New breakpoint $%04X\n", addr);
 			dbg->breakpoints[i] = addr;
+			dbg->break_counter++;
 			return 0;
 		}
 	}
@@ -86,6 +87,7 @@ static int unregister_breakpoint(struct debugger *dbg, u16 addr)
 	for (int i = 0; i < MAX_BREAKPOINTS; i++) {
 		if (dbg->breakpoints[i] == addr) {
 			dbg->breakpoints[i] = 0;
+			dbg->break_counter--;
 			return 0;
 		}
 	}
@@ -109,6 +111,7 @@ static int register_watcher(struct debugger *dbg, u16 addr)
 			dbg->watched_addresses[i] = addr;
 			dbg->watched_values[i] = dbg->gb->memory.ram[addr];
 			printf("New watcher $%04X\n", addr);
+			dbg->watch_counter++;
 			return 0;
 		}
 	}
@@ -121,6 +124,7 @@ static int unregister_watcher(struct debugger *dbg, u16 addr)
 		if (dbg->watched_addresses[i] == addr) {
 			dbg->watched_addresses[i] = 0;
 			dbg->watched_values[i] = 0;
+			dbg->watch_counter--;
 			return 0;
 		}
 	}
@@ -131,7 +135,7 @@ static void check_watchers(struct debugger *dbg)
 {
 	const char *format =
 		"$%1$04X $%2$02X (0b%2$08b) -> $%03$2X (0b%3$08b)\n";
-	for (int i = 0; i < MAX_WATCHERS; i++) {
+	for (int i = 0; i < dbg->watch_counter; i++) {
 		if (dbg->watched_addresses[i]) {
 			u16 addr = dbg->watched_addresses[i];
 			u8 prev = dbg->watched_values[i];
@@ -190,6 +194,13 @@ static int command_parse(struct debugger *dbg, char *buffer)
 		break;
 	}
 	return 0;
+}
+
+void debugger_clear(struct debugger *dbg)
+{
+	memset(dbg->breakpoints, 0, sizeof(u16) * MAX_BREAKPOINTS);
+	memset(dbg->watched_addresses, 0, sizeof(u16) * MAX_WATCHERS);
+	memset(dbg->watched_values, 0, sizeof(u16) * MAX_WATCHERS);
 }
 
 static int debugger_prompt(struct debugger *dbg)
@@ -283,12 +294,12 @@ static int debugger_command_handle(struct debugger *dbg)
 			printf("Too many watchers\n");
 		break;
 	case COMMAND_LIST:
-		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
+		for (int i = 0; i < dbg->break_counter; i++) {
 			if (dbg->breakpoints[i])
 				printf("Breakpoint $%04X\n",
 				       dbg->breakpoints[i]);
 		}
-		for (int i = 0; i < MAX_WATCHERS; i++) {
+		for (int i = 0; i < dbg->watch_counter; i++) {
 			if (dbg->watched_addresses[i]) {
 				printf("Watch %04X\n",
 				       dbg->watched_addresses[i]);
@@ -300,13 +311,7 @@ static int debugger_command_handle(struct debugger *dbg)
 		dump_memory_to_file(&dbg->gb->memory, "dump.sav");
 		break;
 	case COMMAND_CLEAR:
-		for (int i = 0; i < MAX_BREAKPOINTS; i++) {
-			dbg->breakpoints[i] = 0;
-		}
-		for (int i = 0; i < MAX_WATCHERS; i++) {
-			dbg->watched_addresses[i] = 0;
-			dbg->watched_values[i] = 0;
-		}
+		debugger_clear(dbg);
 		break;
 	case COMMAND_HELP:
 		print_help();
@@ -318,12 +323,7 @@ static int debugger_command_handle(struct debugger *dbg)
 int debugger_new(struct debugger *dbg)
 {
 	dbg->state = STATE_WAIT;
-	for (int i = 0; i < MAX_BREAKPOINTS; i++)
-		dbg->breakpoints[i] = 0;
-	for (int i = 0; i < MAX_WATCHERS; i++) {
-		dbg->watched_addresses[i] = 0;
-		dbg->watched_values[i] = 0;
-	}
+	debugger_clear(dbg);
 	return 0;
 }
 
