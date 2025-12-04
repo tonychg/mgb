@@ -25,10 +25,10 @@ u8 read_keys(u8 keys, u8 joyp)
 u8 update_joypad(struct gb_emulator *gb)
 {
 	// https://gbdev.io/pandocs/Joypad_Input.html#ff00--p1joyp-joypad
-	u8 joypad = read_keys(gb->keys, gb->gpu.memory->array->bytes[P1_JOYP]);
-	gb->gpu.memory->array->bytes[P1_JOYP] = joypad;
-	if ((joypad & ~gb->gpu.memory->array->bytes[P1_JOYP] & 0xF) != 0) {
-		gb->gpu.memory->array->bytes[IF] |= (1 << IRQ_JOYPAD);
+	u8 joypad = read_keys(gb->keys, gb->memory.ram[P1_JOYP]);
+	gb->memory.ram[P1_JOYP] = joypad;
+	if ((joypad & ~gb->memory.ram[P1_JOYP] & 0xF) != 0) {
+		gb->memory.ram[IF] |= (1 << IRQ_JOYPAD);
 	}
-	return gb->gpu.memory->array->bytes[P1_JOYP];
+	return gb->memory.ram[P1_JOYP];
 }

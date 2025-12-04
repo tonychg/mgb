@@ -3,6 +3,7 @@
 #include "platform/types.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static void print_help()
 {
@@ -106,7 +107,7 @@ static int register_watcher(struct debugger *dbg, u16 addr)
 	for (int i = 0; i < MAX_WATCHERS; i++) {
 		if (!dbg->watched_addresses[i]) {
 			dbg->watched_addresses[i] = addr;
-			dbg->watched_values[i] = load_u8(dbg->gb->memory, addr);
+			dbg->watched_values[i] = dbg->gb->memory.ram[addr];
 			printf("New watcher $%04X\n", addr);
 			return 0;
 		}
@@ -134,7 +135,7 @@ static void check_watchers(struct debugger *dbg)
 		if (dbg->watched_addresses[i]) {
 			u16 addr = dbg->watched_addresses[i];
 			u8 prev = dbg->watched_values[i];
-			u8 curr = load_u8(dbg->gb->memory, addr);
+			u8 curr = dbg->gb->memory.ram[addr];
 			if (curr == prev)
 				continue;
 			printf("Hit watchpoint at %04X\n", addr);
@@ -238,19 +239,18 @@ static int debugger_command_handle(struct debugger *dbg)
 		}
 		break;
 	case COMMAND_PRINT:
-		print_addr(dbg->gb->memory, dbg->command.addr);
+		print_addr(&dbg->gb->memory, dbg->command.addr);
 		break;
 	case COMMAND_RANGE:
 		break;
 	case COMMAND_MEM:
-		dump_memory(dbg->gb->memory);
+		dump_memory(&dbg->gb->memory);
 		break;
 	case COMMAND_IO:
-		print_hardware_registers(dbg->gb->memory);
+		print_hardware_registers(&dbg->gb->memory);
 		break;
 	case COMMAND_SET:
-		write_u8(dbg->gb->memory, dbg->command.addr,
-			 dbg->command.value);
+		dbg->gb->memory.ram[dbg->command.addr] = dbg->command.value;
 		break;
 	case COMMAND_RESET:
 		sm83_cpu_reset(&dbg->gb->cpu);
@@ -296,7 +296,7 @@ static int debugger_command_handle(struct debugger *dbg)
 		break;
 	case COMMAND_SAVE:
 		printf("Dumping memory to dump.sav\n");
-		dump_memory_to_file(dbg->gb->memory, "dump.sav");
+		dump_memory_to_file(&dbg->gb->memory, "dump.sav");
 		break;
 	case COMMAND_CLEAR:
 		for (int i = 0; i < MAX_BREAKPOINTS; i++) {

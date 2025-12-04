@@ -38,7 +38,7 @@ struct gb_emulator {
 
 	struct sm83_core cpu;
 	struct ppu gpu;
-	struct shared *memory;
+	struct memory memory;
 };
 
 struct gb_context {

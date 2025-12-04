@@ -4,67 +4,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void memory_reset(struct shared *memory)
+void memory_reset(struct memory *mem)
 {
 	for (int i = 0; i <= 0xFFFF; i++) {
 		if ((i >= 0xC000) && (i < 0xE000)) {
 			if ((i & 0x8) ^ ((i & 0x800) >> 8)) {
-				write_u8(memory, i, 0x0f);
+				mem->ram[i] = 0x0f;
 			} else {
-				write_u8(memory, i, 0xff);
+				mem->ram[i] = 0xff;
 			}
 		} else if (i == P1_JOYP) {
-			write_u8(memory, i, 0xff);
+			mem->ram[i] = 0xff;
 		} else if (i == IF) {
-			write_u8(memory, i, 0xe1);
+			mem->ram[i] = 0xe1;
 		} else {
-			write_u8(memory, i, 0x00);
+			mem->ram[i] = 0x00;
 		}
 	}
 }
 
-struct shared *allocate_memory()
-{
-	struct shared *memory = (struct shared *)malloc(sizeof(struct shared));
-	if (!memory)
-		return NULL;
-	if (!(memory->array = allocate_array(MEMORY_SIZE))) {
-		printf("failed to allocated new array\n");
-		goto err;
-	}
-	memory_reset(memory);
-	return memory;
-err:
-	zfree(memory);
-	return NULL;
-}
-
-void destroy_memory(struct shared *memory)
-{
-	destroy_array(memory->array);
-	zfree(memory);
-}
-
-u8 load_u8(struct shared *memory, u16 addr)
-{
-	if (!memory)
-		panic("try to access unalocated memory");
-	return get(memory->array, addr);
-}
-
-void write_u8(struct shared *memory, u16 addr, u8 value)
-{
-	if (!memory)
-		panic("try to access unalocated memory");
-	set(memory->array, addr, value);
-}
-
-int load_rom(struct shared *memory, char *path)
+int load_rom(struct memory *mem, char *path)
 {
 	FILE *file;
 	size_t size_in_bytes;
 	u8 buffer[MEMORY_SIZE] = { 0 };
-	if (!memory)
+	if (!mem)
 		return -1;
 	file = fopen(path, "r");
 	if (!file)
@@ -75,7 +39,7 @@ int load_rom(struct shared *memory, char *path)
 	if (fread(buffer, sizeof(u8), MEMORY_SIZE, file) == 0)
 		goto err;
 	for (int i = 0; i < MEMORY_SIZE; i++)
-		write_u8(memory, i, buffer[i]);
+		mem->ram[i] = buffer[i];
 	fclose(file);
 	return 0;
 err:
@@ -83,10 +47,10 @@ err:
 	return -1;
 }
 
-void dump_memory(struct shared *memory)
+void dump_memory(struct memory *mem)
 {
 	for (int i = 0; i <= MEMORY_SIZE; i++) {
-		u8 byte = load_u8(memory, i);
+		u8 byte = mem->ram[i];
 		if (byte)
 			printf("%02X", byte);
 		else
@@ -98,7 +62,7 @@ void dump_memory(struct shared *memory)
 	}
 }
 
-void dump_memory_to_file(struct shared *memory, char *filename)
+void dump_memory_to_file(struct memory *mem, char *filename)
 {
 	FILE *fptr;
 	fptr = fopen(filename, "w");
@@ -106,23 +70,23 @@ void dump_memory_to_file(struct shared *memory, char *filename)
 		printf("Failed to open %s\n", filename);
 		return;
 	}
-	if (!fwrite(memory->array->bytes, MEMORY_SIZE, sizeof(u8), fptr)) {
+	if (!fwrite(mem->ram, MEMORY_SIZE, sizeof(u8), fptr)) {
 		printf("Failed to write save\n");
 	}
 	fclose(fptr);
 }
 
-void print_addr(struct shared *memory, u16 addr)
+void print_addr(struct memory *mem, u16 addr)
 {
-	u8 byte = load_u8(memory, addr);
+	u8 byte = mem->ram[addr];
 	printf("$%02X [%08b] %d\n", byte, byte, byte);
 }
 
-void request_interrupt(struct shared *memory, enum sm83_irq number)
+void request_interrupt(struct memory *mem, enum sm83_irq number)
 {
-	u8 irq_reqs = load_u8(memory, IF);
+	u8 irq_reqs = mem->ram[IF];
 	irq_reqs |= 1 << number;
-	memory->array->bytes[IF] = irq_reqs;
+	mem->ram[IF] = irq_reqs;
 }
 
 struct hreg_print_helper {
@@ -154,15 +118,15 @@ static const struct hreg_print_helper helpers[] = {
 };
 // clang-format on
 
-void print_hardware_registers(struct shared *memory)
+void print_hardware_registers(struct memory *mem)
 {
 	const char *format = "%1$6s $%2$04X : $%3$02X (%3$08b)";
-	u8 *mem = memory->array->bytes;
 	for (int i = 0; i < ARRAY_SIZE(helpers); i++) {
 		if (i == 1 || (i > 2 && (i - 1) % 2 == 0))
 			printf("\n");
 		const struct hreg_print_helper helper = helpers[i];
-		printf(format, helper.label, helper.addr, mem[helper.addr]);
+		printf(format, helper.label, helper.addr,
+		       mem->ram[helper.addr]);
 	}
 	printf("\n");
 }

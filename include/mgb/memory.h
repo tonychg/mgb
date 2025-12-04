@@ -1,7 +1,6 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
-#include "platform/mm.h"
 #include "platform/types.h"
 
 #define MEMORY_SIZE 0x10000
@@ -76,8 +75,8 @@ enum sm83_irq {
 	IRQ_JOYPAD,
 };
 
-struct shared {
-	struct byte_array *array;
+struct memory {
+	u8 ram[MEMORY_SIZE];
 };
 
 enum cartridge_type {
@@ -120,15 +119,11 @@ static const u32 CARTRIDGE_RAM_SIZES[6] = {
 	65536 // 8 Banks of 8KiB each
 };
 
-struct shared *allocate_memory();
-void destroy_memory(struct shared *memory);
-u8 load_u8(struct shared *memory, u16 addr);
-void write_u8(struct shared *memory, u16 addr, u8 value);
-int load_rom(struct shared *memory, char *path);
-void dump_memory(struct shared *memory);
-void dump_memory_to_file(struct shared *memory, char *filename);
-void print_addr(struct shared *memory, u16 addr);
-void request_interrupt(struct shared *memory, enum sm83_irq number);
-void print_hardware_registers(struct shared *memory);
+int load_rom(struct memory *mem, char *path);
+void dump_memory(struct memory *mem);
+void dump_memory_to_file(struct memory *mem, char *filename);
+void print_addr(struct memory *mem, u16 addr);
+void request_interrupt(struct memory *mem, enum sm83_irq number);
+void print_hardware_registers(struct memory *mem);
 
 #endif

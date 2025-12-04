@@ -4,6 +4,7 @@
 #include "mgb/debugger.h"
 #include <pthread.h>
 #include <raylib.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -16,7 +17,7 @@ static void sigint_handler(int dummy)
 	sigint_catcher = 1;
 }
 
-static u8 gb_load(struct sm83_core *cpu, u16 addr)
+static u8 gb_cpu_load(struct sm83_core *cpu, u16 addr)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
 	switch (addr) {
@@ -25,23 +26,23 @@ static u8 gb_load(struct sm83_core *cpu, u16 addr)
 	case 0xC000 ... 0xDE00:
 		addr += 0x2000;
 	}
-	return load_u8(gb->memory, addr);
+	return gb->memory.ram[addr];
 }
 
-static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
+static void gb_cpu_write(struct sm83_core *cpu, u16 addr, u8 value)
 {
 	struct gb_emulator *gb = (struct gb_emulator *)cpu->parent;
 	switch (addr) {
 	case P1_JOYP: {
-		gb->memory->array->bytes[P1_JOYP] = value | 0x0f;
+		gb->memory.ram[P1_JOYP] = value | 0x0f;
 		update_joypad(gb);
 		break;
 	}
 	case LY_LCD:
 		return;
 	case STAT_LCD: {
-		u8 stat = load_u8(gb->memory, STAT_LCD);
-		gb->memory->array->bytes[addr] = (stat & 0x3) | (value & 0xfc);
+		u8 stat = gb->memory.ram[STAT_LCD];
+		gb->memory.ram[addr] = (stat & 0x3) | (value & 0xfc);
 		break;
 	}
 	case DMA_OAM_DMA: {
@@ -50,49 +51,58 @@ static void gb_write(struct sm83_core *cpu, u16 addr, u8 value)
 		return;
 	}
 	case 0xC000 ... 0xDE00:
-		write_u8(gb->memory, addr, value);
-		write_u8(gb->memory, addr + 0x2000, value);
+		gb->memory.ram[addr] = value;
+		gb->memory.ram[addr + 0x2000] = value;
 	case 0xE000 ... 0xFE00:
-		write_u8(gb->memory, addr, value);
-		write_u8(gb->memory, addr - 0x2000, value);
+		gb->memory.ram[addr] = value;
+		gb->memory.ram[addr - 0x2000] = value;
 	default:
-		write_u8(gb->memory, addr, value);
+		gb->memory.ram[addr] = value;
 	}
 }
 
-static int init_devices(struct gb_emulator *gb)
+static u8 *gb_load_offset(struct ppu *gpu, u16 offset)
 {
-	gb->memory = allocate_memory();
-	if (!gb->memory)
-		goto err;
+	return ((struct gb_emulator*)gpu->parent)->memory.ram + offset;
+}
+
+static u8 gb_gpu_read(struct ppu *gpu, u16 addr)
+{
+	return ((struct gb_emulator*)gpu->parent)->memory.ram[addr];
+}
+
+static void gb_gpu_write(struct ppu *gpu, u16 addr, u8 value)
+{
+	((struct gb_emulator*)gpu->parent)->memory.ram[addr] = value;
+}
+
+static void init_devices(struct gb_emulator *gb)
+{
 	sm83_cpu_reset(&gb->cpu);
 	gb->cpu.parent = gb;
-	gb->cpu.memory.load8 = gb_load;
-	gb->cpu.memory.write8 = gb_write;
+	gb->cpu.memory.load8 = gb_cpu_load;
+	gb->cpu.memory.write8 = gb_cpu_write;
 	ppu_init(&gb->gpu);
-	gb->gpu.memory = gb->memory;
+	gb->gpu.parent = gb;
+	gb->gpu.ram.load = gb_gpu_read;
+	gb->gpu.ram.write = gb_gpu_write;
+	gb->gpu.ram.offset = gb_load_offset;
 	gb->gpu.width = 256 + GB_WIDTH;
 	gb->gpu.height = 512;
-	return 0;
-err:
-	zfree(gb);
-	return -1;
 }
 
 static struct gb_emulator *init_gb_emulator()
 {
 	struct gb_emulator *gb;
 	gb = (struct gb_emulator *)malloc(sizeof(struct gb_emulator));
-	if (!gb || init_devices(gb)) {
-		zfree(gb);
+	if (!gb)
 		return NULL;
-	}
+	init_devices(gb);
 	return gb;
 }
 
 static void destroy_gb_emulator(struct gb_emulator *gb)
 {
-	destroy_memory(gb->memory);
 	zfree(gb);
 }
 
@@ -212,7 +222,7 @@ int gb_start_emulator(struct gb_context *ctx)
 
 	if (!(ctx->gb = init_gb_emulator()))
 		gb_log_error(ctx, "failed to initialize emulator");
-	if (load_rom(ctx->gb->memory, ctx->rom_path))
+	if (load_rom(&ctx->gb->memory, ctx->rom_path))
 		gb_log_error(ctx, "failed to load ROM into emulator");
 	pthread_create(&thread_cpu, NULL, run_emulator_cpu_thread, ctx);
 	if (GB_FLAG(GB_VIDEO)) {

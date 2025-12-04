@@ -1,5 +1,7 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
+#include "platform/mm.h"
+#include <stdio.h>
 
 struct interrupt_struct {
 	const char *description;

@@ -83,7 +83,7 @@ void sm83_cpu_step(struct sm83_core *cpu)
 			u8 value = cpu->memory.load8(
 				cpu, cpu->dma.start_addr + cpu->dma.cursor);
 			cpu->memory.write8(cpu, 0xFE00 + cpu->dma.cursor,
-					    value);
+					   value);
 			cpu->dma.cursor--;
 		} else {
 			cpu->dma.scheduled = false;

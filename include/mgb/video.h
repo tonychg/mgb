@@ -1,4 +1,5 @@
 #include "mgb/sm83.h"
+#include "mgb/memory.h"
 #include "platform/types.h"
 
 enum {
@@ -60,7 +61,7 @@ enum oam_flag_attribute {
 };
 
 #define FLAG_ENABLE(byte, flag) (byte & (1 << flag)) != 0
-#define FLAG_MEM_ENABLE(mem, flag) FLAG_ENABLE(load_u8(gpu->memory, mem), flag)
+#define FLAG_MEM_ENABLE(addr, flag) FLAG_ENABLE(gpu->ram.load(gpu, addr), flag)
 #define LCD_CONTROL(flag) FLAG_MEM_ENABLE(LCDC_LCD, flag)
 #define LCD_STATUS(flag) FLAG_MEM_ENABLE(STAT_LCD, flag)
 
@@ -100,10 +101,17 @@ static const struct vram_area_range vram_areas[][2] = {
 // clang-format on
 
 struct ppu;
+struct ppu_memory;
 
 struct render {
 	// int (*create_window)(struct ppu *gpu, int width, int height, int scale);
 	void (*draw)(struct ppu *gpu, int x, int y, int color);
+};
+
+struct ppu_memory {
+	u8 (*load)(struct ppu *gpu, u16 addr);
+	void (*write)(struct ppu *gpu, u16 addr, u8 value);
+	u8 *(*offset)(struct ppu *gpu, u16 offset);
 };
 
 struct ppu {
@@ -116,13 +124,14 @@ struct ppu {
 
 	u8 frame_buffer[GB_HEIGHT * GB_WIDTH];
 
-	struct shared *memory;
 	enum ppu_mode mode;
 
 	u8 scale;
 	u64 frames;
 	u64 dots;
 	struct render renderer;
+	struct ppu_memory ram;
+	void *parent;
 };
 
 void ppu_init(struct ppu *gpu);

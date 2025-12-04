@@ -1,5 +1,7 @@
+#include "mgb/memory.h"
 #include "mgb/mgb.h"
 #include "platform/mm.h"
+#include <stdio.h>
 
 void ppu_init(struct ppu *gpu)
 {
@@ -118,8 +120,8 @@ static void push_sprite(struct ppu *gpu, u8 *vram, int tile_index, u8 x, u8 y,
 
 static void push_win_bg(struct ppu *gpu, u16 offset, int x, int y)
 {
-	u8 *tilemap = gpu->memory->array->bytes + offset;
-	u8 *tiledata = gpu->memory->array->bytes;
+	u8 *tilemap = gpu->ram.offset(gpu, offset);
+	u8 *tiledata = gpu->ram.offset(gpu, 0);
 	for (u8 j = 0; j < GB_HEIGHT / 8; j++) {
 		for (u8 i = 0; i < GB_WIDTH / 8; i++) {
 			int tile_index = tilemap[j * 32 + i];
@@ -151,17 +153,17 @@ static void draw_oam(struct ppu *gpu)
 {
 	u8 obj_mode = LCD_CONTROL(LCD_OBJ_SIZE);
 	for (int i = 0xFE00; i <= 0xFE9F; i = i + 4) {
-		u8 oam_y = gpu->memory->array->bytes[i] - 8;
-		u8 oam_x = gpu->memory->array->bytes[i + 1] - 8;
-		u8 oam_tile_index = gpu->memory->array->bytes[i + 2];
+		u8 oam_y = gpu->ram.load(gpu, i) - 8;
+		u8 oam_x = gpu->ram.load(gpu, i + 1) - 8;
+		u8 oam_tile_index = gpu->ram.load(gpu, i + 2);
 		// u8 oam_flags = gpu->memory->array->bytes[i + 3];
 		// bool is_y_flip = FLAG_ENABLE(oam_flags, OAM_Y_FLIP);
 		// bool is_x_flip = FLAG_ENABLE(oam_flags, OAM_X_FLIP);
 		// Object is hide
 		if (oam_y == 0 || oam_y == 160)
 			continue;
-		push_sprite(gpu, gpu->memory->array->bytes + 0x8000,
-			    oam_tile_index, oam_x, oam_y - 8, obj_mode);
+		push_sprite(gpu, gpu->ram.offset(gpu, 0x8000), oam_tile_index,
+			    oam_x, oam_y - 8, obj_mode);
 	}
 }
 
@@ -185,8 +187,8 @@ static void draw_viewport(struct ppu *gpu, int x, int y)
 
 static void update_lyc_ly(struct ppu *gpu)
 {
-	u8 lcd_status = load_u8(gpu->memory, STAT_LCD);
-	u8 lyc = load_u8(gpu->memory, LYC_LY);
+	u8 lcd_status = gpu->ram.load(gpu, STAT_LCD);
+	u8 lyc = gpu->ram.load(gpu, LYC_LY);
 	if (lyc == gpu->ly)
 		lcd_status |= 1 << STAT_LYC_LY;
 	else
@@ -195,21 +197,26 @@ static void update_lyc_ly(struct ppu *gpu)
 
 static void request_vlank_interrupt(struct ppu *gpu)
 {
-	if (gpu->ly == 144)
-		request_interrupt(gpu->memory, IRQ_VBLANK);
+	if (gpu->ly == 144) {
+		u8 irq_reqs = gpu->ram.load(gpu , IF);
+		irq_reqs |= 1 << IRQ_VBLANK;
+		gpu->ram.write(gpu, IF, irq_reqs);
+	}
 }
 
 static void request_stat_interrupt(struct ppu *gpu)
 {
 	if (LCD_STATUS(STAT_LYC_INT_SELECT) && LCD_STATUS(STAT_LYC_LY)) {
-		request_interrupt(gpu->memory, IRQ_LCD);
+		u8 irq_reqs = gpu->ram.load(gpu , IF);
+		irq_reqs |= 1 << IRQ_LCD;
+		gpu->ram.write(gpu, IF, irq_reqs);
 	}
 }
 
 static void draw_tiles(struct ppu *gpu, u16 offset, int x, int y)
 {
-	u8 *tilemap = gpu->memory->array->bytes + offset;
-	u8 *tiledata = gpu->memory->array->bytes;
+	u8 *tilemap = gpu->ram.offset(gpu, offset);
+	u8 *tiledata = gpu->ram.offset(gpu, 0);
 	for (u8 j = 0; j < 32; j++) {
 		for (u8 i = 0; i < 32; i++) {
 			int tile_index = tilemap[j * 32 + i];
@@ -239,7 +246,7 @@ void ppu_draw(struct ppu *gpu)
 {
 	if (LCD_CONTROL(LCD_ENABLE))
 		draw_viewport(gpu, 0, 0);
-	draw_tiledata(gpu, gpu->memory->array->bytes + 0x8000, 0, GB_HEIGHT);
+	draw_tiledata(gpu, gpu->ram.offset(gpu, 0x8000), 0, GB_HEIGHT);
 	draw_debug_window(gpu, GB_WIDTH, 0);
 	draw_debug_background(gpu, GB_WIDTH, 256);
 	clear_frame(gpu);
@@ -253,12 +260,12 @@ static void increment_scanline(struct ppu *gpu, struct sm83_core *cpu)
 	}
 	if (gpu->dots >= (GB_VIDEO_SCANLINE_PERIOD / cpu->multiplier)) {
 		gpu->dots -= (GB_VIDEO_SCANLINE_PERIOD / cpu->multiplier);
-		u8 ly = load_u8(gpu->memory, LY_LCD);
+		u8 ly = gpu->ram.load(gpu, LY_LCD);
 		gpu->ly++;
 		if (gpu->ly == 144 && ly != gpu->ly) {
 			request_vlank_interrupt(gpu);
 		}
-		gpu->memory->array->bytes[LY_LCD] = gpu->ly;
+		gpu->ram.write(gpu, LY_LCD, gpu->ly);
 		update_lyc_ly(gpu);
 		request_stat_interrupt(gpu);
 	}
@@ -274,7 +281,7 @@ void ppu_tick(struct ppu *gpu, struct sm83_core *cpu)
 
 void ppu_info(struct ppu *gpu)
 {
-	u8 *mem = gpu->memory->array->bytes;
+	u8 *mem = gpu->ram.offset(gpu, 0);
 	printf(" LY  = %2d | LYC = %2d | ", gpu->ly, mem[LYC_LY]);
 	printf("MODE = %2d | LX  = %2d\n", gpu->mode, gpu->x);
 }
