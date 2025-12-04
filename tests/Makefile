@@ -3,8 +3,9 @@ PROGRAM = test
 CFLAGS = -Wall -g
 LIB = -lcriterion
 SRC = \
-	  $(DESTINATION)/devices/ppu.c \
-	  $(DESTINATION)/devices/joypad.c \
+	  $(DESTINATION)/mgb/memory.c \
+	  $(DESTINATION)/mgb/video.c \
+	  $(DESTINATION)/mgb/joypad.c \
 	  test.c
 
 include $(DESTINATION)/Makefile.common

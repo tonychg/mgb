@@ -1,4 +1,4 @@
-#include "emu/sm83.h"
+#include "mgb/sm83.h"
 #include "platform/types.h"
 
 enum {

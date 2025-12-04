@@ -1,5 +1,5 @@
-#include "emu/memory.h"
-#include "emu/sm83.h"
+#include "mgb/sm83.h"
+#include "mgb/memory.h"
 #include "platform/mm.h"
 #include "platform/types.h"
 #include <stdio.h>

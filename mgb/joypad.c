@@ -1,5 +1,6 @@
-#include "emu/joypad.h"
-#include "emu/memory.h"
+#include "mgb/mgb.h"
+#include "mgb/joypad.h"
+#include "mgb/memory.h"
 
 u8 read_keys(u8 keys, u8 joyp)
 {

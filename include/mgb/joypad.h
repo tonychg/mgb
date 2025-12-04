@@ -1,4 +1,4 @@
-#include "emu/gb.h"
+#include "mgb/mgb.h"
 #include "platform/types.h"
 
 enum joypad_button {

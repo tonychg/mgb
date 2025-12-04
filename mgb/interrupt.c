@@ -1,5 +1,5 @@
-#include "emu/sm83.h"
-#include "emu/memory.h"
+#include "mgb/sm83.h"
+#include "mgb/memory.h"
 
 struct interrupt_struct {
 	const char *description;

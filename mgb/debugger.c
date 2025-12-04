@@ -1,8 +1,6 @@
-#include "emu/gb.h"
-#include "emu/memory.h"
+#include "mgb/debugger.h"
 #include "platform/mm.h"
 #include "platform/types.h"
-#include "platform/debugger.h"
 #include <string.h>
 #include <stdlib.h>
 

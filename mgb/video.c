@@ -1,6 +1,4 @@
-#include "emu/ppu.h"
-#include "emu/memory.h"
-#include "emu/sm83.h"
+#include "mgb/mgb.h"
 #include "platform/mm.h"
 #include <stdlib.h>
 

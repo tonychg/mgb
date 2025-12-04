@@ -2,7 +2,7 @@
 #define _TIMER_H
 
 #include "platform/types.h"
-#include "emu/sm83.h"
+#include "mgb/sm83.h"
 
 enum div_register_freq {
 	DIV_PERIOD = 16384,

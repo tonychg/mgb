@@ -1,6 +1,6 @@
-#include "emu/sm83.h"
-#include "emu/memory.h"
-#include "emu/timer.h"
+#include "mgb/sm83.h"
+#include "mgb/memory.h"
+#include "mgb/timer.h"
 #include "platform/mm.h"
 #include <stdlib.h>
 

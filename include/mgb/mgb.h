@@ -1,10 +1,10 @@
-#ifndef _GB_H
-#define _GB_H
+#ifndef _MGB_H
+#define _MGB_H
 
 #include "platform/types.h"
-#include "emu/sm83.h"
-#include "emu/memory.h"
-#include "emu/ppu.h"
+#include "mgb/sm83.h"
+#include "mgb/memory.h"
+#include "mgb/video.h"
 
 enum gb_option_type {
 	GB_OPTION_DEBUG,

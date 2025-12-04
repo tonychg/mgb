@@ -1,5 +1,5 @@
-#include "emu/memory.h"
-#include "emu/sm83.h"
+#include "mgb/memory.h"
+#include "mgb/sm83.h"
 
 #define INC_AF(cpu) op_r16_inc(&cpu->a, &cpu->f)
 #define INC_BC(cpu) op_r16_inc(&cpu->b, &cpu->c)

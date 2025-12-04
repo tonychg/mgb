@@ -15,12 +15,6 @@ CFLAGS ?=
 #    CFLAGS ?= -g -Wall
 # Be careful you have to put the include after your variables
 SRC += \
-	   $(DESTINATION)/devices/sm83/sm83.c \
-	   $(DESTINATION)/devices/sm83/decoder.c \
-	   $(DESTINATION)/devices/sm83/interrupt.c \
-	   $(DESTINATION)/devices/sm83/isa.c \
-	   $(DESTINATION)/devices/memory.c \
-	   $(DESTINATION)/devices/timer.c \
 	   $(DESTINATION)/platform/mm.c \
 	   $(DESTINATION)/platform/io.c \
 

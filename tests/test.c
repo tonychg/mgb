@@ -1,5 +1,5 @@
 #include "platform/mm.h"
-#include "emu/joypad.h"
+#include "mgb/joypad.h"
 #include <criterion/criterion.h>
 #include <criterion/new/assert.h>
 

@@ -1,5 +1,5 @@
-#include "emu/memory.h"
-#include "emu/timer.h"
+#include "mgb/memory.h"
+#include "mgb/timer.h"
 
 void sm83_update_timer_registers(struct sm83_core *cpu)
 {

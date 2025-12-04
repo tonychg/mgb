@@ -1,7 +1,7 @@
 #ifndef _SM83_DEBUGGER_H
 #define _SM83_DEBUGGER_H
 
-#include "emu/gb.h"
+#include "mgb/mgb.h"
 
 #define COMMAND_MAX_LENGTH 256
 #define COMMAND_DELIMITERS " \n"

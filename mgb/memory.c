@@ -1,6 +1,6 @@
 #include "platform/io.h"
-#include "emu/memory.h"
 #include "platform/mm.h"
+#include "mgb/memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 

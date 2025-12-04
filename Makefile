@@ -2,7 +2,7 @@ MAKE = make
 MAKEFLAGS += --no-print-directory
 
 ALL_PROGRAMS =
-ALL_PROGRAMS += emu/gb
+ALL_PROGRAMS += mgb
 ALL_PROGRAMS += tests
 
 define run_submakefile

@@ -1,7 +1,7 @@
 #ifndef _RENDER_H
 #define _RENDER_H
 
-#include "emu/joypad.h"
+#include "mgb/joypad.h"
 #include "platform/types.h"
 #include <raylib.h>
 #include <stdbool.h>
