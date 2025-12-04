@@ -344,7 +344,8 @@ void sm83_info(struct sm83_core *cpu)
 	printf(" DIV = %3d | TIMA = %3d | M-cycles = %lu\n",
 	       cpu->memory.load8(cpu, DIV), cpu->memory.load8(cpu, TIMA),
 	       cpu->cycles);
-	printf(" State = %s\n", sm83_state_names[cpu->state]);
+	printf(" State = %s | DMA Cursor: %d\n", sm83_state_names[cpu->state],
+	       cpu->dma.cursor);
 	sm83_disassemble(cpu, disasm);
 	printf("  %s\n", disasm);
 }

@@ -51,15 +51,18 @@ void dump_memory(struct memory *mem)
 {
 	for (int i = 0; i <= MEMORY_SIZE; i++) {
 		u8 byte = mem->ram[i];
+		if ((i + 32) < MEMORY_SIZE) {
+			if ((i + 1) % 32 == 0 && i > 0)
+				printf("\n%04X-%04X | ", i, i + 32);
+			else if ((i + 1) % 8 == 0 && i > 0)
+				printf(" ");
+		}
 		if (byte)
 			printf("%02X", byte);
 		else
 			printf("..");
-		if ((i + 1) % 32 == 0 && i > 0)
-			printf("\n");
-		else if ((i + 1) % 8 == 0 && i > 0)
-			printf(" ");
 	}
+	printf("\n");
 }
 
 void dump_memory_to_file(struct memory *mem, char *filename)

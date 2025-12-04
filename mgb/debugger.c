@@ -178,6 +178,8 @@ static int command_parse(struct debugger *dbg, char *buffer)
 	case COMMAND_DELETE:
 	case COMMAND_PRINT:
 	case COMMAND_WATCH:
+		dbg->command.addr = parse_hex(dbg, &buffer);
+		break;
 	case COMMAND_SET:
 		dbg->command.addr = parse_hex(dbg, &buffer);
 		dbg->command.value = parse_hex(dbg, &buffer);
@@ -268,14 +270,13 @@ static int debugger_command_handle(struct debugger *dbg)
 		} else {
 			dbg->state = STATE_EXECUTE;
 			dbg->until = GB_VIDEO_FRAME_PERIOD;
+			sm83_info(&dbg->gb->cpu);
+			ppu_info(&dbg->gb->gpu);
 		}
 		break;
 	}
 	case COMMAND_QUIT:
 		dbg->state = STATE_QUIT;
-		break;
-	case COMMAND_HELP:
-		print_help();
 		break;
 	case COMMAND_WATCH:
 		if (register_watcher(dbg, dbg->command.addr))
@@ -307,6 +308,9 @@ static int debugger_command_handle(struct debugger *dbg)
 			dbg->watched_values[i] = 0;
 		}
 		break;
+	case COMMAND_HELP:
+		print_help();
+		break;
 	}
 	return 0;
 }
@@ -325,12 +329,15 @@ int debugger_new(struct debugger *dbg)
 
 int debugger_step(struct debugger *dbg)
 {
-	struct cmd_struct cmd = commands[dbg->command.type];
+	struct cmd_struct cmd;
 	while (dbg->state == STATE_WAIT) {
 		if (debugger_prompt(dbg))
 			return -1;
 		debugger_command_handle(dbg);
-		printf("Command: %s State: %d\n", cmd.name, dbg->state);
+		cmd = commands[dbg->command.type];
+		printf("Command: %s State: %d Addr: %04x Value: %02X\n",
+		       cmd.name, dbg->state, dbg->command.addr,
+		       dbg->command.value);
 	}
 	debugger_command_handle(dbg);
 	dbg->index = dbg->gb->cpu.index;

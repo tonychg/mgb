@@ -23,8 +23,8 @@ static u8 gb_cpu_load(struct sm83_core *cpu, u16 addr)
 	switch (addr) {
 	case P1_JOYP:
 		return update_joypad(gb);
-	case 0xC000 ... 0xDE00:
-		addr += 0x2000;
+	// case 0xC000 ... 0xDE00:
+	// 	addr += 0x2000;
 	}
 	return gb->memory.ram[addr];
 }
@@ -47,15 +47,15 @@ static void gb_cpu_write(struct sm83_core *cpu, u16 addr, u8 value)
 	}
 	case DMA_OAM_DMA: {
 		// Starting DMA transfer
-		sm83_schedule_dma_transfer(cpu, value << 8);
+		sm83_schedule_dma_transfer(cpu, value * 0x100);
 		return;
 	}
-	case 0xC000 ... 0xDE00:
-		gb->memory.ram[addr] = value;
-		gb->memory.ram[addr + 0x2000] = value;
-	case 0xE000 ... 0xFE00:
-		gb->memory.ram[addr] = value;
-		gb->memory.ram[addr - 0x2000] = value;
+	// case 0xC000 ... 0xDE00:
+	// 	gb->memory.ram[addr] = value;
+	// 	gb->memory.ram[addr + 0x2000] = value;
+	// case 0xE000 ... 0xFE00:
+	// 	gb->memory.ram[addr] = value;
+	// 	gb->memory.ram[addr - 0x2000] = value;
 	default:
 		gb->memory.ram[addr] = value;
 	}

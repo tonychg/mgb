@@ -1,6 +1,7 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
 #include "mgb/timer.h"
+#include <stdio.h>
 
 static void sm83_stack_push_pc(struct sm83_core *cpu, u16 *pc)
 {
@@ -58,14 +59,18 @@ void sm83_halt(struct sm83_core *cpu)
 
 void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr)
 {
-	if (start_addr >= 0xE000) {
-		start_addr &= 0xDFFF;
+	if (!cpu->dma.scheduled) {
+		// if (start_addr >= 0xE000) {
+		// 	start_addr &= 0xDFFF;
+		// }
+		cpu->dma.start_addr = start_addr;
+		cpu->dma.scheduled = true;
+		cpu->dma.cursor = 0;
+		cpu->previous = cpu->state;
+		cpu->state = SM83_CORE_DMA_TRANSFER;
+		// printf("DMA transfer scheduled: %04X %d\n", start_addr,
+		//        cpu->state);
 	}
-	cpu->dma.start_addr = start_addr;
-	cpu->dma.scheduled = true;
-	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
-	cpu->previous = cpu->state;
-	cpu->state = SM83_CORE_DMA_TRANSFER;
 }
 
 void sm83_cpu_step(struct sm83_core *cpu)
@@ -75,20 +80,22 @@ void sm83_cpu_step(struct sm83_core *cpu)
 	cpu->cycles += cpu->multiplier;
 	switch (cpu->state) {
 	case SM83_CORE_DMA_TRANSFER: {
-		if (cpu->dma.scheduled && cpu->dma.cursor > 0) {
-			// printf("[%lu] [$%04X] Cursor %d, Start address %04X Scheduled: %d\n",
+		if (cpu->dma.scheduled &&
+		    cpu->dma.cursor < SM83_DMA_TRANSFER_CYCLES) {
+			// printf("[%lu] [$%04X] Cursor %d -> %04X, Start address %04X Scheduled: %d\n",
 			//        cpu->cycles, cpu->index, cpu->dma.cursor,
+			//        0xFE00 + cpu->dma.cursor,
 			//        cpu->dma.start_addr + cpu->dma.cursor,
 			//        cpu->dma.scheduled);
 			u8 value = cpu->memory.load8(
 				cpu, cpu->dma.start_addr + cpu->dma.cursor);
 			cpu->memory.write8(cpu, 0xFE00 + cpu->dma.cursor,
 					   value);
-			cpu->dma.cursor--;
+			cpu->dma.cursor++;
 		} else {
 			cpu->dma.scheduled = false;
 			cpu->pc++;
-			cpu->state = SM83_CORE_FETCH;
+			cpu->state = cpu->previous;
 			sm83_isa_execute(cpu);
 		}
 		break;
