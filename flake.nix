@@ -14,6 +14,7 @@
         nativeBuildInputs = [
             pkgs.raylib
             pkgs.cjson
+            pkgs.criterion
         ];
         buildInputs = with pkgs; [
           gnumake
