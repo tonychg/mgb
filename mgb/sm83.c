@@ -151,7 +151,8 @@ void sm83_cpu_step(struct sm83_core *cpu)
 				cpu->pc++;
 			}
 		}
-	} break;
+		break;
+	}
 	case SM83_CORE_HALT_BUG: {
 		// FIX ME
 		u8 irq_regs;
