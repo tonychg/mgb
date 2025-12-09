@@ -5,6 +5,9 @@
 #include "mgb/sm83.h"
 #include "mgb/memory.h"
 #include "mgb/video.h"
+#include <sys/time.h>
+
+#define GB_REALISTIC_CYCLES 16670
 
 enum gb_option_type {
 	GB_OPTION_DEBUG,
@@ -47,6 +50,8 @@ struct gb_context {
 	u8 flags;
 	int exit_code;
 	int scale;
+	struct timeval start_time;
+	u32 cycles;
 };
 
 // clang-format off

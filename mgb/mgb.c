@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/time.h>
 #include <string.h>
 
 static volatile int sigint_catcher = 0;
@@ -112,14 +111,21 @@ static void gb_log_error(struct gb_context *ctx, char *msg)
 	ctx->exit_code = -1;
 }
 
-static void throttling(struct timeval *start_time, int milliseconds)
+static void throttling(struct gb_context *ctx)
 {
 	unsigned long elapsed = 0;
 	struct timeval now, diff;
-	while (elapsed < milliseconds) {
-		gettimeofday(&now, NULL);
-		timersub(&now, start_time, &diff);
-		elapsed = (unsigned long)diff.tv_usec * 1000;
+	if (!ctx->gb->cpu.halted) {
+		ctx->cycles++;
+		// Throttling
+		if (ctx->cycles >= 17476) {
+			ctx->cycles -= 17476;
+			while (elapsed < GB_REALISTIC_CYCLES) {
+				gettimeofday(&now, NULL);
+				timersub(&now, &ctx->start_time, &diff);
+				elapsed = (unsigned long)diff.tv_usec * 1000;
+			}
+		}
 	}
 }
 
@@ -135,11 +141,9 @@ static void bind_debugger(struct debugger *dbg, struct gb_context *ctx)
 static void run_cpu_debugger(struct gb_context *ctx)
 {
 	struct debugger dbg;
-	struct timeval start_time;
-	int cycles = 0;
 	bind_debugger(&dbg, ctx);
 	while (dbg.state != STATE_QUIT) {
-		gettimeofday(&start_time, NULL);
+		gettimeofday(&ctx->start_time, NULL);
 		if (sigint_catcher) {
 			dbg.state = STATE_WAIT;
 			sigint_catcher = 0;
@@ -147,14 +151,8 @@ static void run_cpu_debugger(struct gb_context *ctx)
 		if (debugger_step(&dbg))
 			break;
 		ppu_tick(&ctx->gb->gpu, &ctx->gb->cpu);
-		if (!ctx->gb->cpu.halted && GB_FLAG(GB_THROTTLING)) {
-			cycles++;
-			// Throttling
-			if (cycles >= 17476) {
-				cycles -= 17476;
-				throttling(&start_time, 16670);
-			}
-		}
+		if (GB_FLAG(GB_THROTTLING))
+			throttling(ctx);
 	}
 }
 
@@ -167,10 +165,13 @@ static void *run_emulator_cpu_thread(void *arg)
 		GB_FLAG_DISABLE(GB_ON);
 	} else {
 		while (GB_FLAG(GB_ON)) {
+			gettimeofday(&ctx->start_time, NULL);
 			if (sigint_catcher)
 				GB_FLAG_DISABLE(GB_ON);
 			sm83_cpu_step(&ctx->gb->cpu);
 			ppu_tick(&ctx->gb->gpu, &ctx->gb->cpu);
+			if (GB_FLAG(GB_THROTTLING))
+				throttling(ctx);
 		}
 	}
 	pthread_exit(NULL);
@@ -258,6 +259,7 @@ static void gb_context_init(struct gb_context *ctx)
 	ctx->flags = 0;
 	ctx->rom_path = NULL;
 	ctx->scale = 1;
+	ctx->cycles = 0;
 	GB_FLAG_ENABLE(GB_VIDEO);
 	GB_FLAG_ENABLE(GB_ON);
 }
