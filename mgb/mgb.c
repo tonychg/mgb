@@ -226,6 +226,9 @@ int gb_start_emulator(struct gb_context *ctx)
 	if (load_rom(&ctx->gb->memory, ctx->rom_path))
 		gb_log_error(ctx, "failed to load ROM into emulator");
 	pthread_create(&thread_cpu, NULL, run_emulator_cpu_thread, ctx);
+	if (GB_FLAG(GB_DMA)) {
+		ctx->gb->cpu.dma_enabled = true;
+	}
 	if (GB_FLAG(GB_VIDEO)) {
 		ctx->gb->gpu.scale = ctx->scale;
 		printf("Resolution: %dx%d Scale: %d\n", ctx->gb->gpu.width,
@@ -242,6 +245,7 @@ struct gb_option options[] = {
 	{ "-d/--debug         Enable debugger", "--debug", "-d", 0, GB_OPTION_DEBUG },
 	{ "-r/--rom <path>    Path of the ROM", "--rom", "-r", 1, GB_OPTION_ROM },
 	{ "-n/--no-video      Disable video rendering", "--no-video", "-n", 0, GB_OPTION_NO_VIDEO },
+	{ "-D/--no-dma        Disable DMA transfer", "--no-dma", "-D", 0, GB_OPTION_NO_DMA },
 	{ "-s/--scale <int>   Scale viewport", "--scale", "-s", 1, GB_OPTION_SCALE },
 	{ "-t/--throttling    Enable throttling", "--throttling", "-t", 0, GB_OPTION_THROTTLING },
 };
@@ -261,6 +265,7 @@ static void gb_context_init(struct gb_context *ctx)
 	ctx->scale = 1;
 	ctx->cycles = 0;
 	GB_FLAG_ENABLE(GB_VIDEO);
+	GB_FLAG_ENABLE(GB_DMA);
 	GB_FLAG_ENABLE(GB_ON);
 }
 
@@ -277,6 +282,9 @@ static void parse_option(struct gb_context *ctx, int i, int argc, char **argv)
 			break;
 		case GB_OPTION_NO_VIDEO:
 			GB_FLAG_DISABLE(GB_VIDEO);
+			break;
+		case GB_OPTION_NO_DMA:
+			GB_FLAG_DISABLE(GB_DMA);
 			break;
 		case GB_OPTION_THROTTLING:
 			GB_FLAG_DISABLE(GB_THROTTLING);
@@ -299,6 +307,7 @@ static void print_header(struct gb_context *ctx)
 	printf("Starting up ...\n");
 	printf("Debug: %s ", GB_FLAG(GB_DEBUG) ? "On" : "Off");
 	printf("Video: %s ", GB_FLAG(GB_VIDEO) ? "On" : "Off");
+	printf("DMA: %s ", GB_FLAG(GB_DMA) ? "On" : "Off");
 	printf("\n");
 	printf("Throttling: %s\n", GB_FLAG(GB_THROTTLING) ? "On" : "Off");
 	printf("Rom: %s\n", ctx->rom_path ? ctx->rom_path : "Not loaded");

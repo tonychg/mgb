@@ -57,8 +57,8 @@ enum sm83_irq_vector {
 
 struct dma_transfer {
 	bool scheduled;
-	u16 start_addr;
-	u16 cursor;
+	u16 start_address;
+	u16 remaining;
 };
 
 struct sm83_core {
@@ -89,6 +89,7 @@ struct sm83_core {
 	bool ime;
 	bool halted;
 	bool timer_enabled;
+	bool dma_enabled;
 	enum sm83_state state;
 	enum sm83_state previous;
 

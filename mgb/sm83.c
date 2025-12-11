@@ -40,9 +40,10 @@ void sm83_cpu_reset(struct sm83_core *cpu)
 	cpu->internal_divider = 0;
 	cpu->internal_timer = 0;
 	// DMA
-	cpu->dma.start_addr = 0;
+	cpu->dma_enabled = false;
+	cpu->dma.start_address = 0;
 	cpu->dma.scheduled = false;
-	cpu->dma.cursor = SM83_DMA_TRANSFER_CYCLES;
+	cpu->dma.remaining = SM83_DMA_TRANSFER_CYCLES;
 }
 
 void sm83_halt(struct sm83_core *cpu)
@@ -56,15 +57,15 @@ void sm83_halt(struct sm83_core *cpu)
 	}
 }
 
-void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_addr)
+void sm83_schedule_dma_transfer(struct sm83_core *cpu, u16 start_address)
 {
 	if (!cpu->dma.scheduled) {
-		// if (start_addr >= 0xE000) {
-		// 	start_addr &= 0xDFFF;
-		// }
-		cpu->dma.start_addr = start_addr;
+		if (start_address >= 0xE000) {
+			start_address &= 0xDFFF;
+		}
+		cpu->dma.start_address = start_address;
 		cpu->dma.scheduled = true;
-		cpu->dma.cursor = 0;
+		cpu->dma.remaining = SM83_DMA_TRANSFER_CYCLES;
 		cpu->previous = cpu->state;
 		cpu->state = SM83_CORE_DMA_TRANSFER;
 		// printf("DMA transfer scheduled: %04X %d\n", start_addr,
@@ -79,18 +80,19 @@ void sm83_cpu_step(struct sm83_core *cpu)
 	cpu->cycles += cpu->multiplier;
 	switch (cpu->state) {
 	case SM83_CORE_DMA_TRANSFER: {
-		if (cpu->dma.scheduled &&
-		    cpu->dma.cursor < SM83_DMA_TRANSFER_CYCLES) {
+		if (!cpu->dma_enabled)
+			break;
+		if (cpu->dma.scheduled && cpu->dma.remaining > 0) {
 			// printf("[%lu] [$%04X] Cursor %d -> %04X, Start address %04X Scheduled: %d\n",
 			//        cpu->cycles, cpu->index, cpu->dma.cursor,
 			//        0xFE00 + cpu->dma.cursor,
 			//        cpu->dma.start_addr + cpu->dma.cursor,
 			//        cpu->dma.scheduled);
+			--cpu->dma.remaining;
 			u8 value = cpu->memory.load8(
-				cpu, cpu->dma.start_addr + cpu->dma.cursor);
-			cpu->memory.write8(cpu, 0xFE00 + cpu->dma.cursor,
+				cpu, cpu->dma.start_address + cpu->dma.remaining);
+			cpu->memory.write8(cpu, 0xFE00 + cpu->dma.remaining,
 					   value);
-			cpu->dma.cursor++;
 		} else {
 			cpu->dma.scheduled = false;
 			cpu->pc++;

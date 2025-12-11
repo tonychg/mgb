@@ -13,6 +13,7 @@ enum gb_option_type {
 	GB_OPTION_DEBUG,
 	GB_OPTION_ROM,
 	GB_OPTION_NO_VIDEO,
+	GB_OPTION_NO_DMA,
 	GB_OPTION_SCALE,
 	GB_OPTION_THROTTLING,
 };
@@ -22,6 +23,7 @@ enum gb_flags {
 	GB_DEBUG,
 	GB_VIDEO,
 	GB_THROTTLING,
+	GB_DMA,
 };
 
 #define GB_FLAG(flag) (ctx->flags & (1 << flag)) != 0
